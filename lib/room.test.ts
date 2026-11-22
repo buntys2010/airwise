@@ -133,6 +133,17 @@ describe("profilePatch", () => {
     expect(profilePatch([])).toEqual({});
     expect(profilePatch([hotspotFor("purifier_seen", box, 1)])).toEqual({});
   });
+  it("a No answer stops the engine assuming a leaky home or a smoky kitchen", () => {
+    expect(profilePatch([], { window: false }, { home: "leaky", cooking: "lpg" })).toEqual({ home: "typical" });
+    expect(profilePatch([], { stove: false }, { home: "leaky", cooking: "lpg" })).toEqual({ cooking: "induction" });
+    expect(profilePatch([], { window: false }, { home: "sealed", cooking: "lpg" })).toEqual({}); // never worsens a sealed home
+    expect(profilePatch([], { stove: false }, { home: "leaky", cooking: "induction" })).toEqual({});
+  });
+  it("a Yes to the stove keeps wood as wood", () => {
+    const stove = [hotspotFor("gas_stove", undefined, 1)];
+    expect(profilePatch(stove, { stove: true }, { home: "typical", cooking: "wood" })).toEqual({});
+    expect(profilePatch(stove, { stove: true }, { home: "typical", cooking: "induction" })).toEqual({ cooking: "lpg" });
+  });
 });
 
 describe("rankProducts (engine cut per rupee)", () => {

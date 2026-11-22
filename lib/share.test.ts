@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NO_PLAN, fullPlan, type Profile } from "./engine";
-import { decodeChoices, encodeChoices, idsToPlan, planToIds, shareUrl } from "./share";
+import { decodeChoices, encodeChoices, idsToPlan, planToIds, sanitizePlan, shareUrl } from "./share";
 
 const profile: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
 
@@ -61,6 +61,11 @@ describe("plan ids", () => {
   });
   it("a swap in a link means the metro, the same default the engine's full plan uses", () => {
     expect(idsToPlan(["swap"]).swapCommute).toBe("metro");
+  });
+  it("drops a swap that the engine says is not applicable (walk, cycle, metro)", () => {
+    for (const commute of ["walk", "cycle", "metro"] as const) expect(sanitizePlan(idsToPlan(["swap"]), commute).swapCommute).toBeNull();
+    expect(sanitizePlan(idsToPlan(["swap"]), "car").swapCommute).toBe("metro");
+    expect(decodeChoices("?commute=walk&plan=swap").plan?.swapCommute).toBeNull();
   });
 });
 

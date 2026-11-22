@@ -9,10 +9,12 @@ import {
 import { hazeLevel } from "@/lib/haze";
 import { SAMPLE_PROFILE_PATCH } from "@/lib/room";
 import { buildSchedule } from "@/lib/schedule";
-import { decodeChoices } from "@/lib/share";
+import { decodeChoices, sanitizePlan } from "@/lib/share";
 import { clearSaved, readSaved, writeSaved, type StoreState } from "@/lib/store";
 
 const REFRESH_MS = 15 * 60 * 1000;
+const LOAD_TIMEOUT_MS = 10_000;
+const sameProfile = (a: Profile, b: Profile) => a.home === b.home && a.commute === b.commute && a.km === b.km && a.cooking === b.cooking && a.vulnerable === b.vulnerable;
 /** The sample-room family: an older flat in Lucknow, gas cooking, a two-wheeler commute, an asthmatic child. */
 export const DEFAULT_PROFILE: Profile = { home: SAMPLE_PROFILE_PATCH.home, commute: "bike", km: 8, cooking: SAMPLE_PROFILE_PATCH.cooking, vulnerable: true };
 export const DEFAULT_CITY = "lucknow";
@@ -32,6 +34,8 @@ export function useAirwise(lang: Lang = "en") {
   const [prefill, setPrefill] = useState("");
   const [storeState, setStoreState] = useState<StoreState>("empty");
   const [hydrated, setHydrated] = useState(false);
+  const profileRef = useRef<Profile>(DEFAULT_PROFILE); // always the latest profile, so async callers never write over newer edits
+  profileRef.current = profile;
   const touched = useRef(false); // only the user's own changes are saved; opening someone's shared link never overwrites your save
 
   // First run: sample room first. City and household come from a shared link if there is one, else from this device's save, else the defaults.
@@ -41,8 +45,9 @@ export function useAirwise(lang: Lang = "en") {
     setStoreState(state);
     const nextCity = shared.city ?? data?.city;
     if (nextCity) setCityIdRaw(nextCity);
-    if (data || shared.profile) setProfileRaw({ ...DEFAULT_PROFILE, ...(data?.profile ?? {}), ...(shared.profile ?? {}) });
-    if (shared.plan) setPlan(shared.plan);
+    const merged: Profile = { ...DEFAULT_PROFILE, ...(data?.profile ?? {}), ...(shared.profile ?? {}) };
+    if (data || shared.profile) setProfileRaw(merged);
+    if (shared.plan) setPlan(sanitizePlan(shared.plan, merged.commute));
     const ask = new URLSearchParams(window.location.search).get("ask"); // questions sent from the guide page
     if (ask) setPrefill(ask.slice(0, 400));
     setHydrated(true);
@@ -58,7 +63,17 @@ export function useAirwise(lang: Lang = "en") {
   useEffect(() => {
     const ctrl = new AbortController();
     setStatus("loading");
-    const run = () => loadAir(city, ctrl.signal).then((r) => { if (ctrl.signal.aborted) return; setAir(r); setStatus(r.source); const c = istClock(); setNowHour(c.hour); setElapsed(c.elapsed); });
+    // Never show the previous city's curve under this city's name while the fetch is out: start from this city's own estimate.
+    setAir({ hourly: estimateHourly(city), source: "estimate", temp: null, wind: null, updated: null });
+    const run = () => {
+      const req = new AbortController(); // one request: cancelled with the effect, or after a timeout so a hung fetch falls back to the estimate
+      const onAbort = () => req.abort();
+      ctrl.signal.addEventListener("abort", onAbort);
+      const timeout = setTimeout(onAbort, LOAD_TIMEOUT_MS);
+      return loadAir(city, req.signal)
+        .then((r) => { if (ctrl.signal.aborted) return; setAir(r); setStatus(r.source); const c = istClock(); setNowHour(c.hour); setElapsed(c.elapsed); })
+        .finally(() => { clearTimeout(timeout); ctrl.signal.removeEventListener("abort", onAbort); });
+    };
     run();
     const timer = setInterval(run, REFRESH_MS);
     return () => { ctrl.abort(); clearInterval(timer); };
@@ -85,7 +100,13 @@ export function useAirwise(lang: Lang = "en") {
   }, [nowPm, base.meanPm, withPlan.meanPm]);
 
   const setCityId = useCallback((id: string) => { touched.current = true; setCityIdRaw(id); setPlan(NO_PLAN); }, []);
-  const setProfile = useCallback((p: Profile) => { touched.current = true; setProfileRaw(p); setPlan(NO_PLAN); }, []);
+  /** Changing the household resets the plan, but only when something actually changed: an unchanged profile keeps the fixes already ticked. */
+  const updateProfile = useCallback((next: Profile | ((cur: Profile) => Profile)) => {
+    const p = typeof next === "function" ? next(profileRef.current) : next;
+    if (sameProfile(p, profileRef.current)) return;
+    touched.current = true; profileRef.current = p; setProfileRaw(p); setPlan(NO_PLAN);
+  }, []);
+  const setProfile = updateProfile;
   const toggle = useCallback((a: ActionResult) => setPlan((p) => toggleAction(p, a)), []);
   /** Forget what is saved on this device and go back to the sample family. */
   const forget = useCallback(() => {

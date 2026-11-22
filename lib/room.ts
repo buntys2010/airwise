@@ -58,10 +58,15 @@ export const SAMPLE_HOTSPOTS: Hotspot[] = [
 export const SAMPLE_PROFILE_PATCH: Pick<Profile, "home" | "cooking"> = { home: "leaky", cooking: "lpg" };
 
 /** Maps findings to the household facts the engine understands. Code decides this, not the model. */
-export function profilePatch(hotspots: Hotspot[]): Partial<Pick<Profile, "home" | "cooking">> {
+export function profilePatch(
+  hotspots: Hotspot[], answers: Answers = {}, current?: Pick<Profile, "home" | "cooking">,
+): Partial<Pick<Profile, "home" | "cooking">> {
   const patch: { home?: Home; cooking?: Cooking } = {};
   if (hotspots.some((h) => h.kind === "window_gap")) patch.home = "leaky";
-  if (hotspots.some((h) => h.kind === "gas_stove")) patch.cooking = "lpg";
+  else if (answers.window === false && (!current || current.home === "leaky")) patch.home = "typical"; // "no gap": stop assuming a leaky home
+  if (hotspots.some((h) => h.kind === "gas_stove")) {
+    if (current?.cooking !== "wood") patch.cooking = "lpg"; // a wood stove stays wood: it is the worse case
+  } else if (answers.stove === false && (!current || current.cooking !== "induction")) patch.cooking = "induction"; // "no gas or wood": stop assuming smoke
   return patch;
 }
 
