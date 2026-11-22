@@ -1,0 +1,16 @@
+node_modules
+.next
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+.last-check.txt
+build.log
+test-results
+playwright-report
+
+mcp/dist
+.env*

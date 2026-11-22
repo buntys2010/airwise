@@ -1,0 +1,20 @@
+# Files not needed to build or run. Keeps AI-directed notes, tests and local secrets out of the upload.
+.env
+.env.*
+CLAUDE.md
+CLAUDE_TASK_USER_JOURNEY.md
+.gstack
+.git
+.github
+.next
+node_modules
+e2e
+evals
+mcp
+test-results
+playwright-report
+playwright.config.ts
+build.log
+.last-check.txt
+*.test.ts
+*.test.tsx

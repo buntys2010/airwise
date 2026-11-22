@@ -1,0 +1,46 @@
+# Quality evidence
+
+Measured, not estimated. Every figure below is from `npm run check` (and `npm run e2e`) on the commit you are reading; run them to reproduce.
+
+```
+AirWise proof card
+  Type-check     pass
+  Tests          471 passed, 0 failed, in 41 files
+  Accessibility  10 automated axe scans of the pages, 0 with violations
+  Eval set       52/52 cases (100%)
+  First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB
+  Audit          0 vulnerabilities in runtime dependencies
+```
+Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and 390 px phone profiles.
+
+## Code quality
+- Strict TypeScript, checked by `npm run lint`; the compiler is part of the proof card.
+- One source of numbers: [`lib/engine.ts`](../lib/engine.ts) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
+- Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/data.ts`](../lib/data.ts), [`lib/cities.ts`](../lib/cities.ts), [`lib/room.ts`](../lib/room.ts).
+- Model assumptions are written down with ranges in [`methodology.md`](methodology.md).
+
+## Security
+- Trust boundary, threats and mitigations: [`SECURITY.md`](../SECURITY.md).
+- The server recomputes every fact from the client's *choices only* ([`lib/chat.ts`](../lib/chat.ts)); the browser can never supply a number.
+- The grounding guard and prompt-injection cases are exercised by the 52-case eval set ([`evals/`](../evals), report in [`EVAL_REPORT.md`](EVAL_REPORT.md)); a regression test proves the evals fail if the guard is weakened.
+- `npm audit` on runtime dependencies: 0 vulnerabilities.
+
+## Efficiency
+- First-load JS 142 kB for the heaviest page against a 150 kB budget, enforced by [`scripts/budget.mjs`](../scripts/budget.mjs) in CI.
+- The city table loads only on `/map`; the home page fetches only the chosen city; the map uses 3 batched air requests, cached on the server for 10 minutes.
+- Verified model answers are cached for 10 minutes, and Gemini calls have per-call and overall time budgets.
+
+## Testing
+- 471 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
+- 52 eval cases for grounding, injection, Hindi and photo findings ([`evals/`](../evals)).
+- Browser tests ([`e2e/`](../e2e)) for the core journey, layout at 360 and 390 px, focus never hidden behind the bottom bar, and the cigarette animation.
+- `npm run smoke` checks a running deployment.
+
+## Accessibility
+- 10 axe-core scans of the pages and the city picker: 0 violations. Automated scans do not replace testing with assistive technology, which has not been done here.
+- Contrast is measured from the real design tokens ([`lib/contrast.test.ts`](../lib/contrast.test.ts)).
+- Levels are shown by icon, shape and word, never colour alone; the map has an equivalent sortable table; the city picker is a keyboard-operable combobox; reduced motion is respected; Hindi sets `lang` correctly.
+
+## Problem fit
+- Covers urban air quality guidance for Indian households: live hourly PM2.5 for 118 cities, a personal exposure model, concrete fixes with their measured effect, a community notice, and a plain-language guide. See the table in the [README](../README.md).
+- Limits are stated: the dose model is a planning aid, the cigarette equivalent is a rule of thumb, the air feed is gridded, and photo analysis has not been measured on a real-room test set. See [`methodology.md`](methodology.md).

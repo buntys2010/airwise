@@ -1,0 +1,22 @@
+{
+  "name": "airwise-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AirWise as an MCP server: two read-only tools backed by the same engine as the app.",
+  "scripts": {
+    "build": "esbuild server.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/server.mjs",
+    "start": "node dist/server.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "engines": {
+    "node": ">=20.9"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
