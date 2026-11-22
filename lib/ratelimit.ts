@@ -42,6 +42,16 @@ export function createBudget(getLimit: () => number, windowMs: number) {
   };
 }
 
+const IP_RE = /^[0-9a-fA-F:.[\]%_-]{1,64}$/;
+
+/** Validates and bounds an IP address string to prevent memory bloat and injection in key lookups. */
+export function sanitizeIp(ip: string | undefined | null): string {
+  if (!ip) return "local";
+  const trimmed = ip.trim();
+  if (trimmed.length > 64) return "invalid";
+  return IP_RE.test(trimmed) ? trimmed : "invalid";
+}
+
 /**
  * The client address as seen by the nearest trusted proxy: the LAST X-Forwarded-For entry.
  * Earlier entries are supplied by the caller and can be spoofed, so they are ignored.
@@ -50,5 +60,6 @@ export function createBudget(getLimit: () => number, windowMs: number) {
 export function clientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
   const last = xff?.split(",").map((s) => s.trim()).filter(Boolean).pop();
-  return last || req.headers.get("x-real-ip")?.trim() || "local";
+  const raw = last || req.headers.get("x-real-ip")?.trim();
+  return sanitizeIp(raw);
 }

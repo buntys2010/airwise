@@ -2,9 +2,14 @@ import { ImageResponse } from "next/og";
 import { cigsSoFar, sticksFor } from "@/lib/cigsHourly";
 import { CITIES, getCityAir, istClock } from "@/lib/data";
 import { NO_PLAN, aqiFromPm, categoryOf, planSummary, simulate, type Plan, type Profile } from "@/lib/engine";
+import { json } from "@/lib/http";
+import { clientIp, createLimiter } from "@/lib/ratelimit";
 import { decodeChoices } from "@/lib/share";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
+
+const limited = createLimiter(20, 60_000);
 
 const DEFAULT_PROFILE: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
 const f1 = (n: number) => n.toFixed(1);
@@ -33,6 +38,7 @@ function Rows({ value, sofar, w }: { value: number; sofar: number; w: number }) 
  * The query carries CHOICES only (same format as a share link). Every number is recomputed here from live air data, so a link cannot forge a figure.
  */
 export async function GET(req: Request) {
+  if (limited(clientIp(req))) return json({ error: "Too many requests. Try again in a minute." }, 429);
   const url = new URL(req.url);
   const shared = decodeChoices(url.search);
   const city = CITIES.find((c) => c.id === shared.city) ?? CITIES.find((c) => c.id === "delhi") ?? CITIES[0];
@@ -106,6 +112,6 @@ export async function GET(req: Request) {
         )}
       </div>
     ),
-    { width: W, height: H, headers: { "Cache-Control": "public, max-age=300, s-maxage=600" } },
+    { width: W, height: H, headers: { "Cache-Control": "public, max-age=300, s-maxage=600", "X-Content-Type-Options": "nosniff" } },
   );
 }

@@ -65,15 +65,17 @@ export function decodeChoices(search: string): SharedChoices {
   const v = q.get("vulnerable"); if (v === "1" || v === "0") profile.vulnerable = v === "1";
   if (Object.keys(profile).length) out.profile = profile;
   const planParam = q.get("plan");
-  if (planParam) out.plan = idsToPlan(planParam.split(",").filter((id) => (PLAN_IDS as readonly string[]).includes(id)));
+  if (planParam) out.plan = idsToPlan(planParam.split(",").slice(0, 20).filter((id) => (PLAN_IDS as readonly string[]).includes(id)));
   return out;
 }
 
 export function shareUrl(origin: string, c: { city: string; profile: Profile; plan: Plan }): string {
-  return `${origin}/?${encodeChoices(c)}`;
+  const safeOrigin = origin.replace(/[\r\n\0]/g, "").trim();
+  return `${safeOrigin}/?${encodeChoices(c)}`;
 }
 
 /** A wa.me link that opens WhatsApp with a ready message. The text is words plus the choices-only link, never a figure. */
 export function whatsappLink(text: string, url: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
+  const cleanText = text.replace(/[\r\n]/g, " ").trim();
+  return `https://wa.me/?text=${encodeURIComponent(`${cleanText} ${url}`)}`;
 }

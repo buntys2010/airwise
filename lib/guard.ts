@@ -49,12 +49,13 @@ export const isGrounded = (text: string, facts: unknown): boolean => ungroundedN
  * AirWise supplies no studies, experts or population statistics, so any text that cites one is making an ungrounded claim.
  */
 const ATTRIBUTIONS: RegExp[] = [
-  // Hindi: studies, research, experts, scientists, surveys
-  /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने)/,
+  // Hindi: studies, research, experts, scientists, surveys, doctors claiming, AIIMS, ICMR
+  /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने|डॉक्टरों के अनुसार|चिकित्सकों ने|एम्स|आईसीएमआर)/,
   /\d+(?:\.\d+)?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/,
   /(?:ज़्यादातर|ज्यादातर|अधिकतर|अधिकांश|करोड़ों)\s+(?:लोग|परिवार|उपयोगकर्ता)/,
   /\b(studies|research|surveys?|scientists?|experts?|clinical|peer-reviewed|trials?)\b/i,
-  /\b(WHO|CPCB|EPA|CDC)\b/,
+  /\bdoctors?\s+(?:say|said|claim|claimed|recommend|recommended|suggest|suggested|advise|advised)\b/i,
+  /\b(WHO|CPCB|EPA|CDC|ICMR|AIIMS|MoHFW|Lancet)\b/,
   /\d+(?:\.\d+)?\s?%\s+of\s+(?:all\s+)?(?:people|users|families|households|adults|children|residents|patients|deaths|cases)\b/i,
   /\b(?:most|many|majority of|millions of)\s+(?:people|families|users|households)\b/i,
 ];

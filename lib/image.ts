@@ -57,6 +57,8 @@ export function parseDataUrl(value: unknown): { mimeType: string; data: string }
   if (typeof value !== "string") return "bad_type";
   const m = DATA_URL.exec(value);
   if (!m) return "bad_type";
+  // Strict base64 length alignment: standard base64 must align to 4 characters
+  if (m[2].length % 4 !== 0 || m[2].length < 4) return "bad_type";
   const decoded = Math.floor((m[2].length * 3) / 4);
   if (decoded > MAX_UPLOAD_BYTES) return "too_large";
   return { mimeType: m[1], data: m[2] };

@@ -24,16 +24,17 @@ AirWise stores no personal data and has no accounts. This page describes what it
 - No cookies, no third-party scripts, no analytics.
 
 ## Abuse limits and the per-instance caveat
-- Per-IP rate limiting (last `X-Forwarded-For` entry, the one a trusted proxy appends), request time budgets and a per-minute Gemini budget protect cost and availability.
+- Per-IP rate limiting (validated client IP from trusted proxy headers), request time budgets and a per-minute Gemini budget protect cost and availability across all routes including chat, plan, vision, map and dynamic share image generation (`/api/share-image`).
+- Incoming request bodies enforce early Content-Length checks and streaming byte caps in `readGuarded` to prevent unbounded memory buffering and DoS.
 - On serverless hosts the limiter, the budget and the answer cache live in each instance's memory, so the real ceiling is the limit times the number of warm instances. They are a safety net, not a quota: set a spend cap on the Gemini key. Correctness never depends on them.
 
 ## Secrets
 - The Gemini key is read only from server environment variables and never sent to the browser. `.env*` is git-ignored, `.env.example` has no values, and `.vercelignore` excludes local env files from uploads.
 - Rotating a key: create a new key, set it in the host settings, redeploy, delete the old key (`docs/runbook.md`).
 
-## Dependencies
+## Dependencies & Transport Security
 - Runtime dependencies are few and pinned by the lockfile; `npm audit --omit=dev` reports 0 vulnerabilities and runs in CI. The MCP server has its own lockfile with exact versions.
-- Responses carry `nosniff`, frame-deny, referrer and permissions policy headers.
+- Responses carry `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` and permissions policy headers.
 
 ## Reporting an issue
 Open a private security advisory on the repository, or if that is not available, an issue that says only that you have a security report and how to reach you; do not post details publicly. We aim to acknowledge within a few days. There is no bug bounty.

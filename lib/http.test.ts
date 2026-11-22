@@ -20,6 +20,16 @@ describe("readGuarded", () => {
     const bad = await readGuarded(post("{nope"), { limited: never, maxBytes: 100 });
     expect(!bad.ok && bad.res.status).toBe(400);
   });
+  it("rejects early with 413 when content-length exceeds maxBytes", async () => {
+    const req = new Request("http://x", {
+      method: "POST",
+      headers: { "x-forwarded-for": "1.1.1.1", "content-length": "9999" },
+      body: "{}",
+    });
+    const res = await readGuarded(req, { limited: never, maxBytes: 100 });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.res.status).toBe(413);
+  });
   it("limits by the trusted client address", async () => {
     const seen: string[] = [];
     await readGuarded(post("{}", "6.6.6.6, 7.7.7.7"), { limited: (k) => { seen.push(k); return false; }, maxBytes: 100 });
