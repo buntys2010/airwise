@@ -20,6 +20,7 @@ describe("encodeChoices", () => {
   });
   it("builds a full link on the given origin", () => {
     expect(shareUrl("https://airwise.example", { city: "pune", profile, plan: NO_PLAN })).toMatch(/^https:\/\/airwise\.example\/\?city=pune&home=leaky/);
+    expect(shareUrl("https://airwise.example\r\nInjected: header", { city: "pune", profile, plan: NO_PLAN })).toMatch(/^https:\/\/airwise\.exampleInjected: header\/\?city=pune/);
   });
 });
 

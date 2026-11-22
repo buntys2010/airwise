@@ -51,6 +51,8 @@ describe("unsupportedClaims", () => {
     expect(unsupportedClaims("Studies show purifiers help.")).toHaveLength(1);
     expect(unsupportedClaims("Experts recommend an N95.")).toHaveLength(1);
     expect(unsupportedClaims("The WHO says so.")).toHaveLength(1);
+    expect(unsupportedClaims("ICMR guidelines state this.")).toHaveLength(1);
+    expect(unsupportedClaims("AIIMS doctors recommend purifiers.")).toHaveLength(2);
     expect(unsupportedClaims("Most people pick the metro.")).toHaveLength(1);
   });
   it("lets ordinary advice through, including the word who in lowercase", () => {

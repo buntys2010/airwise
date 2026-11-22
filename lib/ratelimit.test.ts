@@ -15,6 +15,8 @@ describe("clientIp", () => {
     expect(clientIp(req({ "x-real-ip": "4.4.4.4" }))).toBe("4.4.4.4");
     expect(clientIp(req({}))).toBe("local");
     expect(clientIp(req({ "x-forwarded-for": " , " }))).toBe("local");
+    expect(clientIp(req({ "x-forwarded-for": "<script>alert(1)</script>" }))).toBe("invalid");
+    expect(clientIp(req({ "x-forwarded-for": "a".repeat(100) }))).toBe("invalid");
   });
 });
 

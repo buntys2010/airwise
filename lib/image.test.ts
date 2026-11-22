@@ -30,7 +30,7 @@ describe("parseDataUrl (server side)", () => {
   const ok = "data:image/jpeg;base64,QUJDREVGRw==";
   it("accepts a base64 data URL of an allowed type", () => expect(parseDataUrl(ok)).toEqual({ mimeType: "image/jpeg", data: "QUJDREVGRw==" }));
   it("rejects other types, non-base64 text, scripts and non-strings", () => {
-    for (const v of ["data:image/svg+xml;base64,QUJD", "data:text/html;base64,QUJD", "data:image/jpeg;base64,<script>", "https://x.test/a.jpg", "", 42, null]) expect(parseDataUrl(v)).toBe("bad_type");
+    for (const v of ["data:image/svg+xml;base64,QUJD", "data:text/html;base64,QUJD", "data:image/jpeg;base64,<script>", "data:image/jpeg;base64,QUJ", "https://x.test/a.jpg", "", 42, null]) expect(parseDataUrl(v)).toBe("bad_type");
   });
   it("rejects a decoded size over the cap", () => {
     const big = `data:image/png;base64,${"A".repeat(Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 8)}`;

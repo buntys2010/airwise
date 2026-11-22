@@ -13,5 +13,8 @@ describe("security headers", () => {
     expect(h["Permissions-Policy"]).toContain("microphone=(self)");
     expect(h["Permissions-Policy"]).toContain("camera=()");
     expect(h["Permissions-Policy"]).toContain("geolocation=()");
+    expect(h["Strict-Transport-Security"]).toBe("max-age=63072000; includeSubDomains; preload");
+    expect(h["Content-Security-Policy"]).toContain("default-src 'self'");
+    expect(h["Content-Security-Policy"]).toContain("frame-ancestors 'none'");
   });
 });
