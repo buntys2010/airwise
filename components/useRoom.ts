@@ -31,7 +31,7 @@ export function useRoom(a: Airwise) {
   const [message, setMessage] = useState<RoomMessage>(null);
   const abort = useRef<AbortController | null>(null);
   const urlRef = useRef<string | null>(null);
-  const { profile, setProfile } = a;
+  const { setProfile } = a;
 
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); abort.current?.abort(); }, []);
 
@@ -45,7 +45,10 @@ export function useRoom(a: Airwise) {
   const questions = useMemo(() => questionState(evidence, answers), [evidence, answers]);
 
   /** Household facts follow the findings; code decides this, not the model. */
-  const applyFindings = useCallback((found: Hotspot[]) => setProfile({ ...profile, ...profilePatch(found) }), [profile, setProfile]);
+  const applyFindings = useCallback(
+    (found: Hotspot[], given: Answers) => setProfile((cur) => ({ ...cur, ...profilePatch(found, given, cur) })),
+    [setProfile],
+  );
 
   const useSample = useCallback(() => {
     abort.current?.abort();
@@ -54,8 +57,8 @@ export function useRoom(a: Airwise) {
     setAnswers({});
     setPhase("sample");
     setMessage(null);
-    setProfile({ ...profile, ...SAMPLE_PROFILE_PATCH });
-  }, [profile, setProfile]);
+    setProfile((cur) => ({ ...cur, ...SAMPLE_PROFILE_PATCH }));
+  }, [setProfile]);
 
   const pickFile = useCallback(async (file: File) => {
     const check = checkPick(file);
@@ -91,7 +94,7 @@ export function useRoom(a: Airwise) {
       setAnswers({}); // a new photo starts a new set of answers
       const found = reply.status === "ok" ? (reply.hotspots ?? []) : [];
       setEvidence(found);
-      applyFindings(mergeFindings(found, {}));
+      applyFindings(mergeFindings(found, {}), {});
       if (found.length) {
         setPhase("photo");
         setMessage({ key: "room.found", vars: { n: found.length } });
@@ -110,7 +113,7 @@ export function useRoom(a: Airwise) {
   const answer = useCallback((q: QuestionId, yes: boolean) => {
     const next = { ...answers, [q]: yes };
     setAnswers(next);
-    applyFindings(mergeFindings(evidence, next));
+    applyFindings(mergeFindings(evidence, next), next);
     setPhase((p) => (p === "sample" ? "checklist" : p));
   }, [answers, evidence, applyFindings]);
 

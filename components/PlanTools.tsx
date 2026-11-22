@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { buildReminderIcs } from "@/lib/calendar";
 import { NO_PLAN } from "@/lib/engine";
 import { shareUrl, whatsappLink } from "@/lib/share";
@@ -15,6 +15,8 @@ export function PlanTools({ a }: { a: Airwise }) {
   const [msg, setMsg] = useState("");
   const [manual, setManual] = useState("");
   const [remindUrl, setRemindUrl] = useState("");
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
 
   async function copyLink() {
     const url = shareUrl(window.location.origin, { city: a.cityId, profile: a.profile, plan: a.plan });
@@ -39,7 +41,7 @@ export function PlanTools({ a }: { a: Airwise }) {
   }
 
   // One-tap WhatsApp share. The message is words plus the choices-only link: never a number.
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  // The origin is read after mount so the server HTML and the first client render match; the link then becomes absolute.
   const whatsapp = whatsappLink(t("tools.shareText", { city: a.city.name }), shareUrl(origin, { city: a.cityId, profile: a.profile, plan: a.plan }));
 
   const savedText = a.storeState === "saved" ? t("tools.saved") : a.storeState === "blocked" ? t("tools.notSaved") : t("tools.notYet");

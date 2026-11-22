@@ -41,6 +41,11 @@ export function idsToPlan(ids: string[]): Plan {
   };
 }
 
+/** The commute swap is a real change only for modes that are not already walk, cycle or metro. Drops it otherwise, so a link or tool call cannot claim a gain the engine's own rules say is not there. */
+export function sanitizePlan(plan: Plan, commute: Profile["commute"]): Plan {
+  return plan.swapCommute && (commute === "walk" || commute === "cycle" || commute === "metro") ? { ...plan, swapCommute: null } : plan;
+}
+
 export function encodeChoices(c: { city: string; profile: Profile; plan: Plan }): string {
   const q = new URLSearchParams({ city: c.city, home: c.profile.home, commute: c.profile.commute, km: String(c.profile.km), cooking: c.profile.cooking, vulnerable: c.profile.vulnerable ? "1" : "0" });
   const ids = planToIds(c.plan);
@@ -65,7 +70,10 @@ export function decodeChoices(search: string): SharedChoices {
   const v = q.get("vulnerable"); if (v === "1" || v === "0") profile.vulnerable = v === "1";
   if (Object.keys(profile).length) out.profile = profile;
   const planParam = q.get("plan");
-  if (planParam) out.plan = idsToPlan(planParam.split(",").slice(0, 20).filter((id) => (PLAN_IDS as readonly string[]).includes(id)));
+  if (planParam) {
+    const plan = idsToPlan(planParam.split(",").slice(0, 20).filter((id) => (PLAN_IDS as readonly string[]).includes(id)));
+    out.plan = profile.commute ? sanitizePlan(plan, profile.commute) : plan; // without a commute in the link, the final profile is checked by the caller
+  }
   return out;
 }
 

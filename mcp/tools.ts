@@ -1,7 +1,7 @@
 import { COMMUTES, COOKINGS, HOMES } from "../lib/chat";
 import { CITIES, loadAir, type AirResult } from "../lib/data";
 import { NO_PLAN, aqiFromPm, bestHour, buildActions, categoryOf, simulate, type Profile } from "../lib/engine";
-import { PLAN_IDS, idsToPlan } from "../lib/share";
+import { PLAN_IDS, idsToPlan, sanitizePlan } from "../lib/share";
 
 /**
  * The two tools, as plain functions. They use the same engine as the AirWise app, so a number from here is the same number the
@@ -85,7 +85,7 @@ export async function scoreActions(
   if (!air) return fail({ code: "air_data_unavailable", message: "Air data could not be loaded.", next_step: "Try again in a minute. Do not quote exposure numbers until it succeeds." });
 
   const profile: Profile = { home: home.data!, commute: commute.data!, km, cooking: cooking.data!, vulnerable: args.vulnerable === true };
-  const plan = idsToPlan(ids);
+  const plan = sanitizePlan(idsToPlan(ids), profile.commute);
   const base = simulate(air.hourly, profile, NO_PLAN), withPlan = simulate(air.hourly, profile, plan);
   return {
     ok: true,
