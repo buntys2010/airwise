@@ -34,9 +34,15 @@ function usePlanWriter(choices: Choices, active: boolean) {
     ctrl.current?.abort();
     const ac = new AbortController();
     ctrl.current = ac;
-    setBusy(true); setError("");
+    setBusy(true);
+    setError("");
     try {
-      const res = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ choices: c }), signal: ac.signal });
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ choices: c }),
+        signal: ac.signal,
+      });
       const json = (await res.json()) as Result & { error?: string };
       if (!res.ok) throw new Error(json.error || "Something went wrong.");
       if (ac.signal.aborted) return;
@@ -44,7 +50,11 @@ function usePlanWriter(choices: Choices, active: boolean) {
       doneFor.current = JSON.stringify(c);
     } catch (e) {
       if (ac.signal.aborted) return;
-      setError(e instanceof Error ? e.message : "Could not reach AirWise. Check your connection and try again.");
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not reach AirWise. Check your connection and try again.",
+      );
     } finally {
       if (!ac.signal.aborted) setBusy(false);
     }
@@ -52,7 +62,9 @@ function usePlanWriter(choices: Choices, active: boolean) {
 
   useEffect(() => {
     if (!active || doneFor.current === key) return;
-    const timer = setTimeout(() => { void write(choices); }, ASK_DELAY_MS);
+    const timer = setTimeout(() => {
+      void write(choices);
+    }, ASK_DELAY_MS);
     return () => clearTimeout(timer);
   }, [active, key, choices, write]);
   useEffect(() => () => ctrl.current?.abort(), []);
@@ -63,9 +75,12 @@ function usePlanWriter(choices: Choices, active: boolean) {
 /** The sentence under the buttons: an error, or where the plan above came from. */
 function statusText(result: Result | null, error: string): string {
   if (error) return error;
-  if (result?.source === "gemini") return `${result.headline}. Every number was checked against your data.`;
-  if (result?.rejected) return "Gemini's version used a number we could not verify, so this is the checked plan.";
-  if (result) return `${result.reasonText ?? "Gemini is not available"}, so this is the standard plan.`;
+  if (result?.source === "gemini")
+    return `${result.headline}. Every number was checked against your data.`;
+  if (result?.rejected)
+    return "Gemini's version used a number we could not verify, so this is the checked plan.";
+  if (result)
+    return `${result.reasonText ?? "Gemini is not available"}, so this is the standard plan.`;
   return "The plan above is calculated from live air data. Gemini rewrites it in friendlier words, and AirWise rejects any version that adds a number it did not calculate.";
 }
 
@@ -73,7 +88,7 @@ function statusText(result: Result | null, error: string): string {
  * The household's clear-air day. The calculated schedule shows at once; Gemini rewrites it in friendly words as soon as the tab opens
  * (and again when the household or city changes). The server checks every number, and falls back to the calculated plan if one is off.
  */
-export function DayPlan({ schedule, choices, active = true }: Props) {
+export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
   const { lang } = useLang();
   const { result, busy, error, write } = usePlanWriter(choices, active);
 
@@ -83,10 +98,19 @@ export function DayPlan({ schedule, choices, active = true }: Props) {
     ? result.steps.map((s) => ({ time: s.time, text: s.text }))
     : schedule.map((e) => ({ time: e.time, title: e.title, text: e.detail }));
 
-  const tag = busy
-    ? <span className="geminitag wait" role="status">✦ Gemini is writing your day…</span>
-    : gemini ? <span className="geminitag">✦ Written by Gemini, numbers checked</span>
-    : null;
+  let tag: React.ReactNode = null;
+  if (busy) {
+    tag = (
+      <span className="geminitag wait" role="status">
+        ✦ Gemini is writing your day…
+      </span>
+    );
+  } else if (gemini) {
+    tag = <span className="geminitag">✦ Written by Gemini, numbers checked</span>;
+  }
+  let buttonLabel = "Write it in my words with Gemini";
+  if (busy) buttonLabel = "Writing your plan…";
+  else if (gemini) buttonLabel = "Write it again with Gemini";
 
   return (
     <div lang={gemini ? lang : "en"}>
@@ -94,7 +118,9 @@ export function DayPlan({ schedule, choices, active = true }: Props) {
       {gemini && result && <p className="dayheadline">{result.headline}</p>}
       {busy && !result ? (
         <div aria-hidden="true" style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-          <div className="skeleton" /><div className="skeleton" /><div className="skeleton" />
+          <div className="skeleton" />
+          <div className="skeleton" />
+          <div className="skeleton" />
         </div>
       ) : null}
       <ol className="day" aria-busy={busy}>
@@ -102,16 +128,30 @@ export function DayPlan({ schedule, choices, active = true }: Props) {
           <li key={`${e.time}-${i}`}>
             <span className="when">{e.time}</span>
             <div className="panel">
-              {e.title ? (<><h3>{e.title}</h3><p className="dim">{e.text}</p></>) : <p>{e.text}</p>}
+              {e.title ? (
+                <>
+                  <h3>{e.title}</h3>
+                  <p className="dim">{e.text}</p>
+                </>
+              ) : (
+                <p>{e.text}</p>
+              )}
             </div>
           </li>
         ))}
       </ol>
       <div className="dayfoot">
-        <button type="button" className="btn ghost" onClick={() => void write(choices)} disabled={busy}>
-          {busy ? "Writing your plan…" : gemini ? "Write it again with Gemini" : "Write it in my words with Gemini"}
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => void write(choices)}
+          disabled={busy}
+        >
+          {buttonLabel}
         </button>
-        <p className="statusline" aria-live="polite" role="status">{statusText(result, error)}</p>
+        <p className="statusline" aria-live="polite" role="status">
+          {statusText(result, error)}
+        </p>
       </div>
     </div>
   );

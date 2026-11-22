@@ -17,13 +17,19 @@ describe("eval set", () => {
     expect(new Set(CASES.map((c) => c.id)).size).toBe(CASES.length); // ids are unique
   });
   for (const r of results) {
-    it(`${r.id}: ${r.category} - ${r.expect}`, () => { expect(r.passed, `${r.id} failed`).toBe(true); });
+    it(`${r.id}: ${r.category} - ${r.expect}`, () => {
+      expect(r.passed, `${r.id} failed`).toBe(true);
+    });
   }
 });
 
 afterAll(() => {
   const line = `Eval pass rate: ${summary.passed}/${summary.total} (${Math.round((summary.passed / summary.total) * 100)}%)`;
-  console.log(`\n${line}\n${Object.entries(summary.byCategory).map(([k, v]) => `  ${k}: ${v.passed}/${v.total}`).join("\n")}\n`);
+  console.log(
+    `\n${line}\n${Object.entries(summary.byCategory)
+      .map(([k, v]) => `  ${k}: ${v.passed}/${v.total}`)
+      .join("\n")}\n`,
+  );
   if (process.env.EVAL_WRITE_REPORT === "1") {
     const md = [
       "# Eval report",
@@ -40,7 +46,9 @@ afterAll(() => {
       "",
       "| Id | Category | What must be true | Result |",
       "|---|---|---|---|",
-      ...results.map((r) => `| ${r.id} | ${r.category} | ${r.expect} | ${r.passed ? "pass" : "FAIL"} |`),
+      ...results.map(
+        (r) => `| ${r.id} | ${r.category} | ${r.expect} | ${r.passed ? "pass" : "FAIL"} |`,
+      ),
       "",
     ].join("\n");
     writeFileSync(path.resolve(__dirname, "../docs/EVAL_REPORT.md"), md);

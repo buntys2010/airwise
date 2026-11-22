@@ -1,0 +1,13 @@
+.next
+node_modules
+coverage
+test-results
+playwright-report
+package-lock.json
+mcp/package-lock.json
+mcp/dist
+mcp/node_modules
+*.md
+docs/openapi.yaml
+next-env.d.ts
+*.css

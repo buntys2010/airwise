@@ -7,5 +7,8 @@ export const dynamic = "force-dynamic";
 
 /** Liveness probe for load balancers, uptime monitors and the smoke test. Makes no outbound calls, so it stays fast and cannot spend quota. */
 export const GET = withObservability("health", () =>
-  NextResponse.json({ status: "ok", uptimeSeconds: Math.round(process.uptime()) }, { headers: { "Cache-Control": "no-store" } }),
+  NextResponse.json(
+    { status: "ok", uptimeSeconds: Math.round(process.uptime()) },
+    { headers: { "Cache-Control": "no-store" } },
+  ),
 );

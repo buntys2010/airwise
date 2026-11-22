@@ -8,7 +8,17 @@ import { CityPicker } from "./CityPicker";
 
 function Harness({ onPick }: { onPick: (id: string) => void }) {
   const [v, setV] = useState("delhi");
-  return <LangProvider><CityPicker value={v} onChange={(id) => { setV(id); onPick(id); }} /></LangProvider>;
+  return (
+    <LangProvider>
+      <CityPicker
+        value={v}
+        onChange={(id) => {
+          setV(id);
+          onPick(id);
+        }}
+      />
+    </LangProvider>
+  );
 }
 const box = () => screen.getByRole("combobox", { name: "City" }) as HTMLInputElement;
 afterEach(cleanup);
@@ -20,7 +30,7 @@ describe("CityPicker", () => {
     expect(box().getAttribute("aria-expanded")).toBe("true");
     expect(screen.getAllByRole("option").length).toBe(50);
     fireEvent.change(box(), { target: { value: "bombay" } });
-    expect(screen.getAllByRole("option")[0].textContent).toContain("Mumbai");
+    expect(screen.getAllByRole("option")[0]!.textContent).toContain("Mumbai");
     fireEvent.change(box(), { target: { value: "kerala" } });
     expect(screen.getAllByRole("option").every((o) => /Kerala/.test(o.textContent!))).toBe(true);
     fireEvent.change(box(), { target: { value: "zzzz" } });
@@ -47,8 +57,42 @@ describe("CityPicker", () => {
     const { container } = render(<Harness onPick={() => {}} />);
     for (const open of [false, true]) {
       if (open) fireEvent.focus(box());
-      const r = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+      const r = await axe.run(container, {
+        rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+      });
       expect(r.violations.map((v) => v.id)).toEqual([]);
     }
+  });
+});
+
+describe("CityPicker keyboard details", () => {
+  it("opens on ArrowUp, then Home and End jump to the first and last option", () => {
+    render(<Harness onPick={() => {}} />);
+    fireEvent.focus(box());
+    fireEvent.keyDown(box(), { key: "End" });
+    const options = screen.getAllByRole("option");
+    expect(options.at(-1)!.className).toContain("active");
+    fireEvent.keyDown(box(), { key: "Home" });
+    expect(screen.getAllByRole("option")[0]!.className).toContain("active");
+    fireEvent.keyDown(box(), { key: "ArrowUp" });
+    expect(screen.getAllByRole("option").at(-1)!.className).toContain("active");
+  });
+
+  it("ignores keys it does not use, and Enter with the list closed", () => {
+    const picked: string[] = [];
+    render(<Harness onPick={(id) => picked.push(id)} />);
+    fireEvent.keyDown(box(), { key: "x" });
+    fireEvent.keyDown(box(), { key: "Enter" });
+    fireEvent.keyDown(box(), { key: "Escape" });
+    expect(picked).toEqual([]);
+  });
+
+  it("chooses an exact city name typed in full when the field loses focus", () => {
+    const picked: string[] = [];
+    render(<Harness onPick={(id) => picked.push(id)} />);
+    fireEvent.focus(box());
+    fireEvent.change(box(), { target: { value: "Pune" } });
+    fireEvent.blur(box());
+    expect(picked).toEqual(["pune"]);
   });
 });

@@ -6,7 +6,9 @@ export default function NotFound() {
       <main id="main" style={{ paddingBlock: "64px" }}>
         <h1>That page does not exist.</h1>
         <p>The link may be old or mistyped.</p>
-        <Link className="btn accent" href="/">Back to AirWise</Link>
+        <Link className="btn accent" href="/">
+          Back to AirWise
+        </Link>
       </main>
     </div>
   );

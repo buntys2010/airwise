@@ -22,7 +22,12 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      - run: npm run format:check
       - run: npm run lint
+      - name: Unused code and duplication
+        run: |
+          npm run dead
+          npm run dupes
       - name: Tests with coverage floor
         run: npm run coverage
       - run: npm run eval

@@ -14,9 +14,19 @@ const limited = createLimiter(30, 60_000);
  * A city whose data is missing or malformed is labelled an estimate individually.
  */
 export const GET = withObservability("map", async (req: Request) => {
-  if (limited(clientIp(req))) return json({ error: "Too many requests. Try again in a minute." }, 429);
+  if (limited(clientIp(req)))
+    return json({ error: "Too many requests. Try again in a minute." }, 429);
   const clock = istClock();
   const points = await loadMap(clock.hour);
   // Shared, non-personal data: let the CDN absorb repeat requests instead of every instance refetching the feed.
-  return json({ points, hour: clock.hour, time: clock.label, live: points.filter((p) => p.source === "live").length }, 200, { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" });
+  return json(
+    {
+      points,
+      hour: clock.hour,
+      time: clock.label,
+      live: points.filter((p) => p.source === "live").length,
+    },
+    200,
+    { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
+  );
 });

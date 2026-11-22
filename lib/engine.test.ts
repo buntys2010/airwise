@@ -1,13 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { CITIES, estimateHourly } from "./data";
 import {
-  NO_PLAN, aqiFromPm, bestHour, buildActions, categoryOf, fmtHour, fullPlan, planSummary, simulate,
+  NO_PLAN,
+  aqiFromPm,
+  bestHour,
+  buildActions,
+  categoryOf,
+  fmtHour,
+  fullPlan,
+  planSummary,
+  simulate,
   type Profile,
 } from "./engine";
 
 const delhi = CITIES[0];
-const hourly = estimateHourly(delhi);
-const family: Profile = { home: "typical", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
+const hourly = estimateHourly(delhi!);
+const family: Profile = {
+  home: "typical",
+  commute: "bike",
+  km: 8,
+  cooking: "lpg",
+  vulnerable: true,
+};
 
 describe("aqiFromPm", () => {
   it("maps breakpoints", () => {
@@ -38,11 +52,11 @@ describe("categoryOf", () => {
 
 describe("estimateHourly", () => {
   it("is deterministic and has 24 hours", () => {
-    expect(estimateHourly(delhi)).toEqual(estimateHourly(delhi));
+    expect(estimateHourly(delhi!)).toEqual(estimateHourly(delhi!));
     expect(hourly).toHaveLength(24);
   });
   it("is worst before dawn and lighter in the afternoon", () => {
-    expect(hourly[6]).toBeGreaterThan(hourly[15]);
+    expect(hourly[6]).toBeGreaterThan(hourly[15]!);
   });
 });
 
@@ -51,7 +65,7 @@ describe("bestHour", () => {
     const h = bestHour(hourly);
     expect(h).toBeGreaterThanOrEqual(10);
     expect(h).toBeLessThanOrEqual(16);
-    for (let i = 10; i <= 16; i++) expect(hourly[h]).toBeLessThanOrEqual(hourly[i]);
+    for (let i = 10; i <= 16; i++) expect(hourly[h]).toBeLessThanOrEqual(hourly[i]!);
   });
 });
 
@@ -64,14 +78,20 @@ describe("simulate", () => {
   });
   it("each action lowers exposure and never raises it", () => {
     const plans = [
-      { ...NO_PLAN, purifier: true }, { ...NO_PLAN, mask: "n95" as const }, { ...NO_PLAN, shiftOutdoor: true },
-      { ...NO_PLAN, swapCommute: "metro" as const }, { ...NO_PLAN, induction: true }, { ...NO_PLAN, sealGaps: true },
+      { ...NO_PLAN, purifier: true },
+      { ...NO_PLAN, mask: "n95" as const },
+      { ...NO_PLAN, shiftOutdoor: true },
+      { ...NO_PLAN, swapCommute: "metro" as const },
+      { ...NO_PLAN, induction: true },
+      { ...NO_PLAN, sealGaps: true },
     ];
-    for (const plan of plans) expect(simulate(hourly, family, plan).meanPm).toBeLessThanOrEqual(base.meanPm);
+    for (const plan of plans)
+      expect(simulate(hourly, family, plan).meanPm).toBeLessThanOrEqual(base.meanPm);
   });
   it("combined plan beats any single action", () => {
     const all = simulate(hourly, family, fullPlan(family));
-    for (const a of buildActions(hourly, family)) expect(all.meanPm).toBeLessThanOrEqual(base.meanPm - a.savedPm + 1e-9);
+    for (const a of buildActions(hourly, family))
+      expect(all.meanPm).toBeLessThanOrEqual(base.meanPm - a.savedPm + 1e-9);
     expect(all.cigs).toBeLessThan(base.cigs);
   });
   it("N95 beats cloth", () => {
@@ -81,11 +101,15 @@ describe("simulate", () => {
   });
   it("metro commute lowers CO2 versus a car", () => {
     const car = simulate(hourly, { ...family, commute: "car" }, NO_PLAN).co2Kg;
-    const metro = simulate(hourly, { ...family, commute: "car" }, { ...NO_PLAN, swapCommute: "metro" }).co2Kg;
+    const metro = simulate(
+      hourly,
+      { ...family, commute: "car" },
+      { ...NO_PLAN, swapCommute: "metro" },
+    ).co2Kg;
     expect(metro).toBeLessThan(car);
   });
   it("cleaner air means fewer cigarettes", () => {
-    const clean = simulate(estimateHourly(CITIES[5]), family, NO_PLAN);
+    const clean = simulate(estimateHourly(CITIES[5]!), family, NO_PLAN);
     expect(clean.cigs).toBeLessThan(base.cigs);
   });
   it("handles zero commute distance without NaN", () => {
@@ -97,7 +121,12 @@ describe("simulate", () => {
 
 describe("buildActions", () => {
   it("marks already-clean choices as not applicable", () => {
-    const a = buildActions(hourly, { ...family, commute: "metro", cooking: "induction", home: "sealed" });
+    const a = buildActions(hourly, {
+      ...family,
+      commute: "metro",
+      cooking: "induction",
+      home: "sealed",
+    });
     expect(a.find((x) => x.id === "swap")?.applicable).toBe(false);
     expect(a.find((x) => x.id === "induction")?.applicable).toBe(false);
     expect(a.find((x) => x.id === "sealGaps")?.applicable).toBe(false);
@@ -128,7 +157,13 @@ describe("helpers", () => {
 import { cigsSoFar } from "./engine";
 
 describe("simulate().perHour", () => {
-  const profile: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
+  const profile: Profile = {
+    home: "leaky",
+    commute: "bike",
+    km: 8,
+    cooking: "lpg",
+    vulnerable: true,
+  };
   it("has 24 non-negative hours that add up to the whole day, so the pieces are consistent", () => {
     const s = simulate(hourly, profile, NO_PLAN);
     expect(s.perHour).toHaveLength(24);
@@ -138,11 +173,20 @@ describe("simulate().perHour", () => {
 });
 
 describe("cigsSoFar", () => {
-  const profile: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
+  const profile: Profile = {
+    home: "leaky",
+    commute: "bike",
+    km: 8,
+    cooking: "lpg",
+    vulnerable: true,
+  };
   it("is 0 at the start of the day and the whole-day figure at hour 24", () => {
     for (const plan of [NO_PLAN, fullPlan(profile)]) {
       expect(cigsSoFar(hourly, profile, plan, 0)).toBe(0);
-      expect(cigsSoFar(hourly, profile, plan, 24)).toBeCloseTo(simulate(hourly, profile, plan).cigs, 9);
+      expect(cigsSoFar(hourly, profile, plan, 24)).toBeCloseTo(
+        simulate(hourly, profile, plan).cigs,
+        9,
+      );
     }
   });
   it("never decreases as the day goes on, including through fractions of an hour", () => {
@@ -154,34 +198,49 @@ describe("cigsSoFar", () => {
     }
   });
   it("interpolates inside an hour", () => {
-    const a = cigsSoFar(hourly, profile, NO_PLAN, 7), b = cigsSoFar(hourly, profile, NO_PLAN, 8), mid = cigsSoFar(hourly, profile, NO_PLAN, 7.5);
+    const a = cigsSoFar(hourly, profile, NO_PLAN, 7),
+      b = cigsSoFar(hourly, profile, NO_PLAN, 8),
+      mid = cigsSoFar(hourly, profile, NO_PLAN, 7.5);
     expect(mid).toBeCloseTo((a + b) / 2, 9);
   });
   it("every action lowers it, at any hour that has any exposure", () => {
     for (const hour of [8, 12, 18, 24]) {
       const base = cigsSoFar(hourly, profile, NO_PLAN, hour);
       for (const a of buildActions(hourly, profile).filter((x) => x.applicable)) {
-        expect(cigsSoFar(hourly, profile, a.apply(NO_PLAN), hour), `${a.id} at ${hour}`).toBeLessThanOrEqual(base + 1e-12);
+        expect(
+          cigsSoFar(hourly, profile, a.apply(NO_PLAN), hour),
+          `${a.id} at ${hour}`,
+        ).toBeLessThanOrEqual(base + 1e-12);
       }
     }
   });
   it("a full plan lowers the day by the same amount simulate() reports", () => {
     const all = fullPlan(profile);
-    expect(cigsSoFar(hourly, profile, NO_PLAN, 24) - cigsSoFar(hourly, profile, all, 24)).toBeCloseTo(simulate(hourly, profile, NO_PLAN).cigs - simulate(hourly, profile, all).cigs, 9);
+    expect(
+      cigsSoFar(hourly, profile, NO_PLAN, 24) - cigsSoFar(hourly, profile, all, 24),
+    ).toBeCloseTo(simulate(hourly, profile, NO_PLAN).cigs - simulate(hourly, profile, all).cigs, 9);
   });
   it("clamps hours outside 0 to 24 and survives non-numbers", () => {
     expect(cigsSoFar(hourly, profile, NO_PLAN, -5)).toBe(0);
-    expect(cigsSoFar(hourly, profile, NO_PLAN, 99)).toBeCloseTo(cigsSoFar(hourly, profile, NO_PLAN, 24), 9);
+    expect(cigsSoFar(hourly, profile, NO_PLAN, 99)).toBeCloseTo(
+      cigsSoFar(hourly, profile, NO_PLAN, 24),
+      9,
+    );
     expect(cigsSoFar(hourly, profile, NO_PLAN, NaN)).toBe(0);
   });
   it("works with no commute distance (km 0)", () => {
     const home: Profile = { ...profile, km: 0 };
     expect(Number.isFinite(cigsSoFar(hourly, home, NO_PLAN, 12))).toBe(true);
-    expect(cigsSoFar(hourly, home, NO_PLAN, 24)).toBeCloseTo(simulate(hourly, home, NO_PLAN).cigs, 9);
+    expect(cigsSoFar(hourly, home, NO_PLAN, 24)).toBeCloseTo(
+      simulate(hourly, home, NO_PLAN).cigs,
+      9,
+    );
   });
   it("is bigger in a smoggier city at the same hour", () => {
-    const clean = estimateHourly(CITIES[5]);
-    expect(cigsSoFar(clean, profile, NO_PLAN, 12)).toBeLessThan(cigsSoFar(hourly, profile, NO_PLAN, 12));
+    const clean = estimateHourly(CITIES[5]!);
+    expect(cigsSoFar(clean, profile, NO_PLAN, 12)).toBeLessThan(
+      cigsSoFar(hourly, profile, NO_PLAN, 12),
+    );
   });
 });
 
@@ -190,7 +249,9 @@ describe("shifting outdoor time", () => {
     for (const home of ["sealed", "typical", "leaky"] as const) {
       for (const cooking of ["wood", "lpg", "induction"] as const) {
         const p: Profile = { home, commute: "bike", km: 8, cooking, vulnerable: true };
-        expect(simulate(hourly, p, { ...NO_PLAN, shiftOutdoor: true }).meanPm).toBeLessThanOrEqual(simulate(hourly, p, NO_PLAN).meanPm + 1e-9);
+        expect(simulate(hourly, p, { ...NO_PLAN, shiftOutdoor: true }).meanPm).toBeLessThanOrEqual(
+          simulate(hourly, p, NO_PLAN).meanPm + 1e-9,
+        );
       }
     }
   });

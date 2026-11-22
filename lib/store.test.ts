@@ -2,14 +2,39 @@ import { describe, expect, it } from "vitest";
 import type { Profile } from "./engine";
 import { STORE_KEY, clearSaved, readSaved, sanitizeSaved, writeSaved } from "./store";
 
-const profile: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
+const profile: Profile = {
+  home: "leaky",
+  commute: "bike",
+  km: 8,
+  cooking: "lpg",
+  vulnerable: true,
+};
 const saved = { city: "lucknow", profile };
 
 function memory() {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, v); }, removeItem: (k: string) => { m.delete(k); }, m };
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      m.set(k, v);
+    },
+    removeItem: (k: string) => {
+      m.delete(k);
+    },
+    m,
+  };
 }
-const throwing = { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); } };
+const throwing = {
+  getItem: () => {
+    throw new Error("blocked");
+  },
+  setItem: () => {
+    throw new Error("blocked");
+  },
+  removeItem: () => {
+    throw new Error("blocked");
+  },
+};
 
 describe("device-only save", () => {
   it("writes, reads back and clears", () => {
@@ -41,19 +66,28 @@ describe("device-only save", () => {
     expect(readSaved(s)).toEqual({ data: null, state: "blocked" });
     s.setItem(STORE_KEY, JSON.stringify({ city: "atlantis", profile }));
     expect(readSaved(s)).toEqual({ data: null, state: "empty" });
-    s.setItem(STORE_KEY, JSON.stringify({ city: "delhi", profile: { ...profile, home: "castle" } }));
+    s.setItem(
+      STORE_KEY,
+      JSON.stringify({ city: "delhi", profile: { ...profile, home: "castle" } }),
+    );
     expect(readSaved(s)).toEqual({ data: null, state: "empty" });
   });
 });
 
 describe("sanitizeSaved", () => {
   it("accepts a valid entry, clamps the distance and drops unknown fields", () => {
-    expect(sanitizeSaved({ city: "delhi", profile: { ...profile, km: 500, extra: "x" }, junk: 1 })).toEqual({ city: "delhi", profile: { ...profile, km: 60 } });
+    expect(
+      sanitizeSaved({ city: "delhi", profile: { ...profile, km: 500, extra: "x" }, junk: 1 }),
+    ).toEqual({ city: "delhi", profile: { ...profile, km: 60 } });
   });
   it("rejects non-objects and incomplete entries", () => {
-    for (const v of [null, 42, "x", {}, { city: "delhi" }, { city: "delhi", profile: {} }]) expect(sanitizeSaved(v)).toBeNull();
+    for (const v of [null, 42, "x", {}, { city: "delhi" }, { city: "delhi", profile: {} }])
+      expect(sanitizeSaved(v)).toBeNull();
   });
   it("treats anything other than true as not vulnerable", () => {
-    expect(sanitizeSaved({ city: "delhi", profile: { ...profile, vulnerable: "yes" } })?.profile.vulnerable).toBe(false);
+    expect(
+      sanitizeSaved({ city: "delhi", profile: { ...profile, vulnerable: "yes" } })?.profile
+        .vulnerable,
+    ).toBe(false);
   });
 });

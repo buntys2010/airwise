@@ -8,17 +8,27 @@ import { useLang } from "./LangProvider";
 export function Sky() {
   return (
     <div className="sky" aria-hidden="true">
-      <div className="sun" /><div className="blob a" /><div className="blob b" /><div className="blob c" /><div className="grain" />
+      <div className="sun" />
+      <div className="blob a" />
+      <div className="blob b" />
+      <div className="blob c" />
+      <div className="grain" />
     </div>
   );
 }
 
-export function Brand() {
+function Brand() {
   return (
     <Link href="/" className="brand" aria-label="AirWise">
       <svg viewBox="0 0 32 32" aria-hidden="true">
         <circle cx="16" cy="16" r="14" fill="#12222a" />
-        <path d="M7 14c3-3 5 3 9 0s5-3 9 0M7 20c3-3 5 3 9 0s5-3 9 0" stroke="#45d1b7" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        <path
+          d="M7 14c3-3 5 3 9 0s5-3 9 0M7 20c3-3 5 3 9 0s5-3 9 0"
+          stroke="#45d1b7"
+          strokeWidth="2.4"
+          fill="none"
+          strokeLinecap="round"
+        />
       </svg>
       AirWise
     </Link>
@@ -33,12 +43,28 @@ export const NAV: { href: string; key: Key }[] = [
 ];
 
 /** English and Hindi. The Hindi button carries lang="hi" so a screen reader pronounces it correctly. */
-export function LangToggle() {
+function LangToggle() {
   const { lang, setLang, t } = useLang();
   return (
     <div className="langtoggle" role="group" aria-label={`${t("lang.label")} / Language`}>
-      <button type="button" aria-pressed={lang === "en"} aria-label="English" lang="en" onClick={() => setLang("en")}>{t("lang.en")}</button>
-      <button type="button" aria-pressed={lang === "hi"} aria-label="हिन्दी" lang="hi" onClick={() => setLang("hi")}>{t("lang.hi")}</button>
+      <button
+        type="button"
+        aria-pressed={lang === "en"}
+        aria-label="English"
+        lang="en"
+        onClick={() => setLang("en")}
+      >
+        {t("lang.en")}
+      </button>
+      <button
+        type="button"
+        aria-pressed={lang === "hi"}
+        aria-label="हिन्दी"
+        lang="hi"
+        onClick={() => setLang("hi")}
+      >
+        {t("lang.hi")}
+      </button>
     </div>
   );
 }
@@ -47,16 +73,26 @@ export function LangToggle() {
  * One nav landmark. On a phone it becomes a bottom bar (thumb reach); on desktop it sits in the header.
  * The current page is announced with aria-current.
  */
-export function Header({ children }: { children?: ReactNode }) {
+export function Header({ children }: Readonly<{ children?: ReactNode }>) {
   const path = usePathname();
   const { t } = useLang();
   return (
     <header className="top">
       <Brand />
-      <div className="toprow">{children}<LangToggle /></div>
+      <div className="toprow">
+        {children}
+        <LangToggle />
+      </div>
       <nav aria-label={t("nav.main")} className="nav">
         {NAV.map((l) => (
-          <Link key={l.href} href={l.href} className="navlink" aria-current={path === l.href ? "page" : undefined}>{t(l.key)}</Link>
+          <Link
+            key={l.href}
+            href={l.href}
+            className="navlink"
+            aria-current={path === l.href ? "page" : undefined}
+          >
+            {t(l.key)}
+          </Link>
         ))}
       </nav>
     </header>

@@ -37,7 +37,9 @@ describe("stylesheet guarantees", () => {
   it("on phones the floating bar has clearance: page padding and scroll padding exceed the bar height", () => {
     const pad = Number(/body \{ padding-bottom: (\d+)px/.exec(css)?.[1]);
     const scroll = Number(/scroll-padding-bottom: (\d+)px/.exec(css)?.[1]);
-    const bar = 52, barPadding = 12, lift = 14; // 52 px buttons, the bar's own padding and its distance from the screen edge
+    const bar = 52,
+      barPadding = 12,
+      lift = 14; // 52 px buttons, the bar's own padding and its distance from the screen edge
     expect(pad).toBeGreaterThanOrEqual(bar + barPadding + lift);
     expect(scroll).toBeGreaterThanOrEqual(pad);
     expect(rules(".dock")).toMatch(/position:\s*fixed/);

@@ -5,7 +5,7 @@ Measured, not estimated. Every figure below is from `npm run check` (and `npm ru
 ```
 AirWise proof card
   Type-check     pass
-  Tests          471 passed, 0 failed, in 41 files
+  Tests          516 passed, 0 failed, in 51 files
   Accessibility  10 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
   First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB
@@ -14,7 +14,11 @@ AirWise proof card
 Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and 390 px phone profiles.
 
 ## Code quality
-- Strict TypeScript and ESLint (`npm run lint`): type-aware rules, React hooks, Next.js and jsx-a11y, plus complexity (15), nesting depth (4) and parameter-count limits that CI enforces. The compiler is part of the proof card.
+- Strict TypeScript, plus `noUncheckedIndexedAccess`, `noImplicitReturns`, `noFallthroughCasesInSwitch` and `noImplicitOverride`. Every array read is checked, so a missing hour or city cannot crash a render.
+- ESLint with type-aware rules (`no-floating-promises`, `no-misused-promises`, unsafe-`any` rules), the SonarJS rule set, React hooks, Next.js and jsx-a11y. CI enforces cyclomatic complexity 15, cognitive complexity 15, nesting depth 4, 5 parameters, 150 lines per function and 500 lines per file.
+- Prettier formats everything (`npm run format`); CI fails on unformatted code.
+- `npm run dead` (knip) fails on unused files, exports and dependencies. `npm run dupes` (jscpd) fails above 1% duplicated lines; today it is 0%. A circular-import check (madge) finds none.
+- SonarQube Community scan of this repo (config in `sonar-project.properties`): 0 bugs, 0 vulnerabilities, 0 code smells, 0 security hotspots, 0% duplication, A on reliability, security and maintainability.
 - Coverage floor in `vitest.config.mts` (`npm run coverage`): CI fails if line, branch, function or statement coverage drops below it.
 - One source of numbers: [`lib/engine.ts`](../lib/engine.ts) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
 - Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/data.ts`](../lib/data.ts), [`lib/cities.ts`](../lib/cities.ts), [`lib/room.ts`](../lib/room.ts).
@@ -32,7 +36,7 @@ Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and
 - Verified model answers are cached for 10 minutes, and Gemini calls have per-call and overall time budgets.
 
 ## Testing
-- 471 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
+- 516 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
 - 52 eval cases for grounding, injection, Hindi and photo findings ([`evals/`](../evals)).
 - Browser tests ([`e2e/`](../e2e)) for the core journey, layout at 360 and 390 px, focus never hidden behind the bottom bar, and the cigarette animation.
 - `npm run smoke` checks a running deployment.

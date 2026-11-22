@@ -13,7 +13,15 @@ export interface SharedChoices {
 }
 
 /** Short names for the plan flags in a link. */
-export const PLAN_IDS = ["seal", "purifier", "boxfan", "n95", "shift", "swap", "induction"] as const;
+export const PLAN_IDS = [
+  "seal",
+  "purifier",
+  "boxfan",
+  "n95",
+  "shift",
+  "swap",
+  "induction",
+] as const;
 type PlanId = (typeof PLAN_IDS)[number];
 
 export function planToIds(plan: Plan): PlanId[] {
@@ -27,13 +35,18 @@ export function planToIds(plan: Plan): PlanId[] {
   return ids;
 }
 
+function purifierKindOf(set: Set<string>): Plan["purifierKind"] {
+  if (set.has("boxfan")) return "boxfan";
+  return set.has("purifier") ? "hepa" : undefined;
+}
+
 export function idsToPlan(ids: string[]): Plan {
   const set = new Set(ids);
   return {
     ...NO_PLAN,
     sealGaps: set.has("seal"),
     purifier: set.has("purifier") || set.has("boxfan"),
-    purifierKind: set.has("boxfan") ? "boxfan" : set.has("purifier") ? "hepa" : undefined,
+    purifierKind: purifierKindOf(set),
     mask: set.has("n95") ? "n95" : "none",
     shiftOutdoor: set.has("shift"),
     swapCommute: set.has("swap") ? "metro" : null,
@@ -43,17 +56,27 @@ export function idsToPlan(ids: string[]): Plan {
 
 /** The commute swap is a real change only for modes that are not already walk, cycle or metro. Drops it otherwise, so a link or tool call cannot claim a gain the engine's own rules say is not there. */
 export function sanitizePlan(plan: Plan, commute: Profile["commute"]): Plan {
-  return plan.swapCommute && (commute === "walk" || commute === "cycle" || commute === "metro") ? { ...plan, swapCommute: null } : plan;
+  return plan.swapCommute && (commute === "walk" || commute === "cycle" || commute === "metro")
+    ? { ...plan, swapCommute: null }
+    : plan;
 }
 
 export function encodeChoices(c: { city: string; profile: Profile; plan: Plan }): string {
-  const q = new URLSearchParams({ city: c.city, home: c.profile.home, commute: c.profile.commute, km: String(c.profile.km), cooking: c.profile.cooking, vulnerable: c.profile.vulnerable ? "1" : "0" });
+  const q = new URLSearchParams({
+    city: c.city,
+    home: c.profile.home,
+    commute: c.profile.commute,
+    km: String(c.profile.km),
+    cooking: c.profile.cooking,
+    vulnerable: c.profile.vulnerable ? "1" : "0",
+  });
   const ids = planToIds(c.plan);
   if (ids.length) q.set("plan", ids.join(","));
   return q.toString();
 }
 
-const oneOf = <T extends string>(list: readonly T[], v: string | null): T | undefined => (v && (list as readonly string[]).includes(v) ? (v as T) : undefined);
+const oneOf = <T extends string>(list: readonly T[], v: string | null): T | undefined =>
+  v && (list as readonly string[]).includes(v) ? (v as T) : undefined;
 
 /** Reads a query string. Anything outside the fixed lists is dropped, so a hand-edited link can only ever choose from valid options. */
 export function decodeChoices(search: string): SharedChoices {
@@ -62,22 +85,35 @@ export function decodeChoices(search: string): SharedChoices {
   const city = CITIES.find((c) => c.id === q.get("city"));
   if (city) out.city = city.id;
   const profile: Partial<Profile> = {};
-  const home = oneOf(HOMES, q.get("home")); if (home) profile.home = home;
-  const commute = oneOf(COMMUTES, q.get("commute")); if (commute) profile.commute = commute;
-  const cooking = oneOf(COOKINGS, q.get("cooking")); if (cooking) profile.cooking = cooking;
+  const home = oneOf(HOMES, q.get("home"));
+  if (home) profile.home = home;
+  const commute = oneOf(COMMUTES, q.get("commute"));
+  if (commute) profile.commute = commute;
+  const cooking = oneOf(COOKINGS, q.get("cooking"));
+  if (cooking) profile.cooking = cooking;
   const km = Number(q.get("km"));
-  if (q.get("km") !== null && q.get("km") !== "" && Number.isFinite(km)) profile.km = Math.min(60, Math.max(0, Math.round(km)));
-  const v = q.get("vulnerable"); if (v === "1" || v === "0") profile.vulnerable = v === "1";
+  if (q.get("km") !== null && q.get("km") !== "" && Number.isFinite(km))
+    profile.km = Math.min(60, Math.max(0, Math.round(km)));
+  const v = q.get("vulnerable");
+  if (v === "1" || v === "0") profile.vulnerable = v === "1";
   if (Object.keys(profile).length) out.profile = profile;
   const planParam = q.get("plan");
   if (planParam) {
-    const plan = idsToPlan(planParam.split(",").slice(0, 20).filter((id) => (PLAN_IDS as readonly string[]).includes(id)));
+    const plan = idsToPlan(
+      planParam
+        .split(",")
+        .slice(0, 20)
+        .filter((id) => (PLAN_IDS as readonly string[]).includes(id)),
+    );
     out.plan = profile.commute ? sanitizePlan(plan, profile.commute) : plan; // without a commute in the link, the final profile is checked by the caller
   }
   return out;
 }
 
-export function shareUrl(origin: string, c: { city: string; profile: Profile; plan: Plan }): string {
+export function shareUrl(
+  origin: string,
+  c: { city: string; profile: Profile; plan: Plan },
+): string {
   const safeOrigin = origin.replace(/[\r\n\0]/g, "").trim();
   return `${safeOrigin}/?${encodeChoices(c)}`;
 }
@@ -85,5 +121,6 @@ export function shareUrl(origin: string, c: { city: string; profile: Profile; pl
 /** A wa.me link that opens WhatsApp with a ready message. The text is words plus the choices-only link, never a figure. */
 export function whatsappLink(text: string, url: string): string {
   const cleanText = text.replace(/[\r\n]/g, " ").trim();
-  return `https://wa.me/?text=${encodeURIComponent(`${cleanText} ${url}`)}`;
+  const message = `${cleanText} ${url}`;
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }

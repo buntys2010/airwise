@@ -1,11 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { allowedNumbers, extractNumbers, isGrounded, ungroundedNumbers, unsupportedClaims, verify } from "./guard";
+import {
+  allowedNumbers,
+  extractNumbers,
+  isGrounded,
+  ungroundedNumbers,
+  unsupportedClaims,
+  verify,
+} from "./guard";
 
-const facts = { city: "Delhi", pm: 212.4, baselineCigs: 3.74, planCigs: 1.1, bestHour: "2 pm", options: [{ title: "Run a purifier", pct: 53, cigs: 1.9 }] };
+const facts = {
+  city: "Delhi",
+  pm: 212.4,
+  baselineCigs: 3.74,
+  planCigs: 1.1,
+  bestHour: "2 pm",
+  options: [{ title: "Run a purifier", pct: 53, cigs: 1.9 }],
+};
 
 describe("extractNumbers", () => {
   it("finds integers, decimals and thousands separators", () => {
-    expect(extractNumbers("PM2.5 is 212 and 1,200 people, 3.7 cigarettes")).toEqual([2.5, 212, 1200, 3.7]);
+    expect(extractNumbers("PM2.5 is 212 and 1,200 people, 3.7 cigarettes")).toEqual([
+      2.5, 212, 1200, 3.7,
+    ]);
   });
   it("ignores text without digits, and subscript characters", () => {
     expect(extractNumbers("CO₂ saved, no numbers here")).toEqual([]);
@@ -25,7 +41,12 @@ describe("allowedNumbers", () => {
 
 describe("isGrounded", () => {
   it("accepts text that only restates supplied numbers, including rounding", () => {
-    expect(isGrounded("Right now PM2.5 is about 212, roughly 4 cigarettes a day. Open windows at 2 pm. A purifier cuts 53%.", facts)).toBe(true);
+    expect(
+      isGrounded(
+        "Right now PM2.5 is about 212, roughly 4 cigarettes a day. Open windows at 2 pm. A purifier cuts 53%.",
+        facts,
+      ),
+    ).toBe(true);
     expect(isGrounded("Wear an N95 mask.", facts)).toBe(true);
   });
   it("rejects an invented figure and names it", () => {
@@ -56,7 +77,11 @@ describe("unsupportedClaims", () => {
     expect(unsupportedClaims("Most people pick the metro.")).toHaveLength(1);
   });
   it("lets ordinary advice through, including the word who in lowercase", () => {
-    expect(unsupportedClaims("Anyone who is sensitive should keep windows shut. Wear an N95 and cut exposure by 53%.")).toEqual([]);
+    expect(
+      unsupportedClaims(
+        "Anyone who is sensitive should keep windows shut. Wear an N95 and cut exposure by 53%.",
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -69,13 +94,27 @@ describe("verify", () => {
 });
 
 describe("Hindi and Devanagari digits", () => {
-  const hiFacts = { city: "Delhi", pm: 212.4, baselineCigs: 3.74, planCigs: 1.1, bestHour: "2 pm", options: [{ title: "Run a purifier", pct: 53, cigs: 1.9 }] };
+  const hiFacts = {
+    city: "Delhi",
+    pm: 212.4,
+    baselineCigs: 3.74,
+    planCigs: 1.1,
+    bestHour: "2 pm",
+    options: [{ title: "Run a purifier", pct: 53, cigs: 1.9 }],
+  };
   it("reads Devanagari digits as numbers", () => {
-    expect(extractNumbers("आज PM2.5 २१२ है और ५३% कम होगा, १,२०० लोग")).toEqual([2.5, 212, 53, 1200]);
+    expect(extractNumbers("आज PM2.5 २१२ है और ५३% कम होगा, १,२०० लोग")).toEqual([
+      2.5, 212, 53, 1200,
+    ]);
     expect(extractNumbers("३.७ सिगरेट")).toEqual([3.7]);
   });
   it("accepts Hindi text whose numbers are supplied, in either digit script", () => {
-    expect(isGrounded("आज हवा खराब है। PM2.5 २१२ है, यानी लगभग ४ सिगरेट। प्यूरीफायर से ५३% कमी होगी।", hiFacts)).toBe(true);
+    expect(
+      isGrounded(
+        "आज हवा खराब है। PM2.5 २१२ है, यानी लगभग ४ सिगरेट। प्यूरीफायर से ५३% कमी होगी।",
+        hiFacts,
+      ),
+    ).toBe(true);
     expect(isGrounded("प्यूरीफायर से 53% कमी होगी।", hiFacts)).toBe(true);
   });
   it("rejects an invented number written in Devanagari digits", () => {
