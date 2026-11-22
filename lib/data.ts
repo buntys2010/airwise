@@ -90,7 +90,8 @@ export function weatherNote(temp: number | null, wind: number | null): string {
 
 /** Server air fetches give up quickly: a slow feed must not eat the chat's overall time budget. */
 export const AIR_TIMEOUT_MS = 3_500;
-const airCache = createCache<AirResult>(10 * 60_000, 12);
+/** Room for every supported city: a smaller cap would evict entries under mixed traffic and re-hit the air feed. */
+const airCache = createCache<AirResult>(10 * 60_000, Math.max(200, CITIES.length));
 const inflight = new Map<string, Promise<AirResult>>();
 
 /** Live air for one city, cached for 10 minutes with a single in-flight request per city. Estimates are never cached. */

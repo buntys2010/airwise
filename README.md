@@ -69,7 +69,7 @@ Gemini is called from the server only: chat, "write my day in my words", and pho
 - Security headers; no third-party scripts, no cookies, no accounts. Location is a city choice, never GPS. Choices live on the device only.
 
 ## Deploy
-See [`docs/deploy.md`](docs/deploy.md) (Vercel and Cloud Run) and [`docs/runbook.md`](docs/runbook.md). `SMOKE_URL=https://your-app node scripts/smoke.mjs` checks a deployment.
+See [`docs/deploy.md`](docs/deploy.md) (Vercel and Cloud Run) and [`docs/runbook.md`](docs/runbook.md) (logs, request ids, health probe). The API is described in [`docs/openapi.yaml`](docs/openapi.yaml); see also [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CHANGELOG.md`](CHANGELOG.md). `SMOKE_URL=https://your-app node scripts/smoke.mjs` checks a deployment.
 
 ## MCP server
 [`mcp/`](mcp/README.md) exposes two read-only tools (`get_city_air`, `score_actions`) from the same engine, with structured errors an agent can act on.
@@ -85,12 +85,12 @@ All model factors are planning assumptions with ranges in [`docs/methodology.md`
 
 ## Repository layout
 ```
-app/          pages (home, /community, /map, /guide), API routes (chat, plan, vision, map), manifest, icons
+app/          pages (home, /community, /map, /guide), API routes (chat, plan, vision, map, share-image, health), manifest, icons
 components/   UI (dial, cigarette row, city picker, map, table, chat, photo, plan tools)
 lib/          engine, data, cities, chat, plan, room, guard, gemini, i18n, share, store and tests
 evals/        52-case eval set and regression test
 e2e/          Playwright tests
 mcp/          MCP server (own package.json)
 scripts/      check (proof card), smoke, bundle budget
-docs/         methodology, quality, deploy, runbook, evals, innovation, cities
+docs/         methodology, quality, deploy, runbook, evals, innovation, cities, openapi.yaml (API reference)
 ```

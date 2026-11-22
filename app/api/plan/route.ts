@@ -5,6 +5,7 @@ import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { json, readGuarded } from "@/lib/http";
 import { buildPlanPrompt, buildPlanRequest, PLAN_SCHEMA, schedulePlan, validatePlan, type DayPlan } from "@/lib/plan";
 import { createLimiter } from "@/lib/ratelimit";
+import { withObservability } from "@/lib/observe";
 
 export const runtime = "nodejs";
 // Gemini calls are budgeted at 12 s (chat), 15 s (plan) and 20 s (vision); the map batches air requests. 30 s leaves headroom.
@@ -13,7 +14,7 @@ export const maxDuration = 30;
 const limited = createLimiter(6, 60_000);
 const verifiedPlans = createCache<DayPlan>(10 * 60_000, 100);
 
-export async function POST(req: Request) {
+export const POST = withObservability("plan", async (req: Request) => {
   const parsed = await readGuarded(req, { limited, maxBytes: 3_000 });
   if (!parsed.ok) return parsed.res;
 
@@ -39,4 +40,4 @@ export async function POST(req: Request) {
     ...schedulePlan(request), source: "offline", verified: false, air: air.source,
     rejected: r.ok, ...(r.ok ? {} : { reason: r.reason, reasonText: REASON_TEXT[r.reason] }),
   });
-}
+});

@@ -5,6 +5,7 @@ import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { verify } from "@/lib/guard";
 import { json, readGuarded } from "@/lib/http";
 import { createLimiter } from "@/lib/ratelimit";
+import { withObservability } from "@/lib/observe";
 
 export const runtime = "nodejs";
 // Gemini calls are budgeted at 12 s (chat), 15 s (plan) and 20 s (vision); the map batches air requests. 30 s leaves headroom.
@@ -17,7 +18,7 @@ const PER_CALL_MS = 6_000;
 /** Verified answers only, for 10 minutes: the same question about the same air costs no model call. */
 const verifiedAnswers = createCache<string>(10 * 60_000);
 
-export async function POST(req: Request) {
+export const POST = withObservability("chat", async (req: Request) => {
   const started = Date.now();
   const parsed = await readGuarded(req, { limited, maxBytes: 3_000, tooMany: "Too many questions. Try again in a minute." });
   if (!parsed.ok) return parsed.res;
@@ -52,4 +53,4 @@ export async function POST(req: Request) {
     return json({ answer: offlineAnswer(question, ctx, choices.lang), source: "offline", verified: false, rejected: true, air: air.source });
   }
   return json({ answer: offlineAnswer(question, ctx, choices.lang), source: "offline", verified: false, rejected: false, reason: r.reason, reasonText: REASON_TEXT[r.reason], air: air.source });
-}
+});

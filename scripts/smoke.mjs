@@ -9,13 +9,15 @@ const pages = ["/", "/community", "/map", "/guide"];
 let failed = 0;
 const check = (ok, label, extra = "") => { console.log(`${ok ? "PASS" : "FAIL"}  ${label}${extra ? "  " + extra : ""}`); if (!ok) failed++; };
 
+try { const r = await fetch(base + "/api/health"); const j = await r.json(); check(r.status === 200 && j.status === "ok" && !!r.headers.get("x-request-id"), "GET /api/health", `(${r.status})`); }
+catch (e) { check(false, "GET /api/health", String(e)); }
 for (const p of pages) {
   try { const r = await fetch(base + p); check(r.status === 200, `GET ${p}`, `(${r.status})`); }
   catch (e) { check(false, `GET ${p}`, String(e)); }
 }
 try {
   const r = await fetch(base + "/api/map"); const j = await r.json();
-  check(r.status === 200 && Array.isArray(j.points) && j.points.length >= 80, "GET /api/map returns every city", `(${j.points?.length} cities, ${j.live} live)`);
+  check(r.status === 200 && Array.isArray(j.points) && j.points.length >= 100, "GET /api/map returns every city", `(${j.points?.length} cities, ${j.live} live)`);
 } catch (e) { check(false, "GET /api/map", String(e)); }
 try {
   const choices = { city: "delhi", home: "typical", commute: "bike", km: 8, cooking: "lpg", vulnerable: true, plan: {}, lang: "en" };

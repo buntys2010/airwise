@@ -129,3 +129,11 @@ describe("generate (thin wrapper)", () => {
     expect(await generate(opts)).toBeNull();
   });
 });
+
+describe("positiveInt", () => {
+  it("accepts whole numbers of at least 1 and falls back for anything else", async () => {
+    const { positiveInt } = await import("./gemini");
+    expect(positiveInt("12", 40)).toBe(12);
+    for (const bad of [undefined, "", "0", "-5", "abc", "2.5", "NaN"]) expect(positiveInt(bad, 40)).toBe(40);
+  });
+});
