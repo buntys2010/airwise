@@ -77,14 +77,14 @@ export function Cigarettes({ a }: { a: Airwise }) {
             <CigRow sticks={baseSticks} tone="base" />
           </div>
           <div className="cigcol">
-            <p className="cliglabel"><span className="dialafter" aria-label={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}><span>{t("cig.plan")} <b>{f1(a.withPlan.cigs)}</b>{changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}</span></span></p>
+            <p className="cliglabel"><span className={`dialafter${changed ? " changed" : ""}`} aria-label={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}><span>{t("cig.plan")} <b style={{ color: changed ? "var(--breath)" : "#fff" }}>{f1(a.withPlan.cigs)}</b>{changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}</span></span></p>
             <CigRow sticks={planSticks} tone="plan" />
           </div>
         </div>
       </div>
-      <div className="meter" role="img" aria-label={t("dial.expo", { pct: a.savedPct })}><i style={{ width: `${Math.max(2, a.savedPct)}%` }} /></div>
-      <p className="cignote">{t("cig.note")}</p>
+      <div className="meter" role="img" aria-label={t("dial.expo", { pct: a.savedPct })}><i style={{ width: a.savedPct > 0 ? `${Math.max(2, a.savedPct)}%` : "0%" }} /></div>
       <p className="dialfoot"><strong>{t("dial.expo", { pct: a.savedPct })}</strong>, <strong>{t("dial.cigs", { n: a.saved.toFixed(1) })}</strong>, <strong>{t("dial.co2", { kg: a.co2Saved.toFixed(1) })}</strong>.</p>
+      <p className="cignote">{t("cig.note")}</p>
     </section>
   );
 }
