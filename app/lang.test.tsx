@@ -40,6 +40,8 @@ function stubFetch(chat: (body: Record<string, unknown>) => unknown = () => ({ a
   return f;
 }
 const renderPage = () => render(<LangProvider><Page /></LangProvider>);
+/** Chat and voice live in the Co-pilot stage; the other stages stay mounted but hidden. */
+const copilot = () => fireEvent.click(screen.getByRole("button", { name: /Co-pilot|सहायक/ }));
 const chatCalls = (f: ReturnType<typeof vi.fn>) => f.mock.calls.filter((c) => String(c[0]).startsWith("/api/chat"));
 
 beforeAll(() => {
@@ -82,6 +84,7 @@ describe("language toggle", () => {
   it("sends the language with the chat question, and shows the answer in that language", async () => {
     const f = stubFetch(() => ({ answer: "N95 पहनें।", verified: true }));
     renderPage();
+    copilot();
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
     fireEvent.change(screen.getByLabelText("AirWise से सवाल पूछें"), { target: { value: "क्या मुझे मास्क चाहिए?" } });
     fireEvent.click(screen.getByRole("button", { name: "भेजें" }));
@@ -109,6 +112,7 @@ describe("voice", () => {
   it("is hidden entirely in a browser without speech support, and typing still works", async () => {
     const f = stubFetch();
     renderPage();
+    copilot();
     expect(screen.queryByRole("button", { name: "Speak your question" })).toBeNull();
     expect(screen.queryByLabelText("Read answers aloud")).toBeNull();
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), { target: { value: "mask?" } });
@@ -121,6 +125,7 @@ describe("voice", () => {
     enableVoice();
     const f = stubFetch();
     renderPage();
+    copilot();
     fireEvent.click(await screen.findByRole("button", { name: "Speak your question" }));
     expect(FakeRec.last!.start).toHaveBeenCalled();
     expect(FakeRec.last!.lang).toBe("en-IN");
@@ -138,6 +143,7 @@ describe("voice", () => {
   it("announces listening, and the button reflects it", async () => {
     enableVoice();
     renderPage();
+    copilot();
     const mic = await screen.findByRole("button", { name: "Speak your question" });
     fireEvent.click(mic);
     expect(screen.getByText("Listening…")).toBeTruthy();
@@ -153,6 +159,7 @@ describe("voice", () => {
   ])("explains a %s problem in plain words and leaves the typed box usable", async (code, text) => {
     enableVoice();
     renderPage();
+    copilot();
     fireEvent.click(await screen.findByRole("button", { name: "Speak your question" }));
     act(() => FakeRec.last!.fail(code));
     expect(screen.getByText(text)).toBeTruthy();
@@ -163,6 +170,7 @@ describe("voice", () => {
   it("listens in Hindi after switching language", async () => {
     enableVoice();
     renderPage();
+    copilot();
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
     fireEvent.click(await screen.findByRole("button", { name: "बोलकर पूछें" }));
     expect(FakeRec.last!.lang).toBe("hi-IN");
@@ -175,6 +183,7 @@ describe("voice", () => {
     class Broken extends FakeRec { start = vi.fn(() => { throw new Error("busy"); }); }
     (window as unknown as Record<string, unknown>).SpeechRecognition = Broken;
     renderPage();
+    copilot();
     fireEvent.click(await screen.findByRole("button", { name: "Speak your question" }));
     expect(screen.getByText(/Voice input is not working right now/)).toBeTruthy();
   });
@@ -182,6 +191,7 @@ describe("voice", () => {
   it("Read aloud is off by default, speaks answers only when switched on, in the right language, and stops when switched off", async () => {
     enableVoice();
     renderPage();
+    copilot();
     const toggle = await screen.findByLabelText("Read answers aloud") as HTMLInputElement;
     expect(toggle.checked).toBe(false);
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), { target: { value: "one" } });
@@ -202,6 +212,7 @@ describe("voice", () => {
   it("has no automated accessibility violations with voice controls showing", async () => {
     enableVoice();
     const { container } = renderPage();
+    copilot();
     await screen.findByRole("button", { name: "Speak your question" });
     const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);

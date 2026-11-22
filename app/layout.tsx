@@ -9,6 +9,7 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bric
 const body = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "AirWise: a clear-air plan for smog days",
   applicationName: "AirWise",
   icons: { icon: "/icons/192", apple: "/icons/192" },

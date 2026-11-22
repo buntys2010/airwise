@@ -34,13 +34,14 @@ describe("stylesheet guarantees", () => {
     expect(reduced).toMatch(/\.smog\s*\{\s*transition:\s*none/);
     expect(reduced).toMatch(/\.blob\s*\{\s*animation:\s*none/);
   });
-  it("on phones the bottom bar has clearance: page padding and scroll padding exceed the bar height", () => {
-    const phone = css.slice(css.lastIndexOf("@media (max-width: 759px)"));
-    const pad = Number(/body \{ padding-bottom: (\d+)px/.exec(phone)?.[1]);
-    const scroll = Number(/scroll-padding-bottom: (\d+)px/.exec(phone)?.[1]);
-    const navLink = 44, navPadding = 12; // 44 px target plus the bar's own padding, before the safe-area inset
-    expect(pad).toBeGreaterThanOrEqual(navLink + navPadding + 16);
+  it("on phones the floating bar has clearance: page padding and scroll padding exceed the bar height", () => {
+    const pad = Number(/body \{ padding-bottom: (\d+)px/.exec(css)?.[1]);
+    const scroll = Number(/scroll-padding-bottom: (\d+)px/.exec(css)?.[1]);
+    const bar = 52, barPadding = 12, lift = 14; // 52 px buttons, the bar's own padding and its distance from the screen edge
+    expect(pad).toBeGreaterThanOrEqual(bar + barPadding + lift);
     expect(scroll).toBeGreaterThanOrEqual(pad);
+    expect(rules(".dock")).toMatch(/position:\s*fixed/);
+    expect(rules(".hasdock .main-wrap")).toMatch(/padding-bottom:\s*1[1-9]\dpx/);
   });
   it("touch targets and markers are at least 44 px", () => {
     expect(rules(".marker")).toMatch(/width:\s*44px;\s*height:\s*44px/);
@@ -54,18 +55,19 @@ describe("stylesheet guarantees", () => {
 });
 
 describe("the cigarette row", () => {
-  it("shortens and burns over the same 1.4 s as the haze, with the same easing", () => {
-    const body = rules(".cigs rect");
-    expect(body).toMatch(/transition:[^;]*y 1\.4s[^;]*height 1\.4s/);
-    expect(rules(".smog")).toMatch(/transition:\s*opacity 1\.4s/);
+  it("burns and shortens with an ease-out transition", () => {
+    expect(rules(".cpaper")).toMatch(/transition:[^;]*width [0-9.]+s cubic-bezier/);
+    expect(rules(".cash")).toMatch(/transition:[^;]*left [0-9.]+s cubic-bezier/);
   });
   it("shows the end state with no motion when the user prefers reduced motion", () => {
-    const start = css.indexOf("@media (prefers-reduced-motion: reduce) { .cigs rect");
+    const start = css.indexOf("@media (prefers-reduced-motion: reduce) { .cember, .cember i");
     expect(start).toBeGreaterThan(-1);
-    expect(css.slice(start, start + 120)).toMatch(/\.cigs rect \{ transition: none; \}/);
+    const block = css.slice(start, start + 260);
+    expect(block).toMatch(/\.cember, \.cember i \{ animation: none; \}/);
+    expect(block).toMatch(/\.cpaper, \.cash, \.cember \{ transition: none; \}/);
   });
-  it("uses only design tokens for its colours", () => {
-    for (const sel of [".cig-body", ".cig-ash", ".cig-ember", ".cig-filter", ".cig-ghost"]) expect(rules(sel), sel).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
-    expect(rules(".cig-ember")).toMatch(/var\(--ember\)/);
+  it("the strip at the very top keeps its sticks short enough to fit a phone", () => {
+    expect(rules(".citycigs .stick")).toMatch(/width:\s*52px/);
+    expect(rules(".citycigs .cigrow")).toMatch(/flex-wrap:\s*wrap/);
   });
 });

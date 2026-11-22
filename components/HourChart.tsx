@@ -25,12 +25,12 @@ export function HourChart({ hourly, best, usual }: Props) {
           const tone = categoryOf(v).tone;
           return <rect key={h} x={x + 3} y={y(v)} width={bw - 6} height={H - padB - y(v)} rx={5} fill={TONE_FILL[tone]} opacity={h === best || h === usual ? 1 : 0.78} />;
         })}
-        <rect x={padL + best * bw} y={padT - 6} width={bw} height={H - padT - padB + 6} rx={7} fill="none" stroke="#ebf3f5" strokeWidth={3} />
-        <text x={Math.min(W - 150, Math.max(padL, padL + best * bw - 52))} y={padT - 14} style={{ fill: "#ebf3f5", fontWeight: 700, fontSize: 14 }}>
+        <rect x={padL + best * bw} y={padT - 6} width={bw} height={H - padT - padB + 6} rx={7} fill="none" stroke="#0f1f27" strokeWidth={3} />
+        <text x={Math.min(W - 150, Math.max(padL, padL + best * bw - 52))} y={padT - 14} style={{ fill: "#0f1f27", fontWeight: 700, fontSize: 14 }}>
           Best: {fmtHour(best)}
         </text>
-        <line x1={padL + usual * bw + bw / 2} x2={padL + usual * bw + bw / 2} y1={y(hourly[usual]) - 4} y2={y(hourly[usual]) - 20} stroke="#ebf3f5" strokeWidth={2} />
-        <text x={padL + usual * bw - 4} y={y(hourly[usual]) - 26} style={{ fill: "#ebf3f5", fontWeight: 700, fontSize: 13 }}>Your usual outing</text>
+        <line x1={padL + usual * bw + bw / 2} x2={padL + usual * bw + bw / 2} y1={y(hourly[usual]) - 4} y2={y(hourly[usual]) - 20} stroke="#0f1f27" strokeWidth={2} />
+        <text x={padL + usual * bw - 4} y={y(hourly[usual]) - 26} style={{ fill: "#0f1f27", fontWeight: 700, fontSize: 13 }}>Your usual outing</text>
         {[0, 6, 12, 18, 23].map((h) => (
           <text key={h} x={padL + h * bw + bw / 2} y={H - 8} textAnchor="middle">{fmtHour(h)}</text>
         ))}

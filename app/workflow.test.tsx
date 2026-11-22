@@ -21,6 +21,9 @@ const renderPage = () => render(<LangProvider><Page /></LangProvider>);
 const setUrl = (search: string) => window.history.replaceState({}, "", `/${search}`);
 const marker = (n: number) => screen.getByRole("button", { name: new RegExp(`^(Fix|उपाय) ${n}:`) });
 const saved = () => localStorage.getItem(STORE_KEY);
+const openTab = (name: string) => fireEvent.click(within(screen.getByRole("navigation", { name: "Sections" })).getByRole("button", { name: new RegExp(name) }));
+const radio = (name: RegExp) => screen.getByRole("radio", { name });
+const isOn = (el: HTMLElement) => el.getAttribute("aria-checked") === "true";
 
 beforeAll(() => {
   window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
@@ -57,8 +60,8 @@ describe("shared links carry choices only", () => {
     setUrl("?city=delhi&home=sealed&commute=metro&km=12&cooking=induction&vulnerable=0&plan=seal,purifier");
     renderPage();
     await waitFor(() => expect(cityName()).toBe("Delhi"));
-    expect((screen.getByLabelText("Sealed, AC on") as HTMLInputElement).checked).toBe(true);
-    expect((screen.getByLabelText("Induction") as HTMLInputElement).checked).toBe(true);
+    expect(isOn(radio(/Flat \(sealed\)/))).toBe(true);
+    expect(isOn(radio(/Induction/))).toBe(true);
     expect(screen.getByLabelText(/One-way distance: 12 km/)).toBeTruthy();
     // the fixes that were on in the link are on here, and the numbers are this device's own, recomputed
     expect(screen.getAllByRole("button", { name: "Done" }).length).toBeGreaterThanOrEqual(1);
@@ -68,7 +71,7 @@ describe("shared links carry choices only", () => {
     renderPage();
     await waitFor(() => expect(cityBox()).toBeTruthy());
     expect(cityName()).toBe("Lucknow");
-    expect((screen.getByLabelText("Old, gappy windows") as HTMLInputElement).checked).toBe(true);
+    expect(isOn(radio(/Flat \(leaky\)/))).toBe(true);
     const dial = screen.getByRole("group", { name: /daily exposure/i }).textContent ?? "";
     expect(dial).not.toMatch(/b0.1b/); // the smuggled baselineCigs never reaches the dial
     expect(dial).not.toMatch(/b99%/);
@@ -88,6 +91,7 @@ describe("shared links carry choices only", () => {
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
     renderPage();
     fireEvent.click(marker(1));
+    openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Copy a link to this plan" }));
     expect(await screen.findByText(/Link copied\. It carries your choices only, never a number\./)).toBeTruthy();
     const url = new URL(writeText.mock.calls[0][0]);
@@ -99,6 +103,7 @@ describe("shared links carry choices only", () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", { value: share, configurable: true });
     renderPage();
+    openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Copy a link to this plan" }));
     await waitFor(() => expect(share).toHaveBeenCalled());
     expect(share.mock.calls[0][0].url).toMatch(/\?city=lucknow/);
@@ -108,6 +113,7 @@ describe("shared links carry choices only", () => {
     Object.defineProperty(navigator, "clipboard", { value: { writeText: vi.fn().mockRejectedValue(new Error("no")) }, configurable: true });
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
     renderPage();
+    openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Copy a link to this plan" }));
     const box = (await screen.findByLabelText("Copy this link:")) as HTMLInputElement;
     expect(box.readOnly).toBe(true);
@@ -115,6 +121,7 @@ describe("shared links carry choices only", () => {
   });
   it("offers a WhatsApp share that carries words and the choices-only link", () => {
     renderPage();
+    openTab("Share");
     const link = screen.getByRole("link", { name: /Share on WhatsApp/ }) as HTMLAnchorElement;
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
     const text = decodeURIComponent(new URL(link.href).searchParams.get("text")!);
@@ -128,12 +135,12 @@ describe("device-only save", () => {
     localStorage.setItem(STORE_KEY, JSON.stringify({ city: "kolkata", profile: { home: "sealed", commute: "metro", km: 5, cooking: "induction", vulnerable: false } }));
     renderPage();
     await waitFor(() => expect(cityName()).toBe("Kolkata"));
-    expect((screen.getByLabelText("Sealed, AC on") as HTMLInputElement).checked).toBe(true);
+    expect(isOn(radio(/Flat \(sealed\)/))).toBe(true);
     expect(screen.getByText("Saved on this phone")).toBeTruthy();
   });
   it("saves the user's own changes, storing choices and no figures", async () => {
     renderPage();
-    fireEvent.click(screen.getByLabelText("Metro"));
+    fireEvent.click(radio(/Metro/));
     await waitFor(() => expect(screen.getByText("Saved on this phone")).toBeTruthy());
     const data = JSON.parse(saved()!);
     expect(data.profile.commute).toBe("metro");
@@ -142,12 +149,14 @@ describe("device-only save", () => {
   });
   it("Clear forgets everything and returns to the sample family", async () => {
     renderPage();
-    fireEvent.click(screen.getByLabelText("Metro"));
+    fireEvent.click(radio(/Metro/));
     await waitFor(() => expect(screen.getByText("Saved on this phone")).toBeTruthy());
+    openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Clear what is saved" }));
     expect(saved()).toBeNull();
     expect(await screen.findByText(/Cleared\. Back to the sample family\./)).toBeTruthy();
-    expect((screen.getByLabelText("Two-wheeler") as HTMLInputElement).checked).toBe(true);
+    openTab("Room");
+    expect(isOn(radio(/Two-wheeler/))).toBe(true);
     expect(screen.getByText(/Not saved yet/)).toBeTruthy();
   });
   it("works when storage is blocked, and says so", async () => {
@@ -168,6 +177,7 @@ describe("calendar reminder", () => {
     URL.revokeObjectURL = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     renderPage();
+    openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Remind me every morning" }));
     expect(click).toHaveBeenCalled();
     expect(blob!.type).toMatch(/text\/calendar/);
@@ -184,6 +194,7 @@ describe("chat progress and time limits", () => {
     vi.useFakeTimers();
     vi.stubGlobal("fetch", vi.fn().mockImplementation((_u: string, init?: RequestInit) => new Promise((_r, rej) => init?.signal?.addEventListener("abort", () => rej(Object.assign(new Error("a"), { name: "AbortError" }))))));
     renderPage();
+    openTab("Co-pilot");
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), { target: { value: "mask?" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(screen.getByRole("progressbar")).toBeTruthy();

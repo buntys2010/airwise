@@ -3,7 +3,7 @@ import Link from "next/link";
 import { weatherKey } from "@/lib/data";
 import { fmtHour } from "@/lib/engine";
 import { ADVICE_KEY, CATEGORY_KEY } from "@/lib/i18n";
-import { CigaretteRow } from "./CigaretteRow";
+import { CityCigs } from "./CityCigs";
 import { CityPicker } from "./CityPicker";
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
@@ -23,13 +23,7 @@ export function SeverityStrip({ a }: { a: Airwise }) {
         <span>{t("strip.aqi", { aqi: a.aqi })}</span>
         {weather && <span>{weather}</span>}
       </div>
-      <div className="citycigs">
-        <CigaretteRow key={a.cityId} compact base={a.outdoorDay} plan={a.outdoorDay} soFar={a.outdoorSoFar} />
-        <p>
-          <span className="sr-only">{t("strip.cigs", { n: a.outdoorDay.toFixed(1) })} {t("strip.cigsSo", { n: a.outdoorSoFar.toFixed(1) })}</span>
-          <span aria-hidden="true"><b>{t("strip.cigs", { n: a.outdoorDay.toFixed(1) })}</b> <small>{t("strip.cigsSo", { n: a.outdoorSoFar.toFixed(1) })}</small></span>
-        </p>
-      </div>
+      <CityCigs key={a.cityId} city={a.cityId} day={a.outdoorDay} soFar={a.outdoorSoFar} />
       <h1 id="h1">{t("strip.headline", { level: lang === "en" ? level.toLowerCase() : level })}</h1>
       <p className="lede">
         {[wk ? t(wk) : "", t(ADVICE_KEY[a.cat.tone])].filter(Boolean).join(" ")}{" "}

@@ -63,6 +63,14 @@ export const EN = {
   "sec.day.h": "Today, hour by hour", "sec.plan.h": "Everything you can do", "sec.plan.p": "Add actions and watch your exposure, and the sky, change. Every number has its math one tap away.",
   "sec.daily.h": "Your clear-air day", "sec.dose.h": "Where your daily dose comes from",
   "foot.disclaimer": "AirWise gives general guidance and is not medical advice. If anyone has trouble breathing, contact a doctor.",
+  "pills.title": "Your household", "pills.home": "Your home", "pills.commute": "Getting around", "pills.kitchen": "Kitchen", "pills.vuln": "A child, older adult or someone with asthma lives here", "pills.km": "One-way distance: {km} km",
+  "pill.home.leaky": "Flat (leaky)", "pill.home.sealed": "Flat (sealed)", "pill.home.typical": "Independent house",
+  "pill.commute.bike": "Two-wheeler", "pill.commute.bus": "Bus", "pill.commute.metro": "Metro", "pill.commute.car": "Car", "pill.commute.walk": "Walk", "pill.commute.cycle": "Cycle", "pill.commute.ev": "Electric car",
+  "pill.cook.lpg": "Gas (LPG)", "pill.cook.induction": "Induction", "pill.cook.wood": "Wood or coal",
+  "dock.label": "Sections", "dock.room": "Room", "dock.plan": "Day plan", "dock.copilot": "Co-pilot", "dock.share": "Share",
+  "plan.cta": "View today's full schedule", "plan.window": "Cleanest air around {time}",
+  "share.h": "AirWise Clean-Air Pass", "share.city": "{city} · AQI {aqi} ({cat})", "share.impact": "−{pct}% daily smog exposure ({n} cigarettes saved)", "share.fixes": "Top fixes for this household", "share.none": "Switch on a fix in the Room tab to build your pass.",
+  "share.footer": "Calculated by code · No accounts needed", "share.btn": "Share to WhatsApp or copy pass", "share.copied": "Clean-air pass copied to clipboard!", "share.title": "My AirWise clean-air plan", "share.community": "Make a plan for your building or school",
 
   "brief.h": "Your morning brief", "brief.line": "{city} at {time}: AQI {aqi}, {level}.", "brief.best": "Best outdoor hour: {hour}, at {pm} µg/m³.", "brief.first": "Do first: {fix}.",
 
@@ -94,6 +102,10 @@ export const EN = {
   "map.city": "City", "map.pm": "PM2.5 (µg/m³)", "map.level": "Level", "map.source": "Source", "map.live": "Live", "map.est": "Estimate",
   "map.err": "The map data could not be loaded. Try again in a moment.", "map.loading": "Loading the map…", "map.open": "Open {city}",
   "map.schematic": "Schematic map, not to scale.", "map.hour": "Values for {time} India time.",
+  "cig.h": "Cigarettes equivalent, so far today", "cig.full": "of about {n} for the whole day", "cig.base": "If nothing changes", "cig.plan": "With your plan",
+  "cig.replay": "Replay the day", "cig.hour": "As of {time}", "cig.less": "{pct}% less",
+  "cig.alt": "{sofar} cigarettes equivalent so far today, of about {base} for the whole day if nothing changes, and about {plan} with your plan.",
+  "share.wa": "Share the card on WhatsApp", "share.download": "Download the image", "share.alt": "AirWise clean-air card for {city}: {base} cigarettes equivalent a day, {plan} with this plan.", "share.preparing": "Preparing your card…", "share.opened": "WhatsApp opened with your link.", "share.cardH": "Your card",
 } as const;
 
 export type Key = keyof typeof EN;
@@ -156,6 +168,14 @@ export const HI: Record<Key, string> = {
   "sec.day.h": "आज, घंटे दर घंटे", "sec.plan.h": "आप जो कुछ कर सकते हैं", "sec.plan.p": "उपाय जोड़ें और देखें कि आपका जोखिम और आसमान कैसे बदलते हैं। हर संख्या का गणित एक टैप दूर है।",
   "sec.daily.h": "आपका साफ़ हवा वाला दिन", "sec.dose.h": "आपकी रोज़ की खुराक कहाँ से आती है",
   "foot.disclaimer": "AirWise सामान्य मार्गदर्शन देता है, चिकित्सा सलाह नहीं। अगर किसी को साँस लेने में तकलीफ़ हो तो डॉक्टर से मिलें।",
+  "pills.title": "आपका परिवार", "pills.home": "आपका घर", "pills.commute": "आना-जाना", "pills.kitchen": "रसोई", "pills.vuln": "घर में बच्चा, बुज़ुर्ग या दमे का मरीज़ है", "pills.km": "एक तरफ़ की दूरी: {km} किमी",
+  "pill.home.leaky": "फ़्लैट (रिसाव वाला)", "pill.home.sealed": "फ़्लैट (बंद)", "pill.home.typical": "स्वतंत्र मकान",
+  "pill.commute.bike": "दोपहिया", "pill.commute.bus": "बस", "pill.commute.metro": "मेट्रो", "pill.commute.car": "कार", "pill.commute.walk": "पैदल", "pill.commute.cycle": "साइकिल", "pill.commute.ev": "इलेक्ट्रिक कार",
+  "pill.cook.lpg": "गैस (LPG)", "pill.cook.induction": "इंडक्शन", "pill.cook.wood": "लकड़ी या कोयला",
+  "dock.label": "भाग", "dock.room": "कमरा", "dock.plan": "दिन की योजना", "dock.copilot": "सहायक", "dock.share": "साझा करें",
+  "plan.cta": "आज का पूरा कार्यक्रम देखें", "plan.window": "सबसे साफ़ हवा लगभग {time}",
+  "share.h": "AirWise स्वच्छ-हवा पास", "share.city": "{city} · AQI {aqi} ({cat})", "share.impact": "−{pct}% दैनिक धुआँ-प्रभाव ({n} सिगरेट कम)", "share.fixes": "इस परिवार के मुख्य उपाय", "share.none": "पास बनाने के लिए कमरा टैब में कोई उपाय चालू करें।",
+  "share.footer": "कोड से गणना · खाता नहीं चाहिए", "share.btn": "WhatsApp पर भेजें या पास कॉपी करें", "share.copied": "स्वच्छ-हवा पास कॉपी हो गया!", "share.title": "मेरी AirWise स्वच्छ-हवा योजना", "share.community": "अपनी सोसायटी या स्कूल के लिए योजना बनाएँ",
 
   "brief.h": "आपकी सुबह की जानकारी", "brief.line": "{city}, {time} पर: AQI {aqi}, {level}।", "brief.best": "बाहर के लिए सबसे अच्छा घंटा: {hour}, {pm} µg/m³ पर।", "brief.first": "सबसे पहले करें: {fix}।",
 
@@ -187,6 +207,10 @@ export const HI: Record<Key, string> = {
   "map.city": "शहर", "map.pm": "PM2.5 (µg/m³)", "map.level": "स्तर", "map.source": "स्रोत", "map.live": "लाइव", "map.est": "अनुमान",
   "map.err": "नक्शे का डेटा नहीं आ सका। थोड़ी देर में फिर कोशिश करें।", "map.loading": "नक्शा लाया जा रहा है…", "map.open": "{city} खोलें",
   "map.schematic": "योजनाबद्ध नक्शा, पैमाने पर नहीं।", "map.hour": "भारतीय समय {time} के मान।",
+  "cig.h": "आज अब तक सिगरेट के बराबर", "cig.full": "पूरे दिन के लगभग {n} में से", "cig.base": "अगर कुछ न बदले", "cig.plan": "आपकी योजना के साथ",
+  "cig.replay": "दिन फिर से देखें", "cig.hour": "{time} तक", "cig.less": "{pct}% कम",
+  "cig.alt": "आज अब तक {sofar} सिगरेट के बराबर, अगर कुछ न बदले तो पूरे दिन के लगभग {base}, और आपकी योजना के साथ लगभग {plan}।",
+  "share.wa": "कार्ड WhatsApp पर भेजें", "share.download": "तस्वीर डाउनलोड करें", "share.alt": "{city} के लिए AirWise स्वच्छ-हवा कार्ड: दिन में {base} सिगरेट के बराबर, इस योजना के साथ {plan}।", "share.preparing": "आपका कार्ड तैयार हो रहा है…", "share.opened": "आपके लिंक के साथ WhatsApp खुल गया।", "share.cardH": "आपका कार्ड",
 };
 
 export const DICTS: Record<Lang, Record<Key, string>> = { en: EN, hi: HI };

@@ -215,6 +215,7 @@ describe("photo reader problems always lead to the questions", () => {
 describe("rupee-ranked value list", () => {
   it("shows the catalog best value first with indicative prices and safe external links", () => {
     render(<Page />);
+    fireEvent.click(screen.getByRole("button", { name: /Day plan/ }));
     const list = screen.getByRole("heading", { name: "What to buy first, by value" }).closest("section")!;
     const items = list.querySelectorAll("ol > li");
     expect(items.length).toBeGreaterThanOrEqual(3);

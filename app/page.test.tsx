@@ -115,6 +115,7 @@ describe("chat on the home screen", () => {
     const f = stubFetch({ chat: () => ({ answer: "Wear an N95.", verified: true }) });
     render(<Page />);
     fireEvent.click(marker(2));
+    fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
     fireEvent.change(screen.getByLabelText(/Ask AirWise a question/), { target: { value: "Do I need a mask?" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByText("Wear an N95.")).toBeTruthy();
@@ -129,6 +130,7 @@ describe("chat on the home screen", () => {
   it("explains why an answer is offline using the named reason", async () => {
     stubFetch({ chat: () => ({ answer: "Use a purifier.", verified: false, reasonText: "Gemini's rate limit was reached" }) });
     render(<Page />);
+    fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
     fireEvent.change(screen.getByLabelText(/Ask AirWise a question/), { target: { value: "purifier?" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByText(/Gemini's rate limit was reached, so this is checked guidance/)).toBeTruthy();
@@ -140,6 +142,7 @@ describe("chat on the home screen", () => {
     let n = 0;
     stubFetch({ chat: () => (++n === 1 ? slow : { answer: "Second answer.", verified: true }) });
     render(<Page />);
+    fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
     const input = screen.getByLabelText(/Ask AirWise a question/);
     fireEvent.change(input, { target: { value: "first" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
@@ -180,5 +183,66 @@ describe("wording of the dial", () => {
     const dial = screen.getByRole("group", { name: /daily exposure/i });
     expect(within(dial).getByText(/^\d+% less exposure$/)).toBeTruthy();
     expect(within(dial).getByRole("img").getAttribute("aria-label")).toMatch(/^\d+% less exposure$/);
+  });
+});
+
+describe("user journey: household pills, stage dock and share pass", () => {
+  it("ProfilePills render as radio groups, and one tap updates the household the chat sends", async () => {
+    const f = stubFetch({ chat: () => ({ answer: "Ok.", verified: true }) });
+    render(<Page />);
+    const wood = screen.getByRole("radio", { name: /Wood or coal/ });
+    expect(wood.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("radio", { name: /Gas \(LPG\)/ }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(wood);
+    expect(wood.getAttribute("aria-checked")).toBe("true");
+    fireEvent.keyDown(wood, { key: "ArrowLeft" }); // arrow keys move and select inside the group
+    expect(screen.getByRole("radio", { name: /Induction/ }).getAttribute("aria-checked")).toBe("true");
+    const vuln = screen.getByRole("button", { name: /child, older adult or someone with asthma/i });
+    fireEvent.click(vuln);
+    expect(vuln.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
+    fireEvent.change(screen.getByLabelText(/Ask AirWise a question/), { target: { value: "ok?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(f.mock.calls.some((c) => String(c[0]).startsWith("/api/chat"))).toBe(true));
+    const body = JSON.parse(f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat"))![1].body as string);
+    expect(body.choices).toMatchObject({ cooking: "induction", vulnerable: false });
+  });
+
+  it("BottomDock shows four stages and switches the active one", () => {
+    render(<Page />);
+    const dock = screen.getByRole("navigation", { name: "Sections" });
+    const tabs = within(dock).getAllByRole("button");
+    expect(tabs.map((b) => b.textContent?.replace(/[^A-Za-z-]/g, ""))).toEqual(["Room", "Dayplan", "Co-pilot", "Share"]);
+    expect(tabs[0].getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(tabs[1]);
+    expect(tabs[1].getAttribute("aria-pressed")).toBe("true");
+    expect(tabs[0].getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("heading", { name: "What to buy first, by value" })).toBeTruthy();
+    fireEvent.click(tabs[3]);
+    expect(screen.getByRole("heading", { name: "Your card" })).toBeTruthy();
+  });
+
+  it("the share card is a picture built from choices only, and WhatsApp opens with the link when files cannot be shared", async () => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "canShare", { value: undefined, configurable: true });
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(<Page />);
+    fireEvent.click(screen.getByRole("button", { name: /Share/ }));
+    const img = screen.getByRole("img", { name: /AirWise clean-air card for Lucknow: .+ cigarettes equivalent a day, .+ with this plan\./ }) as HTMLImageElement;
+    const src = new URL(img.getAttribute("src")!, "http://x");
+    expect(src.pathname).toBe("/api/share-image");
+    expect(src.searchParams.get("city")).toBe("lucknow");
+    expect([...src.searchParams.keys()].every((k) => ["city", "home", "commute", "km", "cooking", "vulnerable", "plan", "size"].includes(k))).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /Share the card on WhatsApp/ }));
+    await waitFor(() => expect(open).toHaveBeenCalled());
+    expect(String(open.mock.calls[0][0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(await screen.findByText("WhatsApp opened with your link.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Download the image" }).getAttribute("download")).toBe("airwise-plan.png");
+  });
+
+  it("has no automated accessibility violations with every stage mounted", async () => {
+    const { container } = render(<Page />);
+    const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 });

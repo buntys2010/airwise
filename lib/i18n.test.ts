@@ -6,7 +6,7 @@ import { ACTION_HI, ADVICE_KEY, CATEGORY_KEY, DICTS, EN, HI, SPEECH_LANG, englis
 const keys = Object.keys(EN) as Key[];
 const DEVANAGARI = /[ऀ-ॿ]/;
 /** Hindi entries that are deliberately Latin: the language buttons' own codes and brand or unit terms. */
-const LATIN_OK = new Set<Key>(["lang.en", "lang.enName", "strip.aqi", "map.pm"]);
+const LATIN_OK = new Set<Key>(["lang.en", "lang.enName", "strip.aqi", "share.h", "share.city", "share.btn", "share.title", "pill.cook.lpg", "map.pm"]);
 
 describe("dictionary parity", () => {
   it("English and Hindi have exactly the same keys", () => {

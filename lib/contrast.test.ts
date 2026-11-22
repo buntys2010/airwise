@@ -48,19 +48,24 @@ describe("colour contrast (WCAG AA, measured from globals.css)", () => {
     expect(ratio(rgb(token("breath-deep")), [255, 255, 255])).toBeGreaterThanOrEqual(AA);
   });
 
-  it("dark text on the smog sky at every haze level, with all blobs and grain stacked (worst case)", () => {
-    const clear = rgb(token("clear")), smog = rgb(token("smog"));
-    const blobs = ["blob-a", "blob-b", "blob-c"].map((n) => rgb(token(n)));
-    const blobOp = num("blob-op"), grainOp = num("grain-op");
-    const grain: RGB = [0.3, 0.22, 0.1];
-    let worst = Infinity;
+  it("dark text and muted text on the smog sky at every haze level, with the blobs stacked (worst case)", () => {
+    const clear = rgb(token("clear")), smog = rgb(token("smog")), blob = rgb(token("blob"));
+    const blobOp = num("blob-op"), skyMix = num("sky-mix");
+    const muted = rgb(token("muted"));
+    let worstInk = Infinity, worstMuted = Infinity;
     for (let h = 0.04; h <= 1.0001; h += 0.02) {
-      let bg = mix(clear, smog, h);
-      for (const b of blobs) bg = mix(bg, b, Math.min(1, h * blobOp));
-      const a = h * grainOp * 0.9; // grain layer is multiply-blended at ~0.9 alpha
-      bg = bg.map((v, i) => v * (1 - a * (1 - grain[i]))) as RGB;
-      worst = Math.min(worst, ratio(ink, bg));
+      let bg = mix(clear, smog, h * skyMix);
+      for (let i = 0; i < 3; i++) bg = mix(bg, blob, Math.min(1, h * blobOp));
+      worstInk = Math.min(worstInk, ratio(ink, bg));
+      worstMuted = Math.min(worstMuted, ratio(muted, bg));
     }
-    expect(worst).toBeGreaterThanOrEqual(AA + 0.5);
+    expect(worstInk).toBeGreaterThanOrEqual(AA + 0.5);
+    expect(worstMuted).toBeGreaterThanOrEqual(AA);
+  });
+
+  it("muted text on white cards and on the dark hero", () => {
+    expect(ratio(rgb(token("muted")), [255, 255, 255])).toBeGreaterThanOrEqual(AA);
+    expect(ratio(rgb(token("muted")), rgb(token("surface-2")))).toBeGreaterThanOrEqual(AA);
+    expect(ratio(rgb(token("ember-deep")), [255, 255, 255])).toBeGreaterThanOrEqual(AA);
   });
 });

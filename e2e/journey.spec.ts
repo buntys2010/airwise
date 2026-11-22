@@ -53,6 +53,7 @@ test.describe("core journey", () => {
   test("asks a question and shows the verified answer", async ({ page }) => {
     await stub(page);
     await page.goto("/");
+    await page.getByRole("button", { name: /Co-pilot/ }).click();
     await page.getByLabel("Ask AirWise a question").fill("Do I need a mask?");
     await page.getByRole("button", { name: "Send" }).click();
     await expect(page.getByText("Wear a fitted N95 for any trip outside.")).toBeVisible();
@@ -133,7 +134,7 @@ test.describe("phone, 390 x 844", () => {
   test("the bottom bar never hides a focused control", async ({ page }) => {
     await stub(page);
     await page.goto("/");
-    const bar = page.getByRole("navigation", { name: "Main" });
+    const bar = page.getByRole("navigation", { name: "Sections" });
     await expect(bar).toBeVisible();
     const box = await bar.boundingBox();
     expect(box && box.y + box.height).toBeGreaterThan(800); // it is at the bottom, as designed
@@ -145,7 +146,7 @@ test.describe("phone, 390 x 844", () => {
       await page.evaluate(() => new Promise<void>((done) => { let last = -1, same = 0; const tick = () => { const y = window.scrollY; if (y === last) { if (++same >= 4) return done(); } else { same = 0; last = y; } requestAnimationFrame(tick); }; tick(); }));
       const info = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
-        const navEl = document.querySelector("nav.nav") as HTMLElement | null;
+        const navEl = document.querySelector("nav.dock") as HTMLElement | null;
         if (!el || !navEl || el === document.body) return null;
         const r = el.getBoundingClientRect(), n = navEl.getBoundingClientRect();
         const inside = navEl.contains(el);
@@ -167,13 +168,14 @@ test.describe("phone, 390 x 844", () => {
     await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
     const footer = page.locator("footer").last();
     const fb = await footer.boundingBox();
-    const nb = await page.getByRole("navigation", { name: "Main" }).boundingBox();
+    const nb = await page.getByRole("navigation", { name: "Sections" }).boundingBox();
     expect(fb && nb && fb.y + fb.height).toBeLessThanOrEqual((nb?.y ?? 0) + 1);
   });
 
   test("the chat controls fit the screen: input on its own row, labelled buttons, 44 px targets, nothing sideways", async ({ page }) => {
     await stub(page);
     await page.goto("/");
+    await page.getByRole("button", { name: /Co-pilot/ }).click();
     const input = page.getByLabel("Ask AirWise a question");
     await input.scrollIntoViewIfNeeded();
     const ib = await input.boundingBox();

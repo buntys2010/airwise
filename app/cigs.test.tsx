@@ -2,11 +2,11 @@
 import axe from "axe-core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { CigaretteRow } from "@/components/CigaretteRow";
 import { LangProvider } from "@/components/LangProvider";
 import { CITIES, estimateHourly } from "@/lib/data";
 import { NO_PLAN, cigsSoFar, simulate, toggleAction, buildActions } from "@/lib/engine";
 import { DEFAULT_PROFILE } from "@/components/useAirwise";
+import { CityCigs } from "@/components/CityCigs";
 import Page from "./page";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
@@ -16,45 +16,6 @@ beforeAll(() => {
 });
 beforeEach(() => { localStorage.clear(); window.history.replaceState({}, "", "/"); vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline"))); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); document.documentElement.style.removeProperty("--haze"); });
-
-describe("CigaretteRow", () => {
-  it("is decorative: hidden from assistive technology, and carries no text of its own except the +N chip", () => {
-    const { container } = render(<CigaretteRow base={3.4} plan={2.2} soFar={1} />);
-    const root = container.querySelector(".cigrow")!;
-    expect(root.getAttribute("aria-hidden")).toBe("true");
-    expect(root.querySelector("svg")!.getAttribute("focusable")).toBe("false");
-    expect(root.querySelector("text")).toBeNull();
-  });
-  it("draws a slot per cigarette-equivalent, marks the one being smoked, and shows the ember only there", async () => {
-    const { container } = render(<CigaretteRow base={4} plan={4} soFar={1.5} />);
-    await waitFor(() => expect(container.querySelectorAll("g[data-burning]")).toHaveLength(1)); // after the first frame the burn-down plays
-    expect(container.querySelectorAll("svg g")).toHaveLength(4);
-    const ember = [...container.querySelectorAll<SVGRectElement>("rect.cig-ember")].map((r) => r.style.height);
-    expect(ember.filter((h) => h && h !== "0px" && h !== "0")).toHaveLength(1);
-  });
-  it("starts unburned and burns down to the so-far figure", async () => {
-    const { container } = render(<CigaretteRow base={3} plan={3} soFar={2} />);
-    const ash = () => [...container.querySelectorAll<SVGRectElement>("rect.cig-ash")].reduce((a, r) => a + parseFloat(r.style.height || "0"), 0);
-    expect(ash()).toBe(0);
-    await waitFor(() => expect(ash()).toBeGreaterThan(0));
-  });
-  it("shortens the same cigarettes when the plan figure falls", async () => {
-    const { container, rerender } = render(<CigaretteRow base={4} plan={4} soFar={0} />);
-    const body = () => [...container.querySelectorAll<SVGRectElement>("rect.cig-body")].reduce((a, r) => a + parseFloat(r.style.height || "0"), 0);
-    await waitFor(() => expect(body()).toBeGreaterThan(0));
-    const full = body();
-    rerender(<CigaretteRow base={4} plan={1.5} soFar={0} />);
-    expect(body()).toBeLessThan(full);
-    expect(container.querySelectorAll("svg g")).toHaveLength(4); // the same row, not a new one
-    expect(container.querySelectorAll("rect.cig-ghost")).toHaveLength(4); // the do-nothing outlines stay
-  });
-  it("shows a +N chip beyond ten cigarettes, and never overflows the row", () => {
-    const { container } = render(<CigaretteRow base={14.5} plan={14.5} soFar={0} />);
-    expect(container.querySelectorAll("svg g")).toHaveLength(10);
-    expect(container.querySelector(".cigmore")!.textContent).toBe("+5");
-    expect(render(<CigaretteRow base={3} plan={3} soFar={0} />).container.querySelector(".cigmore")).toBeNull();
-  });
-});
 
 describe("the dial's text matches the engine", () => {
   const hourly = estimateHourly(CITIES.find((c) => c.id === "lucknow")!);
@@ -120,5 +81,32 @@ describe("the dial's text matches the engine", () => {
     const { container } = render(<LangProvider><Page /></LangProvider>);
     const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+  });
+});
+
+describe("the city strip at the very top", () => {
+  it("draws one stick per cigarette-equivalent, hides the drawing from assistive technology, and says the same in text", () => {
+    const { container } = render(<LangProvider><CityCigs city="delhi" day={5.6} soFar={4.8} /></LangProvider>);
+    expect(container.querySelectorAll(".stick")).toHaveLength(6);
+    expect(container.querySelector(".cigrow")!.getAttribute("aria-hidden")).toBe("true");
+    expect(container.textContent).toMatch(/Outdoors all day here: about 5\.6 cigarettes/);
+    expect(container.textContent).toMatch(/4\.8 so far today/);
+  });
+
+  it("starts from nothing and burns up to the so-far figure when the city changes", async () => {
+    window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+    const { container, rerender } = render(<LangProvider><CityCigs key="lucknow" city="lucknow" day={2.3} soFar={1.6} /></LangProvider>);
+    const burned = () => [...container.querySelectorAll<HTMLElement>(".cash")].reduce((a, el) => a + parseFloat(el.style.width || "0"), 0);
+    await waitFor(() => expect(burned()).toBeGreaterThan(100));
+    rerender(<LangProvider><CityCigs key="delhi" city="delhi" day={5.6} soFar={4.8} /></LangProvider>); // a new key replays the burn
+    expect(burned()).toBeLessThan(100);
+    await waitFor(() => expect(burned()).toBeGreaterThan(400), { timeout: 3000 });
+  });
+
+  it("shows the end state at once for people who prefer reduced motion", () => {
+    window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+    const { container } = render(<LangProvider><CityCigs city="delhi" day={5.6} soFar={4.8} /></LangProvider>);
+    const burned = [...container.querySelectorAll<HTMLElement>(".cash")].reduce((a, el) => a + parseFloat(el.style.width || "0"), 0);
+    expect(burned).toBeGreaterThan(400); // 4.8 of 5.6 cigarettes, as percent widths
   });
 });

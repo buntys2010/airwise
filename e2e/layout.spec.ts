@@ -72,50 +72,51 @@ test.describe("map layout", () => {
   }
 });
 
-test.describe("cigarette row", () => {
-  test("fits the dial at 390px, with the same figures as readable text", async ({ page }) => {
+test.describe("cigarette hero", () => {
+  test("fits the card at 390px, with the same figures as readable text", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stub(page);
     await page.goto("/?city=delhi");
-    const dial = page.getByRole("group", { name: /daily exposure/i });
-    await dial.scrollIntoViewIfNeeded();
+    const hero = page.getByRole("group", { name: /daily exposure/i });
+    await hero.scrollIntoViewIfNeeded();
     const fit = await page.evaluate(() => {
-      const panel = document.querySelector<HTMLElement>(".dial")!.getBoundingClientRect();
-      const svg = document.querySelector<SVGElement>(".dial .cigs")!.getBoundingClientRect();
-      return { svgRight: svg.right, panelRight: panel.right, overflowX: document.documentElement.scrollWidth - window.innerWidth };
+      const card = document.querySelector<HTMLElement>("section.cigs")!.getBoundingClientRect();
+      const rows = [...document.querySelectorAll<HTMLElement>("section.cigs .cigrow")].map((r) => r.getBoundingClientRect().right);
+      return { cardRight: card.right, rowsRight: Math.max(...rows), vw: window.innerWidth, overflowX: document.documentElement.scrollWidth - window.innerWidth };
     });
-    expect(fit.svgRight).toBeLessThanOrEqual(fit.panelRight + 1);
+    expect(fit.rowsRight).toBeLessThanOrEqual(fit.cardRight + 1);
+    expect(fit.cardRight).toBeLessThanOrEqual(fit.vw);
     expect(fit.overflowX).toBeLessThanOrEqual(1);
-    await expect(dial.getByText(/^So far today \(to/).first()).toBeVisible();
-    await expect(dial.getByText(/Cigarettes equivalent is a rule of thumb/)).toBeVisible();
+    await expect(hero.getByText(/Cigarettes equivalent is a rule of thumb/)).toBeVisible();
+    await expect(hero.getByText(/less exposure/).first()).toBeVisible();
   });
 
-  test("burns and shortens over about 1.4 s, and shows the end state with no motion under reduced motion", async ({ page }) => {
+  test("burns with an ease-out transition, and shows the end state with no motion under reduced motion", async ({ page }) => {
     await stub(page);
     await page.goto("/?city=delhi");
-    const dur = () => page.evaluate(() => getComputedStyle(document.querySelector(".cigs rect.cig-body")!).transitionDuration);
-    expect(await dur()).toContain("1.4s");
+    const dur = () => page.evaluate(() => getComputedStyle(document.querySelector("section.cigs .cpaper")!).transitionDuration);
+    expect(parseFloat(await dur())).toBeGreaterThan(0);
     await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
     expect(await dur()).toMatch(/^0s(, 0s)*$/);
   });
 
-  test("applying a fix shortens the cigarettes and lowers the so-far figure", async ({ page }) => {
+  test("applying a fix shortens the day with the plan and lowers the so-far figure", async ({ page }) => {
     await stub(page);
     await page.goto("/?city=delhi");
-    const body = () => page.evaluate(() => [...document.querySelectorAll<SVGRectElement>(".cigs rect.cig-body")].reduce((a, r) => a + parseFloat(r.style.height || "0"), 0));
-    await expect.poll(body).toBeGreaterThan(0);
-    const sofar = () => page.locator(".cigtext .sr-only").textContent();
-    const before = await sofar();
-    const heightBefore = await body();
+    const after = async () => parseFloat((await page.locator("section.cigs .dialafter").getAttribute("aria-label")) ?? "0");
+    const sofar = () => page.locator("section.cigs .cigtext").textContent();
+    const planBefore = await after();
+    const sofarBefore = await sofar();
     await page.getByRole("button", { name: /^Fix 3:/ }).click();
-    await expect.poll(body, { timeout: 5000 }).toBeLessThan(heightBefore);
-    expect(await sofar()).not.toBe(before);
+    await expect.poll(after, { timeout: 5000 }).toBeLessThan(planBefore);
+    expect(await sofar()).not.toBe(sofarBefore);
   });
 });
 
 test.describe("city strip", () => {
   for (const width of [360, 390]) {
-    test(`at ${width}px the city cigarette row and figures fit, and the city picker finds a city by typing`, async ({ page }) => {
+    test(`at ${width}px the city cigarettes and figures fit, and the city picker finds a city by typing`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await stub(page);
       await page.goto("/?city=delhi");
@@ -123,14 +124,14 @@ test.describe("city strip", () => {
       await expect(strip.getByText(/Outdoors all day here: about [0-9.]+ cigarettes/).first()).toBeVisible();
       const fit = await page.evaluate(() => {
         const r = document.querySelector<HTMLElement>(".citycigs")!.getBoundingClientRect();
-        const svg = document.querySelector<SVGElement>(".citycigs .cigs")!.getBoundingClientRect();
+        const row = document.querySelector<HTMLElement>(".citycigs .cigrow")!.getBoundingClientRect();
         const text = document.querySelector<HTMLElement>(".citycigs p")!.getBoundingClientRect();
-        return { right: r.right, svgRight: svg.right, textRight: text.right, vw: window.innerWidth, overflowX: document.documentElement.scrollWidth - window.innerWidth, svgH: svg.height };
+        return { right: r.right, rowRight: row.right, textRight: text.right, vw: window.innerWidth, overflowX: document.documentElement.scrollWidth - window.innerWidth, rowH: row.height };
       });
       expect(fit.overflowX).toBeLessThanOrEqual(1);
-      expect(fit.svgRight).toBeLessThanOrEqual(fit.vw);
+      expect(fit.rowRight).toBeLessThanOrEqual(fit.vw);
       expect(fit.textRight).toBeLessThanOrEqual(fit.vw);
-      expect(fit.svgH).toBeLessThan(80);
+      expect(fit.rowH).toBeLessThan(80); // a short wrapped row of sticks, never a tall block above the headline
       const box = page.getByRole("combobox", { name: "City" });
       await box.click();
       await box.fill("varan");
