@@ -7,11 +7,9 @@ const get = (ip = `10.9.0.${++n}`) => GET(new Request("http://x/api/map", { head
 const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);
 /** A fake feed that answers each batched request with the right number of cities, by parsing the latitude list. */
 const feed = (make: (globalIndex: number) => unknown) => {
-  let seen = 0;
   return vi.fn().mockImplementation(async (url: string) => {
     const n = new URL(url).searchParams.get("latitude")!.split(",").length;
     const first = CITIES.findIndex((c) => String(c.lat) === new URL(url).searchParams.get("latitude")!.split(",")[0]);
-    seen += n;
     return { ok: true, json: async () => Array.from({ length: n }, (_, k) => make(first + k)) };
   });
 };

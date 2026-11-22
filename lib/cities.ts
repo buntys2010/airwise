@@ -37,6 +37,8 @@ export interface City {
 }
 
 interface Extra { aka?: string[]; area?: string; peak?: number; trough?: number; label?: boolean; unsure?: boolean }
+// A positional row helper keeps the ~150-line city table readable at a glance; the optional extras are the 7th argument.
+// eslint-disable-next-line max-params
 const c = (id: string, name: string, state: string, lat: number, lon: number, zone: Zone, x: Extra = {}): City => ({
   id, name, state, lat, lon, zone, area: x.area ?? state, aka: x.aka, label: x.label, unsure: x.unsure,
   peak: x.peak ?? ZONE_LEVELS[zone].peak, trough: x.trough ?? ZONE_LEVELS[zone].trough,

@@ -72,6 +72,8 @@ export function CityPicker({ value, onChange }: { value: string; onChange: (id: 
       <span id={`${id}-hint`} className="sr-only">{t("city.hint")}</span>
       <ul id={listId} ref={listRef} role="listbox" aria-label={t("strip.city")} className="citylist" hidden={!open}>
         {shown.map((c, i) => (
+          // Keyboard operation lives on the input (aria-activedescendant + onKeyDown); options only need the pointer handlers.
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events
           <li key={c.id} id={`${id}-o-${c.id}`} data-index={i} role="option" aria-selected={c.id === current.id}
             className={`cityopt${i === active ? " active" : ""}`}
             onMouseDown={(e) => e.preventDefault() /* keep focus in the input so blur does not close the list first */}

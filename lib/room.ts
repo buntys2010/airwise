@@ -136,6 +136,16 @@ function validBox(raw: unknown): BBox | null {
   return { x, y, w, h };
 }
 
+/** One raw finding from the model as a hotspot, or null if it breaks any rule. */
+function validFinding(raw: unknown): { kind: VisionKind; box: BBox; conf: number } | null {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const kind = VISION_KINDS.find((k) => k === r.kind);
+  const box = validBox(r.bbox);
+  const conf = typeof r.confidence === "number" && Number.isFinite(r.confidence) ? r.confidence : -1;
+  if (!kind || !box || conf < MIN_CONFIDENCE || conf > 1) return null;
+  return { kind, box, conf };
+}
+
 /** Strict validation: visible-evidence kinds only, boxes inside the image, confidence in range and above the floor, one finding per kind. */
 export function validateVision(text: string): VisionOutcome {
   let json: unknown;
@@ -145,14 +155,11 @@ export function validateVision(text: string): VisionOutcome {
   if (!j.is_room) return { status: "not_room" };
   const seen = new Set<VisionKind>();
   const hotspots: Hotspot[] = [];
-  for (const f of j.findings.slice(0, 12)) {
-    const r = (f && typeof f === "object" ? f : {}) as Record<string, unknown>;
-    const kind = VISION_KINDS.find((k) => k === r.kind);
-    const box = validBox(r.bbox);
-    const conf = typeof r.confidence === "number" && Number.isFinite(r.confidence) ? r.confidence : -1;
-    if (!kind || !box || conf < MIN_CONFIDENCE || conf > 1 || seen.has(kind)) continue;
-    seen.add(kind);
-    hotspots.push(hotspotFor(kind, box, conf));
+  for (const raw of j.findings.slice(0, 12)) {
+    const f = validFinding(raw);
+    if (!f || seen.has(f.kind)) continue;
+    seen.add(f.kind);
+    hotspots.push(hotspotFor(f.kind, f.box, f.conf));
   }
   hotspots.sort((a, b) => FINDING_KINDS.indexOf(a.kind) - FINDING_KINDS.indexOf(b.kind));
   return hotspots.length ? { status: "ok", hotspots } : { status: "none" };

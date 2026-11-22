@@ -19,12 +19,10 @@ interface Props {
   active?: boolean;
 }
 
-/**
- * The household's clear-air day. The calculated schedule shows at once; Gemini rewrites it in friendly words as soon as the tab opens
- * (and again when the household or city changes). The server checks every number, and falls back to the calculated plan if one is off.
- */
-export function DayPlan({ schedule, choices, active = true }: Props) {
-  const { lang } = useLang();
+const ASK_DELAY_MS = 700;
+
+/** Fetches the written plan: once the tab is open, and again (after a short pause, so toggling several fixes is one request) whenever the choices change. */
+function usePlanWriter(choices: Choices, active: boolean) {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -52,13 +50,32 @@ export function DayPlan({ schedule, choices, active = true }: Props) {
     }
   }, []);
 
-  // Ask Gemini once the tab is open, and again whenever the choices change (after a short pause, so toggling several fixes is one request).
   useEffect(() => {
     if (!active || doneFor.current === key) return;
-    const timer = setTimeout(() => { void write(choices); }, 700);
+    const timer = setTimeout(() => { void write(choices); }, ASK_DELAY_MS);
     return () => clearTimeout(timer);
   }, [active, key, choices, write]);
   useEffect(() => () => ctrl.current?.abort(), []);
+
+  return { result, busy, error, write };
+}
+
+/** The sentence under the buttons: an error, or where the plan above came from. */
+function statusText(result: Result | null, error: string): string {
+  if (error) return error;
+  if (result?.source === "gemini") return `${result.headline}. Every number was checked against your data.`;
+  if (result?.rejected) return "Gemini's version used a number we could not verify, so this is the checked plan.";
+  if (result) return `${result.reasonText ?? "Gemini is not available"}, so this is the standard plan.`;
+  return "The plan above is calculated from live air data. Gemini rewrites it in friendlier words, and AirWise rejects any version that adds a number it did not calculate.";
+}
+
+/**
+ * The household's clear-air day. The calculated schedule shows at once; Gemini rewrites it in friendly words as soon as the tab opens
+ * (and again when the household or city changes). The server checks every number, and falls back to the calculated plan if one is off.
+ */
+export function DayPlan({ schedule, choices, active = true }: Props) {
+  const { lang } = useLang();
+  const { result, busy, error, write } = usePlanWriter(choices, active);
 
   const gemini = result?.source === "gemini";
   // Once the server has answered, show its steps (built from the same engine and air data); until then, the calculated schedule.
@@ -94,13 +111,7 @@ export function DayPlan({ schedule, choices, active = true }: Props) {
         <button type="button" className="btn ghost" onClick={() => void write(choices)} disabled={busy}>
           {busy ? "Writing your plan…" : gemini ? "Write it again with Gemini" : "Write it in my words with Gemini"}
         </button>
-        <p className="statusline" aria-live="polite" role="status">
-          {error ? error :
-            gemini ? `${result!.headline}. Every number was checked against your data.` :
-            result?.rejected ? "Gemini's version used a number we could not verify, so this is the checked plan." :
-            result ? `${result.reasonText ?? "Gemini is not available"}, so this is the standard plan.` :
-            "The plan above is calculated from live air data. Gemini rewrites it in friendlier words, and AirWise rejects any version that adds a number it did not calculate."}
-        </p>
+        <p className="statusline" aria-live="polite" role="status">{statusText(result, error)}</p>
       </div>
     </div>
   );

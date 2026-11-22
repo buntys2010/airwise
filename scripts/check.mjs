@@ -19,7 +19,7 @@ const row = (label, ok, text) => { rows.push([label, text]); if (!ok) failed = t
 
 // 1. type-check
 const tsc = run("npx", ["tsc", "--noEmit"]);
-row("Type-check", tsc.status === 0, tsc.status === 0 ? "pass" : "FAIL (run npm run lint)");
+row("Type-check", tsc.status === 0, tsc.status === 0 ? "pass" : "FAIL (run npm run typecheck)");
 
 // 2. tests, with a machine-readable report
 const json = path.join(dir, "vitest.json");
