@@ -60,7 +60,12 @@ export function generationConfig(model: string, { maxTokens, temperature = 0.4, 
 }
 
 /** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
-const budget = createBudget(() => Number(process.env.GEMINI_BUDGET_PER_MIN) || 40, 60_000);
+/** A whole number of at least 1, or the fallback: `0`, a negative or text must not silently disable every model call. */
+export function positiveInt(raw: string | undefined, fallback: number): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : fallback;
+}
+const budget = createBudget(() => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, 40), 60_000);
 export const resetGeminiBudget = () => budget.reset();
 
 let sink: (line: string) => void = (line) => { if (process.env.NODE_ENV !== "test") console.info(line); };

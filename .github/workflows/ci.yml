@@ -3,9 +3,20 @@ on:
   push:
     branches: [main]
   pull_request:
+
+# Least privilege: CI only reads the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,15 +32,27 @@ jobs:
       - name: Smoke test the production build
         run: |
           npx next start -p 3100 &
-          sleep 8
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          # Wait for the health probe instead of a fixed sleep.
+          for i in $(seq 1 30); do curl -fs http://localhost:3100/api/health >/dev/null && break; sleep 1; done
           SMOKE_URL=http://localhost:3100 node scripts/smoke.mjs
       - name: Browser tests
         run: |
           npx playwright install --with-deps chromium
           npm run e2e
+      - name: Upload the Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - run: npm audit --omit=dev --audit-level=high
   mcp:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,4 +60,6 @@ jobs:
       - run: npm ci
         working-directory: mcp
       - run: npm run build && npm run smoke
+        working-directory: mcp
+      - run: npm audit --omit=dev --audit-level=high
         working-directory: mcp

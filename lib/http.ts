@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { clientIp } from "./ratelimit";
 
-export const json = (body: unknown, status = 200) => NextResponse.json(body, { status });
+export const json = (body: unknown, status = 200, headers?: Record<string, string>) => NextResponse.json(body, { status, headers });
 
 export type Parsed = { ok: true; body: unknown } | { ok: false; res: Response };
 

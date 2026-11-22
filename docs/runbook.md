@@ -1,7 +1,7 @@
 # Runbook
 
 ## Check a deployment
-`SMOKE_URL=https://your-app.vercel.app node scripts/smoke.mjs` checks the four pages, `/api/map` (80+ cities) and a chat call. Exit code 1 means roll back (see `docs/deploy.md`).
+`SMOKE_URL=https://your-app.vercel.app node scripts/smoke.mjs` checks the four pages, `/api/health`, `/api/map` (100+ cities) and a chat call. Exit code 1 means roll back (see `docs/deploy.md`).
 
 ## Symptoms
 | Symptom | Likely cause | What to do |
@@ -17,3 +17,10 @@ Create a new key in Google AI Studio, set it in the host's environment settings,
 
 ## Cost control
 Set a spend or quota cap on the key in Google AI Studio or Cloud. The in-app budget is per instance and is a safety net, not a quota.
+
+## Logs and request ids
+Every API request writes one JSON line to stdout: `{"evt":"request","route":"chat","method":"POST","status":200,"ms":412,"id":"..."}`. An unexpected failure writes `{"evt":"error",...}` with the error name and message (never a stack, prompt, question or photo) and the caller gets a JSON 500 containing the same `requestId`. Gemini attempts log `{"evt":"gemini",...}` with a reason code.
+
+To trace a user report: ask for the `requestId` shown in the error (or the `x-request-id` response header) and search the host's logs for that id.
+
+`GET /api/health` is the liveness probe for load balancers and uptime monitors. It makes no outbound calls.

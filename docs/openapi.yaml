@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: AirWise API
+  version: 0.1.0
+  description: |
+    Server routes behind AirWise. Every number in a response is computed on the server from the engine and live air data;
+    the client only ever sends choices from fixed lists. All routes are rate limited per client IP (HTTP 429) and
+    return a `x-request-id` header that matches a server log line.
+
+    Gemini-backed routes (`/chat`, `/plan`, `/vision`) always answer: when the model is unavailable or its reply fails
+    the grounding guard, they return an offline result labelled `source: "offline"` instead of an error.
+servers:
+  - url: /api
+tags:
+  - name: Health
+  - name: Air
+  - name: Assistant
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: Makes no outbound calls and is never cached.
+      responses:
+        "200":
+          description: The server is up.
+          headers: { x-request-id: { $ref: "#/components/headers/RequestId" } }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, uptimeSeconds]
+                properties:
+                  status: { type: string, enum: [ok] }
+                  uptimeSeconds: { type: integer, minimum: 0 }
+  /map:
+    get:
+      tags: [Air]
+      summary: Current PM2.5 for every supported city
+      description: One batched request to the air feed, cached on the server for 10 minutes. A city with missing data is labelled an estimate individually. Limit 30 requests per minute per client.
+      responses:
+        "200":
+          description: One point per supported city.
+          headers:
+            x-request-id: { $ref: "#/components/headers/RequestId" }
+            Cache-Control: { schema: { type: string }, description: "public, s-maxage=300, stale-while-revalidate=600" }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [points, hour, time, live]
+                properties:
+                  points: { type: array, items: { $ref: "#/components/schemas/MapPoint" } }
+                  hour: { type: integer, minimum: 0, maximum: 23, description: Current hour in India Standard Time. }
+                  time: { type: string, description: Human label for the current time. }
+                  live: { type: integer, description: How many points came from the live feed rather than an estimate. }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /chat:
+    post:
+      tags: [Assistant]
+      summary: Ask a question about a household plan
+      description: Limit 12 requests per minute per client. Body capped at 3,000 bytes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, choices]
+              properties:
+                question: { type: string, minLength: 1, maxLength: 400 }
+                choices: { $ref: "#/components/schemas/Choices" }
+      responses:
+        "200":
+          description: A verified Gemini answer, or an offline answer built from the engine's facts.
+          headers: { x-request-id: { $ref: "#/components/headers/RequestId" } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatAnswer" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /plan:
+    post:
+      tags: [Assistant]
+      summary: Build a day plan
+      description: Limit 6 requests per minute per client. Body capped at 3,000 bytes. The schedule is built on the server; Gemini only words it, and the result is validated against it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [choices]
+              properties:
+                choices: { $ref: "#/components/schemas/Choices" }
+      responses:
+        "200":
+          description: A verified Gemini day plan, or the offline schedule.
+          headers: { x-request-id: { $ref: "#/components/headers/RequestId" } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DayPlanResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /vision:
+    post:
+      tags: [Assistant]
+      summary: Find plainly visible air-quality factors in a room photo
+      description: Limit 4 requests per minute per client. Body capped at about 2.2 MB; the decoded photo at 1.5 MB. Photos are never stored; findings are cached by the hash of the photo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, description: "A JPEG, PNG or WebP photo as a base64 data URL.", example: "data:image/jpeg;base64,/9j/4AAQ..." }
+      responses:
+        "200":
+          description: Findings, or `status` of `unavailable` when the model could not be used.
+          headers: { x-request-id: { $ref: "#/components/headers/RequestId" } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VisionResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+        "415":
+          description: The photo is not a JPEG, PNG or WebP.
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /share-image:
+    get:
+      tags: [Assistant]
+      summary: Share card image
+      description: The query carries choices only (the same format as a share link); every number is recomputed on the server. Limit 20 requests per minute per client.
+      parameters:
+        - { name: city, in: query, schema: { type: string }, description: "City id, for example `delhi`." }
+        - { name: home, in: query, schema: { type: string, enum: [sealed, typical, leaky] } }
+        - { name: commute, in: query, schema: { type: string, enum: [walk, cycle, bike, car, ev, bus, metro] } }
+        - { name: km, in: query, schema: { type: number, minimum: 0, maximum: 60 } }
+        - { name: cooking, in: query, schema: { type: string, enum: [wood, lpg, induction] } }
+        - { name: vulnerable, in: query, schema: { type: string } }
+        - { name: plan, in: query, schema: { type: string }, description: "Comma separated fixes: seal, purifier, boxfan, n95, shift, swap, induction.", example: "seal,purifier" }
+        - { name: size, in: query, schema: { type: string, enum: [card, og] }, description: "`og` is 1200x630 for link previews." }
+      responses:
+        "200":
+          description: A PNG image.
+          content: { image/png: { schema: { type: string, format: binary } } }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "500": { $ref: "#/components/responses/ServerError" }
+components:
+  headers:
+    RequestId:
+      description: Matches the `id` in the server log line for this request. A safe caller-supplied `x-request-id` is echoed back.
+      schema: { type: string }
+  responses:
+    BadRequest:
+      description: Invalid JSON, a missing field, or invalid household choices.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    TooLarge:
+      description: The request body or photo is too large.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    TooManyRequests:
+      description: The per-client rate limit was reached. Try again in a minute.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    ServerError:
+      description: An unexpected error. The body carries the request id to quote when reporting it.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: "#/components/schemas/Error" }
+              - { type: object, properties: { requestId: { type: string } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    Choices:
+      type: object
+      required: [city, home, commute, cooking, km]
+      properties:
+        city: { type: string, description: "A supported city id, such as `delhi`." }
+        home: { type: string, enum: [sealed, typical, leaky] }
+        commute: { type: string, enum: [walk, cycle, bike, car, ev, bus, metro] }
+        cooking: { type: string, enum: [wood, lpg, induction] }
+        km: { type: number, minimum: 0, maximum: 60, description: Daily commute distance. Values outside the range are clamped. }
+        vulnerable: { type: boolean, description: A child, older adult or someone with asthma lives in the home. }
+        lang: { type: string, enum: [en, hi], default: en }
+        plan:
+          type: object
+          description: Fixes switched on. Unknown or malformed fields count as off.
+          properties:
+            purifier: { type: boolean }
+            purifierKind: { type: string, enum: [hepa, boxfan] }
+            mask: { type: string, enum: [none, cloth, n95] }
+            shiftOutdoor: { type: boolean }
+            swapCommute: { type: string, nullable: true, enum: [walk, cycle, bike, car, ev, bus, metro] }
+            induction: { type: boolean }
+            sealGaps: { type: boolean }
+    FailureReason:
+      type: string
+      enum: [no_key, budget, quota, timeout, blocked, rejected, unavailable, network, empty]
+    AirSource:
+      type: string
+      enum: [live, estimate]
+    MapPoint:
+      type: object
+      required: [id, name, state, lat, lon, pm, source]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        state: { type: string }
+        lat: { type: number }
+        lon: { type: number }
+        pm: { type: number, description: PM2.5 in micrograms per cubic metre. }
+        source: { $ref: "#/components/schemas/AirSource" }
+    ChatAnswer:
+      type: object
+      required: [answer, source, verified, air]
+      properties:
+        answer: { type: string, maxLength: 900 }
+        source: { type: string, enum: [gemini, offline] }
+        verified: { type: boolean, description: True only when every number in a Gemini answer traces back to the engine's facts. }
+        cached: { type: boolean, description: Present and true when the verified answer came from the server cache. }
+        rejected: { type: boolean, description: True when the model replied but the grounding guard refused the reply. }
+        reason: { $ref: "#/components/schemas/FailureReason" }
+        reasonText: { type: string }
+        air: { $ref: "#/components/schemas/AirSource" }
+    DayPlanResponse:
+      type: object
+      required: [headline, steps, source, verified, air]
+      properties:
+        headline: { type: string }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [time, text]
+            properties:
+              time: { type: string }
+              text: { type: string }
+        source: { type: string, enum: [gemini, offline] }
+        verified: { type: boolean }
+        cached: { type: boolean }
+        rejected: { type: boolean }
+        reason: { $ref: "#/components/schemas/FailureReason" }
+        reasonText: { type: string }
+        air: { $ref: "#/components/schemas/AirSource" }
+    VisionResponse:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok, none, not_room, unreadable, unavailable] }
+        hotspots:
+          type: array
+          description: Present when `status` is `ok`.
+          items:
+            type: object
+            required: [id, kind, label, actionId, confidence]
+            properties:
+              id: { type: string }
+              kind: { type: string }
+              label: { type: string }
+              actionId: { type: string }
+              confidence: { type: number, minimum: 0, maximum: 1 }
+              bbox: { type: object, description: Fractions of the image, inside 0 to 1. }
+        source: { type: string, enum: [gemini] }
+        model: { type: string }
+        cached: { type: boolean }
+        reason: { $ref: "#/components/schemas/FailureReason" }
+        reasonText: { type: string }

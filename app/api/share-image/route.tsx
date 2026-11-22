@@ -5,6 +5,7 @@ import { NO_PLAN, aqiFromPm, categoryOf, planSummary, simulate, type Plan, type 
 import { json } from "@/lib/http";
 import { clientIp, createLimiter } from "@/lib/ratelimit";
 import { decodeChoices } from "@/lib/share";
+import { withObservability } from "@/lib/observe";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -37,7 +38,7 @@ function Rows({ value, sofar, w }: { value: number; sofar: number; w: number }) 
  * GET /api/share-image?city=…&home=…&plan=seal,purifier&size=card|og
  * The query carries CHOICES only (same format as a share link). Every number is recomputed here from live air data, so a link cannot forge a figure.
  */
-export async function GET(req: Request) {
+export const GET = withObservability("share-image", async (req: Request) => {
   if (limited(clientIp(req))) return json({ error: "Too many requests. Try again in a minute." }, 429);
   const url = new URL(req.url);
   const shared = decodeChoices(url.search);
@@ -114,4 +115,4 @@ export async function GET(req: Request) {
     ),
     { width: W, height: H, headers: { "Cache-Control": "public, max-age=300, s-maxage=600", "X-Content-Type-Options": "nosniff" } },
   );
-}
+});
