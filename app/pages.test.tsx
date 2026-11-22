@@ -8,7 +8,7 @@ import { NAV } from "@/components/Chrome";
 import { LangProvider } from "@/components/LangProvider";
 import { CITIES } from "@/lib/data";
 import CommunityPage from "./community/page";
-import { cityBox, cityName, pickCity } from "./test-city";
+import { pickCity } from "./test-city";
 import MapPage from "./map/page";
 
 let currentPath = "/";

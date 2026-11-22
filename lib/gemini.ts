@@ -59,12 +59,12 @@ export function generationConfig(model: string, { maxTokens, temperature = 0.4, 
   };
 }
 
-/** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
 /** A whole number of at least 1, or the fallback: `0`, a negative or text must not silently disable every model call. */
 export function positiveInt(raw: string | undefined, fallback: number): number {
   const n = Number(raw);
   return Number.isInteger(n) && n >= 1 ? n : fallback;
 }
+/** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
 const budget = createBudget(() => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, 40), 60_000);
 export const resetGeminiBudget = () => budget.reset();
 
@@ -75,6 +75,29 @@ export function setLogSink(fn: (line: string) => void) { sink = fn; }
 const log = (o: Record<string, unknown>) => sink(JSON.stringify({ evt: "gemini", ...o }));
 
 type CallResult = { ok: true; text: string } | { ok: false; reason: FailureReason };
+
+const BLOCKING_FINISH_REASONS = ["SAFETY", "PROHIBITED_CONTENT", "RECITATION", "BLOCKLIST"];
+
+interface ModelReply {
+  promptFeedback?: { blockReason?: string };
+  candidates?: { finishReason?: string; content?: { parts?: { text?: string }[] } }[];
+}
+
+/** Maps a non-OK HTTP status to the reason a caller can show. */
+function reasonForStatus(status: number): FailureReason {
+  if (status === 429) return "quota";
+  if (status === 400 || status === 401 || status === 403) return "rejected";
+  return "unavailable";
+}
+
+/** Reads the model's text out of a reply, or says why there is none. */
+function readReply(json: ModelReply): CallResult {
+  if (json.promptFeedback?.blockReason) return { ok: false, reason: "blocked" };
+  const cand = json.candidates?.[0];
+  if (cand?.finishReason && BLOCKING_FINISH_REASONS.includes(cand.finishReason)) return { ok: false, reason: "blocked" };
+  const text = cand?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+  return text ? { ok: true, text } : { ok: false, reason: "empty" };
+}
 
 async function callModel(model: string, key: string, opts: GenerateOptions, timeoutMs: number): Promise<CallResult> {
   const ctrl = new AbortController();
@@ -87,20 +110,8 @@ async function callModel(model: string, key: string, opts: GenerateOptions, time
       body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: generationConfig(model, opts) }),
       signal: ctrl.signal,
     });
-    if (!res.ok) {
-      if (res.status === 429) return { ok: false, reason: "quota" };
-      if (res.status === 400 || res.status === 401 || res.status === 403) return { ok: false, reason: "rejected" };
-      return { ok: false, reason: "unavailable" };
-    }
-    const json = (await res.json()) as {
-      promptFeedback?: { blockReason?: string };
-      candidates?: { finishReason?: string; content?: { parts?: { text?: string }[] } }[];
-    };
-    if (json.promptFeedback?.blockReason) return { ok: false, reason: "blocked" };
-    const cand = json.candidates?.[0];
-    if (cand?.finishReason && ["SAFETY", "PROHIBITED_CONTENT", "RECITATION", "BLOCKLIST"].includes(cand.finishReason)) return { ok: false, reason: "blocked" };
-    const text = cand?.content?.parts?.map((p) => p.text ?? "").join("").trim();
-    return text ? { ok: true, text } : { ok: false, reason: "empty" };
+    if (!res.ok) return { ok: false, reason: reasonForStatus(res.status) };
+    return readReply((await res.json()) as ModelReply);
   } catch (e) {
     return { ok: false, reason: e instanceof Error && e.name === "AbortError" ? "timeout" : "network" };
   } finally {

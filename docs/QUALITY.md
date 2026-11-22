@@ -14,7 +14,8 @@ AirWise proof card
 Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and 390 px phone profiles.
 
 ## Code quality
-- Strict TypeScript, checked by `npm run lint`; the compiler is part of the proof card.
+- Strict TypeScript and ESLint (`npm run lint`): type-aware rules, React hooks, Next.js and jsx-a11y, plus complexity (15), nesting depth (4) and parameter-count limits that CI enforces. The compiler is part of the proof card.
+- Coverage floor in `vitest.config.mts` (`npm run coverage`): CI fails if line, branch, function or statement coverage drops below it.
 - One source of numbers: [`lib/engine.ts`](../lib/engine.ts) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
 - Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/data.ts`](../lib/data.ts), [`lib/cities.ts`](../lib/cities.ts), [`lib/room.ts`](../lib/room.ts).
 - Model assumptions are written down with ranges in [`methodology.md`](methodology.md).

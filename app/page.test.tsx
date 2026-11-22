@@ -3,7 +3,7 @@ import axe from "axe-core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "./page";
-import { cityBox, cityName, pickCity } from "./test-city";
+import { cityBox, pickCity } from "./test-city";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 

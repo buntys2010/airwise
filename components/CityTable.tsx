@@ -38,6 +38,7 @@ export default function CityTable({ points, selected, onSelect }: { points: MapP
         <p className="statusline" role="status" aria-live="polite">{rows.length === 0 ? t("map.none") : t("map.count", { n: rows.length, total: points.length })}</p>
       </div>
       {/* A labelled, keyboard-scrollable region: the table wraps to fit a phone and only scrolls sideways on a narrower screen still. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be focusable (axe: scrollable-region-focusable) */}
       <div className="tablewrap" role="region" aria-labelledby="map-table-h" tabIndex={0}>
         <table className="maptable">
           <thead><tr>{head("name", t("map.city"))}{head("pm", t("map.pm"))}<th scope="col">{t("map.level")}</th></tr></thead>

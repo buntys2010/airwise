@@ -2,10 +2,6 @@ import { expect, test, type Page } from "@playwright/test";
 import { CITIES as ALL } from "../lib/cities";
 
 /** Layout checks that only a real browser can make: overlap, clipping, sizes and motion. Network stubbed. */
-const CITIES = [
-  ["delhi", "Delhi", 28.65, 77.31], ["lucknow", "Lucknow", 26.85, 80.99], ["kolkata", "Kolkata", 22.52, 88.36],
-  ["mumbai", "Mumbai", 19.07, 72.87], ["pune", "Pune", 18.53, 73.85], ["bengaluru", "Bengaluru", 12.92, 77.62],
-] as const;
 const day = (base: number) => Array.from({ length: 24 }, (_, h) => Math.round(base + 60 * Math.exp(-(((h - 7) / 3) ** 2)) + 30 * Math.exp(-(((h - 20) / 3) ** 2))));
 
 async function stub(page: Page, pms = [74, 43, 17, 27, 27, 40], estimate = new Set<string>()) {

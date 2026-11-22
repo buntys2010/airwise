@@ -46,7 +46,7 @@ npm run dev                     # http://localhost:3000
 npm run check                   # the proof card below
 npm run e2e                     # Playwright in a real browser
 ```
-Other scripts: `npm test`, `npm run lint` (type-check), `npm run eval`, `npm run build`, `npm run smoke`. Node 22 (`.nvmrc`; `engines` allows 20.9 and up).
+Other scripts: `npm test`, `npm run lint` (ESLint with complexity limits, then the type-check), `npm run coverage` (tests with a coverage floor), `npm run eval`, `npm run build`, `npm run smoke`. Node 22 (`.nvmrc`; `engines` allows 20.9 and up).
 
 ## Proof (output of `npm run check` on this commit)
 ```

@@ -139,7 +139,7 @@ test.describe("phone, 390 x 844", () => {
     const box = await bar.boundingBox();
     expect(box && box.y + box.height).toBeGreaterThan(800); // it is at the bottom, as designed
     const seen = new Set<string>();
-    let obscured: string[] = [];
+    const obscured: string[] = [];
     for (let i = 0; i < 90; i++) {
       await page.keyboard.press("Tab");
       // Wait for any smooth scrolling to finish: what matters is where the control ends up, not where it is mid-scroll.

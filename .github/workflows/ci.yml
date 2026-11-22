@@ -23,7 +23,8 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      - name: Tests with coverage floor
+        run: npm run coverage
       - run: npm run eval
       - name: Build and check the bundle budget
         run: |
