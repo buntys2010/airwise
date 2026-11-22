@@ -51,7 +51,7 @@ button, select, input { font: inherit; color: inherit; }
 a { color: inherit; }
 
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; box-shadow: 0 0 0 6px var(--breath); border-radius: 10px; }
-.dark :focus-visible, .cigs :focus-visible, .pass :focus-visible { outline-color: var(--on-ink); box-shadow: 0 0 0 6px var(--breath-deep); }
+.dark :focus-visible, .cigs :focus-visible, .pass :focus-visible { outline-color: var(--on-ink); box-shadow: 0 0 0 6px var(--breath); }
 
 .skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: var(--on-ink); padding: 10px 16px; border-radius: 10px; z-index: 80; }
 .skip:focus { left: 8px; }
@@ -157,7 +157,7 @@ legend { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; 
 .brief p { font-size: 1.02rem; }
 
 /* ---------- the cigarette hero ---------- */
-.cigs { margin-top: 12px; background: radial-gradient(120% 90% at 85% 0%, #1f3a47 0%, var(--ink) 62%); color: var(--on-ink); border-radius: 30px; padding: 24px 22px 20px; box-shadow: 0 24px 50px -24px rgba(15, 31, 39, 0.55); margin: 14px 0 8px; }
+.cigs { background: radial-gradient(120% 90% at 85% 0%, #1f3a47 0%, var(--ink) 62%); color: var(--on-ink); border-radius: 30px; padding: 24px 22px 20px; box-shadow: 0 24px 50px -24px rgba(15, 31, 39, 0.55); margin: 14px 0 16px; }
 .cigshead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .cigshead .textbtn { white-space: nowrap; }
 .cigshead h2 { font-family: var(--font-body); font-size: 0.82rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--on-ink-dim); }
@@ -166,25 +166,31 @@ legend { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; 
 .cignum strong { font-family: var(--font-display); font-weight: 800; font-size: clamp(4.4rem, 17vw, 7.2rem); line-height: 0.9; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; color: #fff; }
 .cignum span { font-weight: 700; color: var(--on-ink-dim); max-width: 16ch; line-height: 1.25; }
 .cigtime { color: var(--on-ink-dim); font-weight: 600; margin-top: 4px; }
-.cigrows { display: grid; gap: 22px; margin-top: 18px; }
+.cigrows { display: grid; gap: 22px; margin-top: 18px; margin-bottom: 8px; }
 @media (min-width: 760px) { .cigrows { grid-template-columns: 1fr 1fr; gap: 34px; } }
 .cliglabel { font-weight: 700; color: var(--on-ink-dim); margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .cliglabel b { color: #fff; font-family: var(--font-display); font-size: 1.5rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .cliglabel em { font-style: normal; background: var(--breath); color: var(--ink); border-radius: 999px; padding: 2px 10px; font-size: 0.85rem; font-weight: 800; }
 .cigrow { display: grid; gap: 9px; }
-.stick { display: flex; align-items: center; height: 18px; }
+.stick { display: flex; align-items: center; height: 18px; position: relative; }
 .cfilter { flex: none; width: 15%; height: 100%; border-radius: 9px 3px 3px 9px; background: repeating-linear-gradient(90deg, #e8b96a 0 6px, #d9a24c 6px 8px); }
 .ctrack { position: relative; flex: 1; height: 100%; border-radius: 3px 9px 9px 3px; border: 1.5px dashed rgba(180, 200, 209, 0.28); border-left: 0; }
 .cpaper { position: absolute; left: 0; top: -1.5px; bottom: -1.5px; background: linear-gradient(#ffffff, #dfe9ec); border-radius: 0 3px 3px 0; transition: width 0.9s cubic-bezier(.2,.7,.2,1); }
 .cash { position: absolute; top: -1.5px; bottom: -1.5px; background: repeating-linear-gradient(90deg, #7a8a91 0 5px, #5d6c73 5px 9px); border-radius: 3px 9px 9px 3px; transition: left 0.9s cubic-bezier(.2,.7,.2,1), width 0.9s cubic-bezier(.2,.7,.2,1); }
-.cember { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -4px; border-radius: 50%; background: radial-gradient(circle, #fff3c4 0%, #ff9a4d 45%, #ff5a1f 80%); box-shadow: 0 0 14px 4px rgba(255, 122, 77, 0.7); transition: left 0.9s cubic-bezier(.2,.7,.2,1); animation: glow 1.1s ease-in-out infinite alternate; }
+.cember { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -4px; border-radius: 50%; background: radial-gradient(circle, #fff3c4 0%, #ff9a4d 45%, #ff5a1f 80%); box-shadow: 0 0 14px 4px rgba(255, 122, 77, 0.7); transition: left 0.9s cubic-bezier(.2,.7,.2,1); animation: glow 1.1s ease-in-out infinite alternate; z-index: 2; }
 .cember i { position: absolute; bottom: 12px; left: 3px; width: 8px; height: 8px; border-radius: 50%; background: rgba(224, 236, 240, 0.35); filter: blur(3px); opacity: 0; animation: smoke 2.8s ease-out infinite; }
 .cember i:nth-child(2) { animation-delay: 0.9s; left: 0; }
 .cember i:nth-child(3) { animation-delay: 1.8s; left: 6px; }
 @keyframes glow { to { box-shadow: 0 0 20px 7px rgba(255, 122, 77, 0.85); filter: brightness(1.15); } }
 @keyframes smoke { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 20% { opacity: 0.7; } 100% { opacity: 0; transform: translate(-6px, -44px) scale(2.6); } }
 .cigrow.plan .cpaper { background: linear-gradient(#ffffff, #cfeee6); }
-.cignote { margin-top: 18px; font-size: 0.86rem; color: var(--on-ink-dim); max-width: 70ch; }
+.cigs .dialafter b { color: #fff; }
+.cigs .dialafter.changed b { color: var(--breath); }
+.cigs .meter { height: 8px; margin: 20px 0 10px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 99px; overflow: hidden; }
+.cigs .meter > i { display: block; height: 100%; background: linear-gradient(90deg, var(--breath), #5eead4); border-radius: 99px; transition: width 0.9s cubic-bezier(.2,.7,.2,1); }
+.cigs .dialfoot { color: var(--on-ink-dim); font-size: 0.94rem; margin-top: 6px; line-height: 1.45; }
+.cigs .dialfoot strong { color: var(--on-ink); }
+.cignote { margin-top: 14px; font-size: 0.86rem; color: var(--on-ink-dim); max-width: 70ch; line-height: 1.45; }
 @media (prefers-reduced-motion: reduce) { .cember, .cember i { animation: none; } .cpaper, .cash, .cember { transition: none; } }
 
 /* ---------- home: room, fixes ---------- */
@@ -217,7 +223,7 @@ legend { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; 
 .dialnums { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .dialnums b { display: block; font-family: var(--font-display); font-weight: 800; font-size: clamp(2.8rem, 8vw, 4rem); line-height: 0.9; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 .dialnums small { display: block; color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
-.dialafter b { color: var(--breath-deep); }
+.dial .dialafter b { color: var(--breath-deep); }
 .dialarrow { color: var(--muted); padding-bottom: 1.4rem; font-weight: 700; }
 .meter { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); }
 .dial .meter { margin: 14px 0 10px; }
