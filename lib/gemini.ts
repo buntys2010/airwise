@@ -1,8 +1,20 @@
 import { createBudget } from "./ratelimit";
 
-export type FailureReason = "no_key" | "budget" | "quota" | "timeout" | "blocked" | "rejected" | "unavailable" | "network" | "empty";
+export type FailureReason =
+  | "no_key"
+  | "budget"
+  | "quota"
+  | "timeout"
+  | "blocked"
+  | "rejected"
+  | "unavailable"
+  | "network"
+  | "empty";
 
-export interface ImagePart { mimeType: string; data: string /* base64, no data: prefix */ }
+interface ImagePart {
+  mimeType: string;
+  data: string; /* base64, no data: prefix */
+}
 
 export interface GenerateOptions {
   prompt: string;
@@ -20,7 +32,8 @@ export interface GenerateOptions {
   kind?: "chat" | "plan" | "vision";
 }
 
-export type GenResult = { ok: true; text: string; model: string } | { ok: false; reason: FailureReason };
+export type GenResult =
+  { ok: true; text: string; model: string } | { ok: false; reason: FailureReason };
 
 /** Plain-language text for each failure, shown to the user next to the offline answer. */
 export const REASON_TEXT: Record<FailureReason, string> = {
@@ -41,8 +54,12 @@ const DEFAULT_FALLBACKS = "gemini-flash-lite-latest,gemini-3.5-flash-lite";
 
 /** Primary model first, then fallbacks, de-duplicated. All configurable from the environment. */
 export function modelChain(env: NodeJS.ProcessEnv = process.env): string[] {
-  const list = [env.GEMINI_MODEL || DEFAULT_MODEL, ...(env.GEMINI_FALLBACK_MODELS ?? DEFAULT_FALLBACKS).split(",")]
-    .map((m) => m.trim()).filter(Boolean);
+  const list = [
+    env.GEMINI_MODEL || DEFAULT_MODEL,
+    ...(env.GEMINI_FALLBACK_MODELS ?? DEFAULT_FALLBACKS).split(","),
+  ]
+    .map((m) => m.trim())
+    .filter(Boolean);
   return [...new Set(list)];
 }
 
@@ -50,7 +67,14 @@ export function modelChain(env: NodeJS.ProcessEnv = process.env): string[] {
  * Gemini 2.5 models "think" with hidden tokens that otherwise consume the output budget and return empty text,
  * so thinking is switched off for them. Newer models reject that setting, so it is only sent to 2.5.
  */
-export function generationConfig(model: string, { maxTokens, temperature = 0.4, schema }: Pick<GenerateOptions, "maxTokens" | "temperature" | "schema">) {
+export function generationConfig(
+  model: string,
+  {
+    maxTokens,
+    temperature = 0.4,
+    schema,
+  }: Pick<GenerateOptions, "maxTokens" | "temperature" | "schema">,
+) {
   return {
     maxOutputTokens: maxTokens,
     temperature,
@@ -68,9 +92,13 @@ export function positiveInt(raw: string | undefined, fallback: number): number {
 const budget = createBudget(() => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, 40), 60_000);
 export const resetGeminiBudget = () => budget.reset();
 
-let sink: (line: string) => void = (line) => { if (process.env.NODE_ENV !== "test") console.info(line); };
+let sink: (line: string) => void = (line) => {
+  if (process.env.NODE_ENV !== "test") console.info(line);
+};
 /** Test hook. */
-export function setLogSink(fn: (line: string) => void) { sink = fn; }
+export function setLogSink(fn: (line: string) => void) {
+  sink = fn;
+}
 /** One structured line per attempt. Never contains the prompt, the question or any image. */
 const log = (o: Record<string, unknown>) => sink(JSON.stringify({ evt: "gemini", ...o }));
 
@@ -94,32 +122,61 @@ function reasonForStatus(status: number): FailureReason {
 function readReply(json: ModelReply): CallResult {
   if (json.promptFeedback?.blockReason) return { ok: false, reason: "blocked" };
   const cand = json.candidates?.[0];
-  if (cand?.finishReason && BLOCKING_FINISH_REASONS.includes(cand.finishReason)) return { ok: false, reason: "blocked" };
-  const text = cand?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+  if (cand?.finishReason && BLOCKING_FINISH_REASONS.includes(cand.finishReason))
+    return { ok: false, reason: "blocked" };
+  const text = cand?.content?.parts
+    ?.map((p) => p.text ?? "")
+    .join("")
+    .trim();
   return text ? { ok: true, text } : { ok: false, reason: "empty" };
 }
 
-async function callModel(model: string, key: string, opts: GenerateOptions, timeoutMs: number): Promise<CallResult> {
+async function callModel(
+  model: string,
+  key: string,
+  opts: GenerateOptions,
+  timeoutMs: number,
+): Promise<CallResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const parts: unknown[] = [{ text: opts.prompt }, ...(opts.images ?? []).map((i) => ({ inlineData: { mimeType: i.mimeType, data: i.data } }))];
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: generationConfig(model, opts) }),
-      signal: ctrl.signal,
-    });
+    const parts: unknown[] = [
+      { text: opts.prompt },
+      ...(opts.images ?? []).map((i) => ({ inlineData: { mimeType: i.mimeType, data: i.data } })),
+    ];
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts }],
+          generationConfig: generationConfig(model, opts),
+        }),
+        signal: ctrl.signal,
+      },
+    );
     if (!res.ok) return { ok: false, reason: reasonForStatus(res.status) };
     return readReply((await res.json()) as ModelReply);
   } catch (e) {
-    return { ok: false, reason: e instanceof Error && e.name === "AbortError" ? "timeout" : "network" };
+    return {
+      ok: false,
+      reason: e instanceof Error && e.name === "AbortError" ? "timeout" : "network",
+    };
   } finally {
     clearTimeout(timer);
   }
 }
 
-const PRIORITY: FailureReason[] = ["blocked", "quota", "timeout", "rejected", "unavailable", "network", "empty"];
+const PRIORITY: FailureReason[] = [
+  "blocked",
+  "quota",
+  "timeout",
+  "rejected",
+  "unavailable",
+  "network",
+  "empty",
+];
 
 /**
  * Calls the Gemini API from the server, walking the model chain until one answers or the overall budget runs out.
@@ -134,11 +191,24 @@ export async function generateDetailed(opts: GenerateOptions): Promise<GenResult
   const seen: FailureReason[] = [];
   for (const model of modelChain()) {
     const remaining = overall - (Date.now() - started);
-    if (remaining <= 250) { seen.push("timeout"); break; }
-    if (!budget.take()) { log({ kind: opts.kind, ok: false, reason: "budget" }); return { ok: false, reason: "budget" }; }
+    if (remaining <= 250) {
+      seen.push("timeout");
+      break;
+    }
+    if (!budget.take()) {
+      log({ kind: opts.kind, ok: false, reason: "budget" });
+      return { ok: false, reason: "budget" };
+    }
     const t0 = Date.now();
     const r = await callModel(model, key, opts, Math.min(opts.timeoutMs ?? 12_000, remaining));
-    log({ kind: opts.kind, model, ok: r.ok, reason: r.ok ? undefined : r.reason, ms: Date.now() - t0, images: opts.images?.length ?? 0 });
+    log({
+      kind: opts.kind,
+      model,
+      ok: r.ok,
+      reason: r.ok ? undefined : r.reason,
+      ms: Date.now() - t0,
+      images: opts.images?.length ?? 0,
+    });
     if (r.ok) return { ok: true, text: r.text, model };
     seen.push(r.reason);
   }

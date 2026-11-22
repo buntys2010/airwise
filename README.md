@@ -52,7 +52,7 @@ Other scripts: `npm test`, `npm run lint` (ESLint with complexity limits, then t
 ```
 AirWise proof card
   Type-check     pass
-  Tests          471 passed, 0 failed, in 41 files
+  Tests          516 passed, 0 failed, in 51 files
   Accessibility  10 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
   First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB

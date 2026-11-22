@@ -3,7 +3,11 @@ import { GET } from "./route";
 
 let n = 0;
 const call = (query = "", ip = `10.8.0.${++n}`) =>
-  GET(new Request(`http://localhost/api/share-image?${query}`, { headers: { "x-forwarded-for": ip } }));
+  GET(
+    new Request(`http://localhost/api/share-image?${query}`, {
+      headers: { "x-forwarded-for": ip },
+    }),
+  );
 
 describe("GET /api/share-image", () => {
   it("returns an image response with security and cache headers", async () => {

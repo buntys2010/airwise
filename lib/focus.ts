@@ -1,4 +1,9 @@
-export interface Rect { top: number; bottom: number; left: number; right: number }
+export interface Rect {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
 
 /**
  * WCAG 2.2 "focus not obscured": how far to scroll the page up so a focused control sits clear of a fixed bar.

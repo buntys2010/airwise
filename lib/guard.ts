@@ -12,7 +12,7 @@ const NAMES = [2.5, 95, 13];
 const TOLERANCE = 0.051; // allows 3.74 to be written as 3.7
 
 /** Devanagari digits (०-९) written by a model in Hindi become ASCII so the same checks apply. */
-export function normaliseDigits(text: string): string {
+function normaliseDigits(text: string): string {
   return text.replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
 }
 
@@ -27,7 +27,9 @@ export function allowedNumbers(facts: unknown): number[] {
   const walk = (v: unknown) => {
     if (typeof v === "number" && Number.isFinite(v)) {
       // A model may round honestly: 3.74 can be written 3.7 or 4.
-      out.add(v); out.add(Math.round(v)); out.add(Math.round(v * 10) / 10);
+      out.add(v);
+      out.add(Math.round(v));
+      out.add(Math.round(v * 10) / 10);
     } else if (typeof v === "string") extractNumbers(v).forEach((n) => out.add(n));
     else if (Array.isArray(v)) v.forEach(walk);
     else if (v && typeof v === "object") Object.values(v as Record<string, unknown>).forEach(walk);
@@ -42,7 +44,8 @@ export function ungroundedNumbers(text: string, facts: unknown): number[] {
   return extractNumbers(text).filter((n) => !allowed.some((a) => Math.abs(a - n) <= TOLERANCE));
 }
 
-export const isGrounded = (text: string, facts: unknown): boolean => ungroundedNumbers(text, facts).length === 0;
+export const isGrounded = (text: string, facts: unknown): boolean =>
+  ungroundedNumbers(text, facts).length === 0;
 
 /**
  * Second layer: unsupported attributions. A supplied number can still be misused ("53% of people choose it").
@@ -51,21 +54,25 @@ export const isGrounded = (text: string, facts: unknown): boolean => ungroundedN
 const ATTRIBUTIONS: RegExp[] = [
   // Hindi: studies, research, experts, scientists, surveys, doctors claiming, AIIMS, ICMR
   /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने|डॉक्टरों के अनुसार|चिकित्सकों ने|एम्स|आईसीएमआर)/,
-  /\d+(?:\.\d+)?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/,
+  /\d{1,9}(?:\.\d{1,9})?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/,
   /(?:ज़्यादातर|ज्यादातर|अधिकतर|अधिकांश|करोड़ों)\s+(?:लोग|परिवार|उपयोगकर्ता)/,
   /\b(studies|research|surveys?|scientists?|experts?|clinical|peer-reviewed|trials?)\b/i,
   /\bdoctors?\s+(?:say|said|claim|claimed|recommend|recommended|suggest|suggested|advise|advised)\b/i,
   /\b(WHO|CPCB|EPA|CDC|ICMR|AIIMS|MoHFW|Lancet)\b/,
-  /\d+(?:\.\d+)?\s?%\s+of\s+(?:all\s+)?(?:people|users|families|households|adults|children|residents|patients|deaths|cases)\b/i,
+  /\d{1,9}(?:\.\d{1,9})?\s?%\s+of\s+(?:all\s+)?(?:people|users|families|households|adults|children|residents|patients|deaths|cases)\b/i,
   /\b(?:most|many|majority of|millions of)\s+(?:people|families|users|households)\b/i,
 ];
 
 export function unsupportedClaims(text: string): string[] {
   const t = normaliseDigits(text);
-  return ATTRIBUTIONS.map((re) => t.match(re)?.[0]).filter((m): m is string => Boolean(m));
+  return ATTRIBUTIONS.map((re) => re.exec(t)?.[0]).filter((m): m is string => Boolean(m));
 }
 
-export interface Verdict { ok: boolean; numbers: number[]; claims: string[] }
+export interface Verdict {
+  ok: boolean;
+  numbers: number[];
+  claims: string[];
+}
 
 /** Both layers together. `ok` means safe to show as a verified answer. */
 export function verify(text: string, facts: unknown): Verdict {

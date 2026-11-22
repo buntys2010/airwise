@@ -1,16 +1,51 @@
 import { describe, expect, it } from "vitest";
-import { buildContext, buildPrompt, cleanQuestion, MAX_QUESTION, offlineAnswer, parseChoices, parsePlan } from "./chat";
+import {
+  buildContext,
+  buildPrompt,
+  cleanQuestion,
+  MAX_QUESTION,
+  offlineAnswer,
+  parseChoices,
+  parsePlan,
+} from "./chat";
 import { CITIES, estimateHourly } from "./data";
 import { isGrounded } from "./guard";
 
-const valid = { city: "delhi", home: "typical", commute: "bike", km: 8, cooking: "lpg", vulnerable: true, plan: {}, lang: "en" };
-const hourly = estimateHourly(CITIES[0]);
+const valid = {
+  city: "delhi",
+  home: "typical",
+  commute: "bike",
+  km: 8,
+  cooking: "lpg",
+  vulnerable: true,
+  plan: {},
+  lang: "en",
+};
+const hourly = estimateHourly(CITIES[0]!);
 
 describe("parsePlan", () => {
   it("only accepts known values; anything else means not in the plan", () => {
-    const p = parsePlan({ purifier: true, purifierKind: "boxfan", mask: "n95", swapCommute: "metro", sealGaps: true, induction: "yes", shiftOutdoor: 1 });
-    expect(p).toMatchObject({ purifier: true, purifierKind: "boxfan", mask: "n95", swapCommute: "metro", sealGaps: true, induction: false, shiftOutdoor: false });
-    expect(parsePlan({ mask: "gas-mask", swapCommute: "rocket", purifierKind: "ion" })).toMatchObject({ mask: "none", swapCommute: null, purifierKind: undefined });
+    const p = parsePlan({
+      purifier: true,
+      purifierKind: "boxfan",
+      mask: "n95",
+      swapCommute: "metro",
+      sealGaps: true,
+      induction: "yes",
+      shiftOutdoor: 1,
+    });
+    expect(p).toMatchObject({
+      purifier: true,
+      purifierKind: "boxfan",
+      mask: "n95",
+      swapCommute: "metro",
+      sealGaps: true,
+      induction: false,
+      shiftOutdoor: false,
+    });
+    expect(
+      parsePlan({ mask: "gas-mask", swapCommute: "rocket", purifierKind: "ion" }),
+    ).toMatchObject({ mask: "none", swapCommute: null, purifierKind: undefined });
     expect(parsePlan(null).purifier).toBe(false);
   });
 });
@@ -20,7 +55,13 @@ describe("parseChoices", () => {
     const c = parseChoices({ ...valid, lang: "xx" })!;
     expect(c.city.id).toBe("delhi");
     expect(c.lang).toBe("en");
-    expect(c.profile).toEqual({ home: "typical", commute: "bike", km: 8, cooking: "lpg", vulnerable: true });
+    expect(c.profile).toEqual({
+      home: "typical",
+      commute: "bike",
+      km: 8,
+      cooking: "lpg",
+      vulnerable: true,
+    });
   });
   it("rejects unknown cities and values outside the fixed lists", () => {
     expect(parseChoices(null)).toBeNull();
@@ -46,23 +87,32 @@ describe("buildContext (server-side facts)", () => {
     expect(c.city).toBe("Delhi");
   });
   it("reflects the plan the user chose", () => {
-    const withPlan = buildContext(parseChoices({ ...valid, plan: { purifier: true, mask: "n95" } })!, hourly, 7);
+    const withPlan = buildContext(
+      parseChoices({ ...valid, plan: { purifier: true, mask: "n95" } })!,
+      hourly,
+      7,
+    );
     expect(withPlan.planCigs).toBeLessThan(withPlan.baselineCigs);
     expect(withPlan.actions).toEqual(expect.arrayContaining(["run a purifier"]));
   });
   it("a client cannot supply its own numbers: extra fields are ignored", () => {
     const sneaky = parseChoices({ ...valid, baselineCigs: 0.1, pm: 1, options: [{ pct: 99 }] })!;
-    expect(buildContext(sneaky, hourly, 7).baselineCigs).toBe(buildContext(choices, hourly, 7).baselineCigs);
+    expect(buildContext(sneaky, hourly, 7).baselineCigs).toBe(
+      buildContext(choices, hourly, 7).baselineCigs,
+    );
   });
   it("its own numbers are what the guard treats as grounded", () => {
     const c = buildContext(choices, hourly, 7);
-    expect(isGrounded(`PM2.5 is ${c.pm} right now, about ${Math.round(c.baselineCigs)} cigarettes.`, c)).toBe(true);
+    expect(
+      isGrounded(`PM2.5 is ${c.pm} right now, about ${Math.round(c.baselineCigs)} cigarettes.`, c),
+    ).toBe(true);
     expect(isGrounded("That is 87% worse than last year.", c)).toBe(false);
   });
 });
 
 describe("cleanQuestion", () => {
-  it("accepts normal questions and trims", () => expect(cleanQuestion("  Do I need a mask? ")).toBe("Do I need a mask?"));
+  it("accepts normal questions and trims", () =>
+    expect(cleanQuestion("  Do I need a mask? ")).toBe("Do I need a mask?"));
   it("rejects empty, huge and non-string input", () => {
     expect(cleanQuestion("")).toBeNull();
     expect(cleanQuestion("a".repeat(MAX_QUESTION + 1))).toBeNull();
@@ -101,7 +151,14 @@ describe("offlineAnswer", () => {
 describe("offlineAnswer in Hindi", () => {
   const ctx = buildContext(parseChoices(valid)!, hourly, 7);
   it("answers each topic in Devanagari and keeps digits ASCII", () => {
-    for (const q of ["क्या मुझे मास्क चाहिए?", "खिड़की कब खोलूँ?", "प्यूरीफायर कहाँ रखूँ?", "बच्चे बाहर खेल सकते हैं?", "रसोई में क्या बदलूँ?", "मेट्रो या बाइक?"]) {
+    for (const q of [
+      "क्या मुझे मास्क चाहिए?",
+      "खिड़की कब खोलूँ?",
+      "प्यूरीफायर कहाँ रखूँ?",
+      "बच्चे बाहर खेल सकते हैं?",
+      "रसोई में क्या बदलूँ?",
+      "मेट्रो या बाइक?",
+    ]) {
       const a = offlineAnswer(q, ctx, "hi");
       expect(a).toMatch(/[ऀ-ॿ]/);
       expect(a).not.toMatch(/[०-९]/);
@@ -132,7 +189,12 @@ describe("so-far figure in the server-built facts", () => {
     expect(isGrounded("So far today it is about 31.4 cigarettes' worth.", c)).toBe(false);
   });
   it("a plan lowers it", () => {
-    const withPlan = buildContext(parseChoices({ ...valid, plan: { purifier: true, sealGaps: true } })!, hourly, 16, 16);
+    const withPlan = buildContext(
+      parseChoices({ ...valid, plan: { purifier: true, sealGaps: true } })!,
+      hourly,
+      16,
+      16,
+    );
     expect(withPlan.soFar).toBeLessThan(buildContext(choices, hourly, 16, 16).soFar);
   });
 });

@@ -6,18 +6,29 @@ import * as image from "@/lib/image";
 import Page from "./page";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
-vi.mock("@/lib/image", async (orig) => ({ ...(await orig<typeof import("@/lib/image")>()), prepareImage: vi.fn() }));
+vi.mock("@/lib/image", async (orig) => ({
+  ...(await orig<typeof import("@/lib/image")>()),
+  prepareImage: vi.fn(),
+}));
 
 const prepare = vi.mocked(image.prepareImage);
 const box = { x: 0.1, y: 0.2, w: 0.3, h: 0.3 };
-const hot = (kind: string, label: string, actionId: string) => ({ id: kind, kind, label, actionId, bbox: box, confidence: 0.9 });
+const hot = (kind: string, label: string, actionId: string) => ({
+  id: kind,
+  kind,
+  label,
+  actionId,
+  bbox: box,
+  confidence: 0.9,
+});
 const WINDOW = hot("window_gap", "Gap around the window", "sealGaps");
 const STOVE = hot("gas_stove", "Gas stove", "induction");
 const PURIFIER = hot("purifier_seen", "Air purifier", "purifier");
 
 function stubVision(reply: unknown, status = 200) {
   const f = vi.fn().mockImplementation(async (url: string) => {
-    if (String(url).startsWith("/api/vision")) return { ok: status === 200, status, json: async () => reply };
+    if (String(url).startsWith("/api/vision"))
+      return { ok: status === 200, status, json: async () => reply };
     throw new Error("offline"); // air feed falls back to the labelled estimate
   });
   vi.stubGlobal("fetch", f);
@@ -30,14 +41,36 @@ const pick = (type = "image/jpeg") => {
 const fixList = () => screen.queryByRole("list", { name: "Fixes found in your room" });
 const rows = () => fixList()?.querySelectorAll(":scope > li") ?? [];
 const question = (name: RegExp) => screen.getByRole("group", { name }) as HTMLElement;
-const answer = (q: RegExp, yes: boolean) => fireEvent.click(within(question(q)).getByLabelText(yes ? "Yes" : "No"));
+const answer = (q: RegExp, yes: boolean) =>
+  fireEvent.click(within(question(q)).getByLabelText(yes ? "Yes" : "No"));
 
 beforeAll(() => {
-  window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+  window.matchMedia = ((q: string) => ({
+    matches: true,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    onchange: null,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
   URL.revokeObjectURL = vi.fn();
 });
-beforeEach(() => { localStorage.clear(); prepare.mockResolvedValue({ dataUrl: "data:image/jpeg;base64,QUJD", objectUrl: "blob:room-photo" }); stubVision({ status: "none" }); });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); prepare.mockReset(); document.documentElement.style.removeProperty("--haze"); });
+beforeEach(() => {
+  localStorage.clear();
+  prepare.mockResolvedValue({
+    dataUrl: "data:image/jpeg;base64,QUJD",
+    objectUrl: "blob:room-photo",
+  });
+  stubVision({ status: "none" });
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  prepare.mockReset();
+  document.documentElement.style.removeProperty("--haze");
+});
 
 describe("photo of your room: only visible evidence becomes a hotspot", () => {
   it("replaces the sample room with the photo, marks what is visible, and lists the same findings", async () => {
@@ -47,7 +80,9 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     pick();
     expect(await screen.findByText(/^Found 2 in your photo\./)).toBeTruthy();
     expect(screen.queryByText("Sample room")).toBeNull();
-    expect(screen.getByRole("img", { name: /Your room, with 2 marked/ }).getAttribute("src")).toBe("blob:room-photo");
+    expect(screen.getByRole("img", { name: /Your room, with 2 marked/ }).getAttribute("src")).toBe(
+      "blob:room-photo",
+    );
     expect(screen.getByRole("button", { name: /^Fix 1: Gap around the window/ })).toBeTruthy();
     expect(rows()).toHaveLength(2);
   });
@@ -57,7 +92,9 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     render(<Page />);
     pick();
     await screen.findByText(/^Found 2 in your photo\./);
-    const win = question(/gap around a window or door/), stove = question(/cook on gas or wood/), pur = question(/air purifier in this room/);
+    const win = question(/gap around a window or door/),
+      stove = question(/cook on gas or wood/),
+      pur = question(/air purifier in this room/);
     expect((within(win).getByLabelText("Yes") as HTMLInputElement).checked).toBe(true);
     expect(within(win).getByText("Seen in your photo")).toBeTruthy();
     expect((within(stove).getByLabelText("Yes") as HTMLInputElement).checked).toBe(true);
@@ -83,11 +120,20 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     stubVision({ status: "none" });
     render(<Page />);
     pick();
-    expect(await screen.findByText(/Nothing from our list was visible in this photo\. A photo cannot show what is not there/)).toBeTruthy();
+    expect(
+      await screen.findByText(
+        /Nothing from our list was visible in this photo\. A photo cannot show what is not there/,
+      ),
+    ).toBeTruthy();
     expect(fixList()).toBeNull();
     expect(screen.getByText(/Nothing from our list was visible yet/)).toBeTruthy();
     expect(screen.queryByText("Gas stove")).toBeNull();
-    for (const q of [/gap around a window or door/, /cook on gas or wood/, /air purifier in this room/]) expect(within(question(q)).getByText("Not visible in the photo")).toBeTruthy();
+    for (const q of [
+      /gap around a window or door/,
+      /cook on gas or wood/,
+      /air purifier in this room/,
+    ])
+      expect(within(question(q)).getByText("Not visible in the photo")).toBeTruthy();
   });
 
   it("an answer adds a fix with no marker, and a No beats what the photo seemed to show", async () => {
@@ -109,7 +155,9 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     pick();
     await screen.findByText(/^Found 1 in your photo\./);
     expect(within(fixList()!).getByText("Air purifier")).toBeTruthy();
-    expect(within(question(/air purifier in this room/)).getByText("Seen in your photo")).toBeTruthy();
+    expect(
+      within(question(/air purifier in this room/)).getByText("Seen in your photo"),
+    ).toBeTruthy();
   });
 
   it("sends only the downscaled photo to the server", async () => {
@@ -128,7 +176,9 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     pick();
     await screen.findByText(/^Found 1 in your photo\./);
     fireEvent.click(screen.getByRole("button", { name: /^Fix 1:/ }));
-    expect(screen.getByRole("button", { name: /^Fix 1:/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: /^Fix 1:/ }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
   });
 
   it("a new photo starts a fresh set of answers", async () => {
@@ -148,16 +198,26 @@ describe("photo reader problems always lead to the questions", () => {
     stubVision({ status: "not_room" });
     render(<Page />);
     pick();
-    expect(await screen.findByText("That does not look like a room. Try another photo.")).toBeTruthy();
+    expect(
+      await screen.findByText("That does not look like a room. Try another photo."),
+    ).toBeTruthy();
     expect(screen.getByText("Sample room")).toBeTruthy();
     expect(image.prepareImage).toHaveBeenCalledTimes(1);
   });
 
   it("names the reason when the photo reader is unavailable, then asks the questions", async () => {
-    stubVision({ status: "unavailable", reason: "quota", reasonText: "Gemini's rate limit was reached" });
+    stubVision({
+      status: "unavailable",
+      reason: "quota",
+      reasonText: "Gemini's rate limit was reached",
+    });
     render(<Page />);
     pick();
-    expect(await screen.findByText("Gemini's rate limit was reached. Answer the questions below instead.")).toBeTruthy();
+    expect(
+      await screen.findByText(
+        "Gemini's rate limit was reached. Answer the questions below instead.",
+      ),
+    ).toBeTruthy();
     answer(/cook on gas or wood/, true);
     expect(within(fixList()!).getByText("Gas stove")).toBeTruthy();
   });
@@ -199,7 +259,11 @@ describe("photo reader problems always lead to the questions", () => {
 
   it("discloses what happens to the photo", () => {
     render(<Page />);
-    expect(screen.getByText(/shrunk on your device, its location data is removed, and it is sent once to be read. It is not stored/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /shrunk on your device, its location data is removed, and it is sent once to be read. It is not stored/,
+      ),
+    ).toBeTruthy();
   });
 
   it("has no automated accessibility violations in the photo and questions state", async () => {
@@ -207,7 +271,9 @@ describe("photo reader problems always lead to the questions", () => {
     const { container } = render(<Page />);
     pick();
     await screen.findByText(/^Found 1 in your photo\./);
-    const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+    });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 });
@@ -216,7 +282,9 @@ describe("rupee-ranked value list", () => {
   it("shows the catalog best value first with indicative prices and safe external links", () => {
     render(<Page />);
     fireEvent.click(screen.getByRole("button", { name: /Day plan/ }));
-    const list = screen.getByRole("heading", { name: "What to buy first, by value" }).closest("section")!;
+    const list = screen
+      .getByRole("heading", { name: "What to buy first, by value" })
+      .closest("section")!;
     const items = list.querySelectorAll("ol > li");
     expect(items.length).toBeGreaterThanOrEqual(3);
     expect(within(list).getAllByText(/\(indicative\)/).length).toBe(items.length);

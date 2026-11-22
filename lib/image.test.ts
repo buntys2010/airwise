@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { MAX_EDGE, MAX_PICK_BYTES, MAX_UPLOAD_BYTES, checkPick, fitSize, parseDataUrl } from "./image";
+import {
+  MAX_EDGE,
+  MAX_PICK_BYTES,
+  MAX_UPLOAD_BYTES,
+  checkPick,
+  fitSize,
+  parseDataUrl,
+} from "./image";
 
 describe("fitSize", () => {
   it("shrinks the longest edge to the maximum and keeps the ratio", () => {
@@ -15,7 +22,8 @@ describe("fitSize", () => {
 
 describe("checkPick", () => {
   it("accepts JPEG, PNG and WebP", () => {
-    for (const type of ["image/jpeg", "image/png", "image/webp"]) expect(checkPick({ type, size: 1000 }).ok).toBe(true);
+    for (const type of ["image/jpeg", "image/png", "image/webp"])
+      expect(checkPick({ type, size: 1000 }).ok).toBe(true);
   });
   it("explains HEIC, other types and oversized files in plain words", () => {
     const heic = checkPick({ type: "image/heic", size: 1000 });
@@ -28,9 +36,20 @@ describe("checkPick", () => {
 
 describe("parseDataUrl (server side)", () => {
   const ok = "data:image/jpeg;base64,QUJDREVGRw==";
-  it("accepts a base64 data URL of an allowed type", () => expect(parseDataUrl(ok)).toEqual({ mimeType: "image/jpeg", data: "QUJDREVGRw==" }));
+  it("accepts a base64 data URL of an allowed type", () =>
+    expect(parseDataUrl(ok)).toEqual({ mimeType: "image/jpeg", data: "QUJDREVGRw==" }));
   it("rejects other types, non-base64 text, scripts and non-strings", () => {
-    for (const v of ["data:image/svg+xml;base64,QUJD", "data:text/html;base64,QUJD", "data:image/jpeg;base64,<script>", "data:image/jpeg;base64,QUJ", "https://x.test/a.jpg", "", 42, null]) expect(parseDataUrl(v)).toBe("bad_type");
+    for (const v of [
+      "data:image/svg+xml;base64,QUJD",
+      "data:text/html;base64,QUJD",
+      "data:image/jpeg;base64,<script>",
+      "data:image/jpeg;base64,QUJ",
+      "https://x.test/a.jpg",
+      "",
+      42,
+      null,
+    ])
+      expect(parseDataUrl(v)).toBe("bad_type");
   });
   it("rejects a decoded size over the cap", () => {
     const big = `data:image/png;base64,${"A".repeat(Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 8)}`;

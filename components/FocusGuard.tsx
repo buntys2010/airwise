@@ -7,7 +7,9 @@ export function FocusGuard() {
   useEffect(() => {
     function onFocus(e: FocusEvent) {
       const el = e.target as HTMLElement | null;
-      const bar = document.querySelector<HTMLElement>("nav.dock") ?? document.querySelector<HTMLElement>("nav.nav");
+      const bar =
+        document.querySelector<HTMLElement>("nav.dock") ??
+        document.querySelector<HTMLElement>("nav.nav");
       if (!el || !bar || bar.contains(el) || typeof el.getBoundingClientRect !== "function") return;
       if (getComputedStyle(bar).position !== "fixed") return; // on wide screens the nav is in the header
       const dy = scrollNeeded(el.getBoundingClientRect(), bar.getBoundingClientRect());

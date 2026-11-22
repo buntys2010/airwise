@@ -3,7 +3,14 @@ import { parseChoices } from "@/lib/chat";
 import { getCityAir, istClock } from "@/lib/data";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { json, readGuarded } from "@/lib/http";
-import { buildPlanPrompt, buildPlanRequest, PLAN_SCHEMA, schedulePlan, validatePlan, type DayPlan } from "@/lib/plan";
+import {
+  buildPlanPrompt,
+  buildPlanRequest,
+  PLAN_SCHEMA,
+  schedulePlan,
+  validatePlan,
+  type DayPlan,
+} from "@/lib/plan";
 import { createLimiter } from "@/lib/ratelimit";
 import { withObservability } from "@/lib/observe";
 
@@ -28,16 +35,29 @@ export const POST = withObservability("plan", async (req: Request) => {
 
   const cacheKey = JSON.stringify([choices.lang, request]);
   const cached = verifiedPlans.get(cacheKey);
-  if (cached) return json({ ...cached, source: "gemini", verified: true, cached: true, air: air.source });
+  if (cached)
+    return json({ ...cached, source: "gemini", verified: true, cached: true, air: air.source });
 
-  const r = await generateDetailed({ prompt: buildPlanPrompt(request, choices.lang), maxTokens: 900, temperature: 0.5, schema: PLAN_SCHEMA, budgetMs: 15_000, timeoutMs: 15_000, kind: "plan" });
+  const r = await generateDetailed({
+    prompt: buildPlanPrompt(request, choices.lang),
+    maxTokens: 900,
+    temperature: 0.5,
+    schema: PLAN_SCHEMA,
+    budgetMs: 15_000,
+    timeoutMs: 15_000,
+    kind: "plan",
+  });
   const plan = r.ok ? validatePlan(r.text, request) : null;
   if (plan) {
     verifiedPlans.set(cacheKey, plan);
     return json({ ...plan, source: "gemini", verified: true, air: air.source });
   }
   return json({
-    ...schedulePlan(request), source: "offline", verified: false, air: air.source,
-    rejected: r.ok, ...(r.ok ? {} : { reason: r.reason, reasonText: REASON_TEXT[r.reason] }),
+    ...schedulePlan(request),
+    source: "offline",
+    verified: false,
+    air: air.source,
+    rejected: r.ok,
+    ...(r.ok ? {} : { reason: r.reason, reasonText: REASON_TEXT[r.reason] }),
   });
 });

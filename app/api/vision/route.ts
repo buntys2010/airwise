@@ -17,22 +17,34 @@ const findings = createCache<VisionOutcome>(30 * 60_000, 50);
 
 export const POST = withObservability("vision", async (req: Request) => {
   // Decoded photo is capped at 1.5 MB (parseDataUrl); base64 plus JSON framing stays under this.
-  const parsed = await readGuarded(req, { limited, maxBytes: 2_200_000, tooMany: "Too many photos. Try again in a minute." });
+  const parsed = await readGuarded(req, {
+    limited,
+    maxBytes: 2_200_000,
+    tooMany: "Too many photos. Try again in a minute.",
+  });
   if (!parsed.ok) return parsed.res;
 
   const img = parseDataUrl((parsed.body as { image?: unknown } | null)?.image);
   if (img === "bad_type") return json({ error: "Send a JPEG, PNG or WebP photo." }, 415);
-  if (img === "too_large") return json({ error: "That photo is too large. Try a smaller one." }, 413);
+  if (img === "too_large")
+    return json({ error: "That photo is too large. Try a smaller one." }, 413);
 
   const key = createHash("sha256").update(img.data).digest("hex");
   const hit = findings.get(key);
   if (hit) return json({ ...hit, source: "gemini", cached: true });
 
   const r = await generateDetailed({
-    prompt: VISION_PROMPT, maxTokens: 600, temperature: 0.1, schema: VISION_SCHEMA, images: [img],
-    budgetMs: 20_000, timeoutMs: 20_000, kind: "vision",
+    prompt: VISION_PROMPT,
+    maxTokens: 600,
+    temperature: 0.1,
+    schema: VISION_SCHEMA,
+    images: [img],
+    budgetMs: 20_000,
+    timeoutMs: 20_000,
+    kind: "vision",
   });
-  if (!r.ok) return json({ status: "unavailable", reason: r.reason, reasonText: REASON_TEXT[r.reason] });
+  if (!r.ok)
+    return json({ status: "unavailable", reason: r.reason, reasonText: REASON_TEXT[r.reason] });
 
   // The model's reply is untrusted: only enum kinds, in-image boxes and sane confidences survive validation.
   const outcome = validateVision(r.text);

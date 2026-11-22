@@ -39,7 +39,13 @@ describe("checkBudget", () => {
     expect(r.violations[0]).toMatch(/^\/ is 151 kB/);
   });
   it("fails when the shared bundle grows, or when nothing could be read", () => {
-    expect(checkBudget(parseBuildLog(LOG.replace("shared by all             103 kB", "shared by all             130 kB"))).ok).toBe(false);
+    expect(
+      checkBudget(
+        parseBuildLog(
+          LOG.replace("shared by all             103 kB", "shared by all             130 kB"),
+        ),
+      ).ok,
+    ).toBe(false);
     expect(checkBudget(parseBuildLog("nothing useful")).ok).toBe(false);
   });
   it("accepts a custom budget", () => {

@@ -5,10 +5,13 @@ import { describe, expect, it } from "vitest";
 const root = path.resolve(import.meta.dirname, "..");
 const spec = readFileSync(path.join(root, "docs/openapi.yaml"), "utf8");
 const apiDir = path.join(root, "app/api");
-const routeFile = (dir: string) => readdirSync(path.join(apiDir, dir)).find((f) => /^route\.tsx?$/.test(f));
+const routeFile = (dir: string) =>
+  readdirSync(path.join(apiDir, dir)).find((f) => /^route\.tsx?$/.test(f));
 
 /** Routes that exist on disk: each folder under app/api holding a route file. */
-const routes = readdirSync(apiDir).filter((d) => statSync(path.join(apiDir, d)).isDirectory() && routeFile(d));
+const routes = readdirSync(apiDir).filter(
+  (d) => statSync(path.join(apiDir, d)).isDirectory() && routeFile(d),
+);
 
 describe("docs/openapi.yaml", () => {
   it("documents every API route, and only routes that exist", () => {
@@ -21,7 +24,8 @@ describe("docs/openapi.yaml", () => {
       const src = readFileSync(path.join(apiDir, r, routeFile(r)!), "utf8");
       const method = /export const (GET|POST) /.exec(src)?.[1]?.toLowerCase();
       expect(method, `${r} exports a handler`).toBeTruthy();
-      const block = spec.split(new RegExp(`^ {2}/${r}:$`, "m"))[1]?.split(/^ {2}\/[a-z-]+:$/m)[0] ?? "";
+      const block =
+        spec.split(new RegExp(`^ {2}/${r}:$`, "m"))[1]?.split(/^ {2}\/[a-z-]+:$/m)[0] ?? "";
       expect(block, `${r} documents ${method}`).toMatch(new RegExp(`^ {4}${method}:$`, "m"));
     }
   });
@@ -33,6 +37,7 @@ describe("docs/openapi.yaml", () => {
   it("references only schemas, responses and headers that are defined", () => {
     const refs = [...spec.matchAll(/#\/components\/(schemas|responses|headers)\/(\w+)/g)];
     expect(refs.length).toBeGreaterThan(10);
-    for (const [, kind, name] of refs) expect(spec, `${kind}/${name} is defined`).toMatch(new RegExp(`^ {4}${name}:$`, "m"));
+    for (const [, kind, name] of refs)
+      expect(spec, `${kind}/${name} is defined`).toMatch(new RegExp(`^ {4}${name}:$`, "m"));
   });
 });
