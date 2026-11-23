@@ -132,32 +132,32 @@ describe("cleanQuestion", () => {
 });
 
 describe("buildPrompt", () => {
-  const ctx = buildContext(must(parseChoices(valid)), hourly, 7);
+  const facts = buildContext(must(parseChoices(valid)), hourly, 7);
   it("fences facts and question", () => {
-    const builtPrompt = buildPrompt("Is it safe to jog?", ctx);
+    const builtPrompt = buildPrompt("Is it safe to jog?", facts);
     expect(builtPrompt).toContain("<facts>");
     expect(builtPrompt).toContain("<question>Is it safe to jog?</question>");
     expect(builtPrompt).toContain("Never invent figures");
   });
   it("asks for the requested language", () => {
-    expect(buildPrompt("hi", ctx, "hi")).toMatch(/Hindi/);
-    expect(buildPrompt("hi", ctx, "en")).toMatch(/Reply in English/);
+    expect(buildPrompt("hi", facts, "hi")).toMatch(/Hindi/);
+    expect(buildPrompt("hi", facts, "en")).toMatch(/Reply in English/);
   });
 });
 
 describe("offlineAnswer", () => {
-  const ctx = buildContext(must(parseChoices(valid)), hourly, 7);
+  const facts2 = buildContext(must(parseChoices(valid)), hourly, 7);
   it("answers masks, windows and the general case from known facts only", () => {
-    expect(offlineAnswer("which mask?", ctx)).toMatch(/N95/);
-    expect(offlineAnswer("when to open windows", ctx)).toContain(ctx.bestHour);
-    const general = offlineAnswer("hello", ctx);
-    expect(general).toContain(ctx.baselineCigs.toFixed(1));
+    expect(offlineAnswer("which mask?", facts2)).toMatch(/N95/);
+    expect(offlineAnswer("when to open windows", facts2)).toContain(facts2.bestHour);
+    const general = offlineAnswer("hello", facts2);
+    expect(general).toContain(facts2.baselineCigs.toFixed(1));
     expect(general).toMatch(/not medical advice/);
   });
 });
 
 describe("offlineAnswer in Hindi", () => {
-  const ctx = buildContext(must(parseChoices(valid)), hourly, 7);
+  const facts3 = buildContext(must(parseChoices(valid)), hourly, 7);
   it("answers each topic in Devanagari and keeps digits ASCII", () => {
     for (const q of [
       "क्या मुझे मास्क चाहिए?",
@@ -167,18 +167,18 @@ describe("offlineAnswer in Hindi", () => {
       "रसोई में क्या बदलूँ?",
       "मेट्रो या बाइक?",
     ]) {
-      const answer = offlineAnswer(q, ctx, "hi");
+      const answer = offlineAnswer(q, facts3, "hi");
       expect(answer).toMatch(/[ऀ-ॿ]/u);
       expect(answer).not.toMatch(/[०-९]/u);
     }
   });
   it("the general answer states only engine numbers, and passes the guard", () => {
-    const answer = offlineAnswer("नमस्ते", ctx, "hi");
-    expect(answer).toContain(ctx.baselineCigs.toFixed(1));
-    expect(isGrounded(answer, ctx)).toBe(true);
+    const answer = offlineAnswer("नमस्ते", facts3, "hi");
+    expect(answer).toContain(facts3.baselineCigs.toFixed(1));
+    expect(isGrounded(answer, facts3)).toBe(true);
   });
   it("falls back to English text for English requests", () => {
-    expect(offlineAnswer("mask?", ctx, "en")).toMatch(/N95/);
+    expect(offlineAnswer("mask?", facts3, "en")).toMatch(/N95/);
   });
 });
 

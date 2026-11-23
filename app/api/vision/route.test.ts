@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resetGeminiBudget, setLogSink } from "@/lib/gemini";
+import { resetGeminiBudget } from "@/lib/gemini";
 
+import { captureLog } from "../../../test-support/log";
 import { must } from "../../../test-support/must";
 import { POST } from "./route";
 
@@ -36,7 +37,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
-  setLogSink(() => undefined);
+});
+beforeEach(() => {
+  captureLog();
 });
 
 describe("POST /api/vision", () => {
@@ -113,8 +116,7 @@ describe("POST /api/vision", () => {
     expect(last).toBe(429);
   });
   it("never logs the photo or its bytes", async () => {
-    const lines: string[] = [];
-    setLogSink((l) => lines.push(l));
+    const lines = captureLog();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(gem({ is_room: true, findings: [] })));
     await call({ image: imageOf("secret-bytes-here") });
     expect(lines.join("\n")).not.toContain(

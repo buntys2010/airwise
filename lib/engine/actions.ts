@@ -190,8 +190,8 @@ export function buildActions(hourly: number[], p: Profile): ActionResult[] {
       savedCo2Kg: base.co2Kg - simulated.co2Kg,
     };
   };
-  const ctx: ActionContext = { hourly, p, base, best: bestHour(hourly), solo };
-  return ACTION_BUILDERS.map((build) => build(ctx));
+  const facts: ActionContext = { hourly, p, base, best: bestHour(hourly), solo };
+  return ACTION_BUILDERS.map((build) => build(facts));
 }
 
 /** A 24-hour clock hour as a 12-hour label, e.g. 15 becomes "3 pm". */

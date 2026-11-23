@@ -1,43 +1,11 @@
 "use client";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 
 import { cigsSoFar, type Stick, sticksFor } from "@/lib/cigsHourly";
 import { fmtHour } from "@/lib/engine/actions";
 
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
-
-const prefersReduced = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/**
- * Walks the clock from midnight to `target` so the day visibly builds up hour by hour. Jumps
- * straight there for reduced motion.
- */
-function useHourReplay(target: number) {
-  const [hour, setHour] = useState(target);
-  const raf = useRef(0);
-  const play = useCallback(() => {
-    cancelAnimationFrame(raf.current);
-    if (prefersReduced()) {
-      setHour(target);
-      return;
-    }
-    const start = performance.now();
-    const ms = 2400;
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - start) / ms);
-      setHour(-1 + (target + 1) * (1 - Math.pow(1 - progress, 2)));
-      if (progress < 1) raf.current = requestAnimationFrame(tick);
-    };
-    raf.current = requestAnimationFrame(tick);
-  }, [target]);
-  useEffect(() => {
-    play();
-    return () => cancelAnimationFrame(raf.current);
-  }, [play]);
-  return { hour, play };
-}
 
 /** One row of cigarette sticks, each drawn partly burned according to its share of the day's exposure. */
 export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base" | "plan" }>) {
@@ -55,13 +23,7 @@ export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base
                 className="cash"
                 style={{ left: `${left * 100}%`, width: `${s.burned * 100}%` }}
               />
-              {burning && (
-                <span className="cember" style={{ left: `${left * 100}%` }}>
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              )}
+              {burning && <span className="cember" style={{ left: `${left * 100}%` }} />}
             </span>
           </div>
         );
@@ -130,14 +92,13 @@ function CigRows({
 }
 
 /**
- * The hero: today's smoke as cigarettes that burn down hour by hour, and shrink when a fix is
+ * The hero: today's smoke as cigarettes, burned up to the current hour, shrinking when a fix is
  * switched on. Figures come from the engine.
  */
 export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
   const { t } = useLang();
-  const { hour, play } = useHourReplay(a.nowHour);
-  const sofarBase = cigsSoFar(a.base, hour);
-  const sofarPlan = cigsSoFar(a.withPlan, hour);
+  const sofarBase = cigsSoFar(a.base, a.nowHour);
+  const sofarPlan = cigsSoFar(a.withPlan, a.nowHour);
   const baseSticks = sticksFor(a.base.cigs, sofarBase);
   const planSticks = sticksFor(a.withPlan.cigs, sofarPlan);
   const changed = a.savedPct > 0;
@@ -146,9 +107,6 @@ export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
     <section className="cigs" role="group" aria-label={t("dial.group")}>
       <div className="cigshead">
         <h2 id="h-cigs">{t("cig.h")}</h2>
-        <button type="button" className="textbtn" onClick={play}>
-          ↻ {t("cig.replay")}
-        </button>
       </div>
       <div aria-live="polite">
         <p className="cignum">

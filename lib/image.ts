@@ -62,9 +62,9 @@ export async function prepareImage(file: Blob): Promise<Prepared> {
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("canvas");
-    ctx.drawImage(img, 0, 0, w, h);
+    const facts = canvas.getContext("2d");
+    if (!facts) throw new Error("canvas");
+    facts.drawImage(img, 0, 0, w, h);
     const blob = await new Promise<Blob | null>((res) =>
       canvas.toBlob(res, "image/jpeg", JPEG_QUALITY),
     );

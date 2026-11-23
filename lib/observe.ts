@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
 
-type Handler = (req: Request) => Response | Promise<Response>;
+import { logLine } from "./log";
 
-/** Test hook: lets a test capture the log lines. Silent under `NODE_ENV=test` by default. */
-let sink: (line: string) => void = (line) => {
-  if (process.env.NODE_ENV !== "test") console.info(line);
-};
-/** Test hook: send request log lines to `fn` instead of the console. */
-export function setRequestLogSink(fn: (line: string) => void) {
-  sink = fn;
-}
+type Handler = (req: Request) => Response | Promise<Response>;
 
 /**
  * A caller-supplied id is kept only if it is short and harmless; anything else is replaced, so logs
@@ -42,7 +35,7 @@ export function withObservability(
       res = await handler(req);
     } catch (err) {
       const failure = err instanceof Error ? err : new Error(String(err));
-      sink(
+      logLine(
         JSON.stringify({
           evt: "error",
           route,
@@ -62,7 +55,7 @@ export function withObservability(
     } catch {
       /* an immutable response keeps working without the header */
     }
-    sink(
+    logLine(
       JSON.stringify({
         evt: "request",
         route,

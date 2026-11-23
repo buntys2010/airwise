@@ -277,7 +277,6 @@ export const EN = {
   "cig.full": "of about {n} for the whole day",
   "cig.base": "If nothing changes",
   "cig.plan": "With your plan",
-  "cig.replay": "Replay the day",
   "cig.hour": "As of {time}",
   "cig.less": "{pct}% less",
   "cig.alt":

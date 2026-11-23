@@ -1,40 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
-
 import { sticksFor } from "@/lib/cigsHourly";
 
 import { CigRow } from "./Cigarettes";
 import { useLang } from "./LangProvider";
-
-const prefersReduced = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/**
- * Burns from nothing up to `target` over 1.4 s (ease-out); remounting on a city change replays it.
- * Static under reduced motion.
- */
-function useBurn(target: number) {
-  // the same on server and client, so hydration never disagrees; the effect plays it
-  const [p, setP] = useState(0);
-  useEffect(() => {
-    if (prefersReduced()) {
-      setP(1);
-      return undefined;
-    }
-    let raf = 0;
-    const start = performance.now();
-    const tick = () => {
-      // one clock for start and now, whatever the frame callback reports
-      const progress = Math.min(1, (performance.now() - start) / 1400);
-      setP(1 - Math.pow(1 - progress, 3));
-      if (progress < 1) raf = requestAnimationFrame(tick);
-    };
-    setP(0);
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target]);
-  return p;
-}
 
 /**
  * The very top of the page: what a person would breathe outdoors all day in the chosen city, as cigarettes.
@@ -46,8 +14,7 @@ export function CityCigs({
   city,
 }: Readonly<{ day: number; soFar: number; city: string }>) {
   const { t } = useLang();
-  const burn = useBurn(soFar);
-  const sticks = sticksFor(day, soFar * burn);
+  const sticks = sticksFor(day, soFar);
   return (
     <div className="citycigs" data-city={city}>
       <CigRow sticks={sticks} tone="base" />

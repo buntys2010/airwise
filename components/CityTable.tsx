@@ -65,7 +65,7 @@ function CityRow({
   onSelect,
 }: Readonly<{ point: MapPoint; selected: boolean; onSelect: (id: string) => void }>) {
   const { t } = useLang();
-  const cat = categoryOf(point.pm);
+  const category = categoryOf(point.pm);
   return (
     <tr data-city={point.id} className={selected ? "sel" : undefined}>
       <th scope="row">
@@ -86,8 +86,8 @@ function CityRow({
       </td>
       <td>
         <span className="cat">
-          <i aria-hidden="true">{cat.icon}</i>
-          {t(CATEGORY_KEY[cat.tone])}
+          <i aria-hidden="true">{category.icon}</i>
+          {t(CATEGORY_KEY[category.tone])}
         </span>
         <small>AQI {aqiFromPm(point.pm)}</small>
       </td>

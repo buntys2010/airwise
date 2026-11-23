@@ -274,7 +274,6 @@ export const HI: Record<Key, string> = {
   "cig.full": "पूरे दिन के लगभग {n} में से",
   "cig.base": "अगर कुछ न बदले",
   "cig.plan": "आपकी योजना के साथ",
-  "cig.replay": "दिन फिर से देखें",
   "cig.hour": "{time} तक",
   "cig.less": "{pct}% कम",
   "cig.alt":

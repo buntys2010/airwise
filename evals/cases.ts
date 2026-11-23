@@ -77,7 +77,7 @@ const vis = (id: string, text: string, expectStatus: string, kinds?: string[]): 
 });
 
 const delhi = estimateHourly(must(CITIES[0]));
-const ctx = buildContext(
+const facts = buildContext(
   must(
     parseChoices({
       city: "delhi",
@@ -242,31 +242,31 @@ export const CASES: Case[] = [
     id: "off-01",
     category: "offline answers",
     expect: "mask question mentions N95",
-    run: () => /N95/.test(offlineAnswer("do I need a mask?", ctx)),
+    run: () => /N95/.test(offlineAnswer("do I need a mask?", facts)),
   },
   {
     id: "off-02",
     category: "offline answers",
     expect: "window question names the best hour",
-    run: () => offlineAnswer("when should I open windows?", ctx).includes(ctx.bestHour),
+    run: () => offlineAnswer("when should I open windows?", facts).includes(facts.bestHour),
   },
   {
     id: "off-03",
     category: "offline answers",
     expect: "Hindi mask answer is Devanagari",
-    run: () => /[ऀ-ॿ]/u.test(offlineAnswer("क्या मुझे मास्क चाहिए?", ctx, "hi")),
+    run: () => /[ऀ-ॿ]/u.test(offlineAnswer("क्या मुझे मास्क चाहिए?", facts, "hi")),
   },
   {
     id: "off-04",
     category: "offline answers",
     expect: "general answer is grounded in the engine's facts",
-    run: () => isGrounded(offlineAnswer("hello", ctx), ctx),
+    run: () => isGrounded(offlineAnswer("hello", facts), facts),
   },
   {
     id: "off-05",
     category: "offline answers",
     expect: "Hindi general answer is grounded",
-    run: () => isGrounded(offlineAnswer("नमस्ते", ctx, "hi"), ctx),
+    run: () => isGrounded(offlineAnswer("नमस्ते", facts, "hi"), facts),
   },
   {
     id: "off-06",
@@ -276,8 +276,8 @@ export const CASES: Case[] = [
       const qs = ["mask", "window", "purifier", "child", "cooking", "metro", "hello"];
       const hi = ["मास्क", "खिड़की", "प्यूरीफायर", "बच्चे", "रसोई", "मेट्रो", "नमस्ते"];
       return [
-        ...qs.map((q) => offlineAnswer(q, ctx)),
-        ...hi.map((q) => offlineAnswer(q, ctx, "hi")),
+        ...qs.map((q) => offlineAnswer(q, facts)),
+        ...hi.map((q) => offlineAnswer(q, facts, "hi")),
       ].every((a) => unsupportedClaims(a).length === 0);
     },
   },

@@ -91,7 +91,7 @@ export const FEATURES: { name: string; what: string; how: string }[] = [
   {
     name: "Outdoors-all-day cigarettes",
     what: "Next to the city name, a small row of cigarettes shows what a person breathes standing outdoors all day in that city at today's levels, and how much of it has passed so far. It is about the city, not your household.",
-    how: "Read the line beside the row. It burns down when you open the page or change city. Your own figure is the big gauge lower down.",
+    how: "Read the line beside the row. It shows how much of the day has burned so far. Your own figure is the big gauge lower down.",
   },
   {
     name: "Photo of your room",

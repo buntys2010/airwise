@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { captureLog } from "../test-support/log";
 import { must } from "../test-support/must";
 import {
   generate,
@@ -7,7 +8,6 @@ import {
   generationConfig,
   modelChain,
   resetGeminiBudget,
-  setLogSink,
 } from "./gemini";
 
 beforeEach(() => resetGeminiBudget());
@@ -15,7 +15,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.useRealTimers();
-  setLogSink(() => undefined);
+});
+beforeEach(() => {
+  captureLog();
 });
 
 const reply = (text: string) => ({
@@ -197,8 +199,7 @@ describe("generateDetailed: chain, images, budget", () => {
 describe("structured log", () => {
   it("writes one JSON line per attempt and never the prompt or image", async () => {
     vi.stubEnv("GEMINI_API_KEY", "k");
-    const lines: string[] = [];
-    setLogSink((l) => lines.push(l));
+    const lines = captureLog();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(reply("ok")));
     await generateDetailed({
       prompt: "my private question",

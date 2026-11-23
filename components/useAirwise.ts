@@ -166,7 +166,7 @@ export function useAirwise(lang: Lang = "en") {
   const actions = useMemo(() => buildActions(hourly, profile), [hourly, profile]);
   const schedule = useMemo(() => buildSchedule(hourly, profile), [hourly, profile]);
   const best = bestHour(hourly);
-  const cat = categoryOf(pmAt(hourly, nowHour));
+  const category = categoryOf(pmAt(hourly, nowHour));
   const outdoorDay = useMemo(() => outdoorCigs(hourly), [hourly]);
   const outdoorSoFar = useMemo(() => outdoorCigsSoFar(hourly, elapsed), [hourly, elapsed]);
   const soFar = useMemo(
@@ -240,7 +240,7 @@ export function useAirwise(lang: Lang = "en") {
     actions,
     schedule,
     best,
-    cat,
+    cat: category,
     saved,
     savedPct,
     storeState,
