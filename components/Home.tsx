@@ -17,12 +17,106 @@ import { ProfilePills } from "@/components/ProfilePills";
 import { RoomPanel } from "@/components/RoomPanel";
 import { SeverityStrip } from "@/components/SeverityStrip";
 import { ShareCard } from "@/components/ShareCard";
-import { useAirwise } from "@/components/useAirwise";
-import { useRoom } from "@/components/useRoom";
+import { useAirwise, type Airwise } from "@/components/useAirwise";
+import { useRoom, type Room } from "@/components/useRoom";
 import { ValueList } from "@/components/ValueList";
 import { OUTDOOR_HOUR, fmtHour } from "@/lib/engine";
 import { englishIn } from "@/lib/i18n";
-import { rankProducts } from "@/lib/room";
+import type { Lang } from "@/lib/chat";
+import { rankProducts, type Hotspot, type RankedProduct } from "@/lib/room";
+
+/** The "your home" stage: the room photo, the fixes it points to, and the household. */
+function RoomStage({
+  airwise,
+  room,
+  hotspots,
+  onPick,
+  hidden,
+  onNext,
+}: Readonly<{
+  airwise: Airwise;
+  room: Room;
+  hotspots: Hotspot[];
+  onPick: (id: string) => void;
+  hidden: boolean;
+  onNext: () => void;
+}>) {
+  const { lang, t } = useLang();
+  return (
+    <section id="stage-room" aria-labelledby="h-room" hidden={hidden}>
+      <h2 id="h-room" className="sr-only">
+        {t("dock.room")}
+      </h2>
+      <div className="homegrid">
+        <RoomPanel
+          a={airwise}
+          hotspots={hotspots}
+          photoUrl={room.photoUrl}
+          onPick={onPick}
+          footer={<PhotoPicker room={room} />}
+        />
+        <div className="homeside">
+          <h2 className="sr-only">{t("fix.heading")}</h2>
+          <FixRows a={airwise} hotspots={hotspots} />
+          <ProfilePills profile={airwise.profile} onChange={airwise.setProfile} lang={lang} />
+          <button type="button" className="btn ghost nextstage" onClick={onNext}>
+            {t("plan.cta")} ➔
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** The "plan" stage: the cleanest hour, the day's schedule, what is worth buying, and where the dose comes from. */
+function PlanStage({
+  airwise,
+  lang,
+  products,
+  hidden,
+  active,
+}: Readonly<{
+  airwise: Airwise;
+  lang: Lang;
+  products: RankedProduct[];
+  hidden: boolean;
+  active: boolean;
+}>) {
+  const { t } = useLang();
+  return (
+    <section id="stage-plan" aria-labelledby="h-plan" hidden={hidden}>
+      <div className="sec-head">
+        <h2 id="h-plan">{t("dock.plan")}</h2>
+        <p className="safewindow">{t("plan.window", { time: airwise.bestLabel })}</p>
+        <p {...englishIn(lang)}>
+          The air is usually worst before dawn and again at dusk. The cleanest window is around{" "}
+          <strong>{airwise.bestLabel}</strong>, when it is {airwise.hourly[airwise.best]} µg/m³
+          instead of {airwise.hourly[OUTDOOR_HOUR]} at your usual {fmtHour(OUTDOOR_HOUR)} outing.
+        </p>
+      </div>
+      <div {...englishIn(lang)}>
+        <HourChart hourly={airwise.hourly} best={airwise.best} usual={OUTDOOR_HOUR} />
+      </div>
+      <div className="sec-head">
+        <h2 id="h-daily">{t("sec.daily.h")}</h2>
+      </div>
+      <DayPlan schedule={airwise.schedule} choices={airwise.choices} active={active} />
+      <section aria-labelledby="h-value">
+        <div className="sec-head">
+          <h2 id="h-value">{t("value.h")}</h2>
+          <p>{t("value.sub")}</p>
+        </div>
+        <ValueList products={products} />
+      </section>
+      <div className="sec-head">
+        <h2 id="h-dose">{t("sec.dose.h")}</h2>
+      </div>
+      <div {...englishIn(lang)}>
+        <DoseBars base={airwise.base} plan={airwise.withPlan} />
+      </div>
+    </section>
+  );
+}
 
 /** The home screen: air strip, actions, plan, cigarettes, chat and room panel, wired to useAirwise. */
 export function Home() {
@@ -83,61 +177,22 @@ export function Home() {
         <Cigarettes a={airwise} />
         <MorningBrief a={airwise} />
 
-        <section id="stage-room" aria-labelledby="h-room" hidden={tab !== "room"}>
-          <h2 id="h-room" className="sr-only">
-            {t("dock.room")}
-          </h2>
-          <div className="homegrid">
-            <RoomPanel
-              a={airwise}
-              hotspots={hotspots}
-              photoUrl={room.photoUrl}
-              onPick={pick}
-              footer={<PhotoPicker room={room} />}
-            />
-            <div className="homeside">
-              <h2 className="sr-only">{t("fix.heading")}</h2>
-              <FixRows a={airwise} hotspots={hotspots} />
-              <ProfilePills profile={airwise.profile} onChange={airwise.setProfile} lang={lang} />
-              <button type="button" className="btn ghost nextstage" onClick={() => setTab("plan")}>
-                {t("plan.cta")} ➔
-              </button>
-            </div>
-          </div>
-        </section>
+        <RoomStage
+          airwise={airwise}
+          room={room}
+          hotspots={hotspots}
+          onPick={pick}
+          hidden={tab !== "room"}
+          onNext={() => setTab("plan")}
+        />
 
-        <section id="stage-plan" aria-labelledby="h-plan" hidden={tab !== "plan"}>
-          <div className="sec-head">
-            <h2 id="h-plan">{t("dock.plan")}</h2>
-            <p className="safewindow">{t("plan.window", { time: airwise.bestLabel })}</p>
-            <p {...englishIn(lang)}>
-              The air is usually worst before dawn and again at dusk. The cleanest window is around{" "}
-              <strong>{airwise.bestLabel}</strong>, when it is {airwise.hourly[airwise.best]} µg/m³
-              instead of {airwise.hourly[OUTDOOR_HOUR]} at your usual {fmtHour(OUTDOOR_HOUR)}{" "}
-              outing.
-            </p>
-          </div>
-          <div {...englishIn(lang)}>
-            <HourChart hourly={airwise.hourly} best={airwise.best} usual={OUTDOOR_HOUR} />
-          </div>
-          <div className="sec-head">
-            <h2 id="h-daily">{t("sec.daily.h")}</h2>
-          </div>
-          <DayPlan schedule={airwise.schedule} choices={airwise.choices} active={tab === "plan"} />
-          <section aria-labelledby="h-value">
-            <div className="sec-head">
-              <h2 id="h-value">{t("value.h")}</h2>
-              <p>{t("value.sub")}</p>
-            </div>
-            <ValueList products={products} />
-          </section>
-          <div className="sec-head">
-            <h2 id="h-dose">{t("sec.dose.h")}</h2>
-          </div>
-          <div {...englishIn(lang)}>
-            <DoseBars base={airwise.base} plan={airwise.withPlan} />
-          </div>
-        </section>
+        <PlanStage
+          airwise={airwise}
+          lang={lang}
+          products={products}
+          hidden={tab !== "plan"}
+          active={tab === "plan"}
+        />
 
         <section id="stage-copilot" aria-labelledby="h-chat" hidden={tab !== "copilot"}>
           <h2 id="h-chat" className="chat-h">

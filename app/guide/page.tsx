@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Header } from "@/components/Chrome";
 
 export const metadata: Metadata = {
@@ -242,6 +243,15 @@ function PromptSection() {
   );
 }
 
+/** One line of "how the numbers work": a bold label followed by its explanation. */
+function Fact({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
+  return (
+    <li>
+      <strong>{label}</strong> {children}
+    </li>
+  );
+}
+
 function HowSection() {
   return (
     <section id="how" aria-labelledby="g-how">
@@ -255,31 +265,124 @@ function HowSection() {
       </div>
       <div className="panel">
         <ul className="facts">
-          <li>
-            <strong>At home:</strong> outdoor air times how much gets in (sealed 35%, typical 60%,
-            gappy 85%). A right-sized purifier keeps 40% of that.
-          </li>
-          <li>
-            <strong>On the way:</strong> exposure depends on the mode. Metro is about half of street
-            air, car 60%, bus 80%, walking 100%, cycling 120% because you breathe harder.
-          </li>
-          <li>
-            <strong>Outdoors:</strong> half an hour outside. An N95 filters about 60% after allowing
-            for fit. A cloth mask about 10%.
-          </li>
-          <li>
-            <strong>Cooking:</strong> adds smoke indoors while you cook: wood or coal +150, gas +30,
-            induction +8 µg/m³.
-          </li>
-          <li>
-            <strong>CO₂:</strong> grams per passenger-kilometre by mode, using India&apos;s grid for
-            electric vehicles.
-          </li>
+          <Fact label="At home:">
+            outdoor air times how much gets in (sealed 35%, typical 60%, gappy 85%). A right-sized
+            purifier keeps 40% of that.
+          </Fact>
+          <Fact label="On the way:">
+            exposure depends on the mode. Metro is about half of street air, car 60%, bus 80%,
+            walking 100%, cycling 120% because you breathe harder.
+          </Fact>
+          <Fact label="Outdoors:">
+            half an hour outside. An N95 filters about 60% after allowing for fit. A cloth mask
+            about 10%.
+          </Fact>
+          <Fact label="Cooking:">
+            adds smoke indoors while you cook: wood or coal +150, gas +30, induction +8 µg/m³.
+          </Fact>
+          <Fact label="CO₂:">
+            grams per passenger-kilometre by mode, using India&apos;s grid for electric vehicles.
+          </Fact>
         </ul>
         <p className="dim u-mt-12">
           These are planning assumptions for comparing choices, not clinical measurements. Full list
           and sources: docs/methodology.md in the project repository.
         </p>
+      </div>
+    </section>
+  );
+}
+
+/** The page title, a short intro and the table of contents. */
+function HeroSection() {
+  return (
+    <section aria-labelledby="g-title" className="g-hero">
+      <h1 id="g-title">How to use AirWise</h1>
+      <p>
+        AirWise turns today&apos;s live air quality into a plan for your family, and shows how much
+        each choice helps. This guide covers every feature and the best way to ask questions.
+      </p>
+      <nav aria-label="On this page" className="g-toc">
+        <a href="#start">Start in a minute</a>
+        <a href="#features">Every feature</a>
+        <a href="#prompts">Prompt guide</a>
+        <a href="#how">How the numbers work</a>
+        <a href="#words">Plain-language terms</a>
+      </nav>
+    </section>
+  );
+}
+
+/** The three-step start. */
+function StartSection() {
+  return (
+    <section id="start" aria-labelledby="g-start">
+      <div className="sec-head">
+        <h2 id="g-start">Start in a minute</h2>
+      </div>
+      <ol className="steps">
+        {STEPS.map(([t, d]) => (
+          <li key={t}>
+            <h3>{t}</h3>
+            <p>{d}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** Every feature and how to use it. */
+function FeaturesSection() {
+  return (
+    <section id="features" aria-labelledby="g-feat">
+      <div className="sec-head">
+        <h2 id="g-feat">Every feature, and how to use it</h2>
+      </div>
+      <dl className="features">
+        {FEATURES.map((f) => (
+          <div key={f.name} className="feature">
+            <dt>{f.name}</dt>
+            <dd>{f.what}</dd>
+            <dd className="how">
+              <strong>How to use it:</strong> {f.how}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/** Plain-language terms. */
+function TermsSection() {
+  return (
+    <section id="words" aria-labelledby="g-words">
+      <div className="sec-head">
+        <h2 id="g-words">Plain-language terms</h2>
+      </div>
+      <dl className="features">
+        {TERMS.map(([t, d]) => (
+          <div key={t} className="feature">
+            <dt>{t}</dt>
+            <dd>{d}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/** The closing call to action. */
+function CtaSection() {
+  return (
+    <section aria-labelledby="g-go">
+      <div className="panel g-cta">
+        <h2 id="g-go">Ready to clear your air?</h2>
+        <p className="dim">Your plan takes about a minute to build.</p>
+        <Link href="/" className="btn u-no-underline u-inline-block u-mt-14">
+          Open AirWise
+        </Link>
       </div>
     </section>
   );
@@ -295,80 +398,19 @@ export default function Guide() {
       </Header>
 
       <main id="main">
-        <section aria-labelledby="g-title" className="g-hero">
-          <h1 id="g-title">How to use AirWise</h1>
-          <p>
-            AirWise turns today&apos;s live air quality into a plan for your family, and shows how
-            much each choice helps. This guide covers every feature and the best way to ask
-            questions.
-          </p>
-          <nav aria-label="On this page" className="g-toc">
-            <a href="#start">Start in a minute</a>
-            <a href="#features">Every feature</a>
-            <a href="#prompts">Prompt guide</a>
-            <a href="#how">How the numbers work</a>
-            <a href="#words">Plain-language terms</a>
-          </nav>
-        </section>
+        <HeroSection />
 
-        <section id="start" aria-labelledby="g-start">
-          <div className="sec-head">
-            <h2 id="g-start">Start in a minute</h2>
-          </div>
-          <ol className="steps">
-            {STEPS.map(([t, d]) => (
-              <li key={t}>
-                <h3>{t}</h3>
-                <p>{d}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
+        <StartSection />
 
-        <section id="features" aria-labelledby="g-feat">
-          <div className="sec-head">
-            <h2 id="g-feat">Every feature, and how to use it</h2>
-          </div>
-          <dl className="features">
-            {FEATURES.map((f) => (
-              <div key={f.name} className="feature">
-                <dt>{f.name}</dt>
-                <dd>{f.what}</dd>
-                <dd className="how">
-                  <strong>How to use it:</strong> {f.how}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        <FeaturesSection />
 
         <PromptSection />
 
         <HowSection />
 
-        <section id="words" aria-labelledby="g-words">
-          <div className="sec-head">
-            <h2 id="g-words">Plain-language terms</h2>
-          </div>
-          <dl className="features">
-            {TERMS.map(([t, d]) => (
-              <div key={t} className="feature">
-                <dt>{t}</dt>
-                <dd>{d}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        <TermsSection />
 
-        <section aria-labelledby="g-go">
-          <div className="panel g-cta">
-            <h2 id="g-go">Ready to clear your air?</h2>
-            <p className="dim">Your plan takes about a minute to build.</p>
-            <Link href="/" className="btn u-no-underline u-inline-block u-mt-14">
-              Open AirWise
-            </Link>
-          </div>
-        </section>
+        <CtaSection />
       </main>
 
       <footer>
