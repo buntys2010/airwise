@@ -1,9 +1,11 @@
 "use client";
-import { Suspense, lazy, useState } from "react";
-import { aqiFromPm, categoryOf, type Tone } from "@/lib/engine";
-import { CATEGORY_KEY } from "@/lib/i18n";
-import type { MapPoint } from "@/lib/data";
+import { lazy, Suspense, useState } from "react";
+
+import type { MapPoint } from "@/lib/air/server";
 import { CITIES } from "@/lib/cities";
+import { aqiFromPm, categoryOf, type Tone } from "@/lib/engine/aqi";
+import { CATEGORY_KEY } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 
 /** The long table is only needed on this page, and only below the map, so it is loaded separately. */
@@ -66,14 +68,14 @@ const OUTLINE: [number, number][] = [
   [70.9, 20.7],
   [69.2, 22.2],
 ];
-const W = 620,
-  H = 680,
+const MAP_WIDTH = 620,
+  MAP_HEIGHT = 680,
   LON0 = 67,
   LON1 = 98.5,
   LAT0 = 6,
   LAT1 = 38;
-const x = (lon: number) => ((lon - LON0) / (LON1 - LON0)) * W;
-const y = (lat: number) => H - ((lat - LAT0) / (LAT1 - LAT0)) * H;
+const xFor = (lon: number) => ((lon - LON0) / (LON1 - LON0)) * MAP_WIDTH;
+const yFor = (lat: number) => MAP_HEIGHT - ((lat - LAT0) / (LAT1 - LAT0)) * MAP_HEIGHT;
 
 /** Cropped to the country, with room for the islands and the north-east. */
 const VIEW = { x: -70, y: 40, w: 670, h: 640 };
@@ -87,7 +89,10 @@ const FILL: Record<Tone, string> = {
   hazardous: "#a56bff",
 };
 
-/** Where the twelve named cities' labels sit, relative to their dots. Hand-placed so none overlap (checked in a real browser). */
+/**
+ * Where the twelve named cities' labels sit, relative to their dots. Hand-placed so none overlap
+ * (checked in a real browser).
+ */
 const LABEL: Record<string, { dx: number; dy: number; anchor: "start" | "end" }> = {
   delhi: { dx: -20, dy: -4, anchor: "end" },
   jaipur: { dx: -18, dy: 8, anchor: "end" },
@@ -95,7 +100,7 @@ const LABEL: Record<string, { dx: number; dy: number; anchor: "start" | "end" }>
   patna: { dx: 18, dy: -4, anchor: "start" },
   kolkata: { dx: -20, dy: 4, anchor: "end" },
   ahmedabad: { dx: -18, dy: 0, anchor: "end" },
-  bhopal: { dx: 18, dy: 2, anchor: "start" },
+  bhopal: { dx: -18, dy: 2, anchor: "end" },
   mumbai: { dx: -18, dy: -6, anchor: "end" },
   pune: { dx: 18, dy: 36, anchor: "start" },
   hyderabad: { dx: 18, dy: -24, anchor: "start" },
@@ -138,8 +143,10 @@ function Shape({ tone, r }: Readonly<{ tone: Tone; r: number }>) {
 }
 
 /**
- * Every city is a marker with a shape and a value in the table; the twelve biggest also carry a name and value on the map.
- * Tap a marker, or use "Show" in the table (keyboard), to read any city. The air feed is gridded, so near neighbours can share a value.
+ * Every city is a marker with a shape and a value in the table; the twelve biggest also carry a
+ * name and value on the map.
+ * Tap a marker, or use "Show" in the table (keyboard), to read any city. The air feed is gridded,
+ * so near neighbours can share a value.
  */
 export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: string }>) {
   const { t } = useLang();
@@ -166,9 +173,9 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
         >
           <polygon
             className="map-land"
-            points={OUTLINE.map(([lon, lat]) => `${x(lon).toFixed(1)},${y(lat).toFixed(1)}`).join(
-              " ",
-            )}
+            points={OUTLINE.map(
+              ([lon, lat]) => `${xFor(lon).toFixed(1)},${yFor(lat).toFixed(1)}`,
+            ).join(" ")}
           />
           {/* small markers first, so the named cities and the selection draw on top */}
           {points
@@ -179,7 +186,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                 <g
                   key={p.id}
                   data-city={p.id}
-                  transform={`translate(${x(p.lon)} ${y(p.lat)})`}
+                  transform={`translate(${xFor(p.lon)} ${yFor(p.lat)})`}
                   className={`map-mark${p.id === selected ? " sel" : ""}`}
                   onClick={() => setSelected(p.id)}
                 >
@@ -193,7 +200,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
             .filter((p) => NAMED.has(p.id))
             .map((p) => {
               const cat = categoryOf(p.pm);
-              const L = LABEL[p.id] ?? { dx: 18, dy: 0, anchor: "start" as const };
+              const labelOffset = LABEL[p.id] ?? { dx: 18, dy: 0, anchor: "start" as const };
               return (
                 <g
                   key={p.id}
@@ -203,28 +210,33 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                   onClick={() => setSelected(p.id)}
                 >
                   <circle
-                    cx={x(p.lon)}
-                    cy={y(p.lat)}
+                    cx={xFor(p.lon)}
+                    cy={yFor(p.lat)}
                     r={13}
                     fill={FILL[cat.tone]}
                     className="map-dot"
                     strokeDasharray={p.source === "estimate" ? "5 4" : undefined}
                   />
-                  <text x={x(p.lon)} y={y(p.lat) + 5} textAnchor="middle" className="map-icon">
+                  <text
+                    x={xFor(p.lon)}
+                    y={yFor(p.lat) + 5}
+                    textAnchor="middle"
+                    className="map-icon"
+                  >
                     {cat.icon}
                   </text>
                   <text
-                    x={x(p.lon) + L.dx}
-                    y={y(p.lat) + L.dy}
-                    textAnchor={L.anchor}
+                    x={xFor(p.lon) + labelOffset.dx}
+                    y={yFor(p.lat) + labelOffset.dy}
+                    textAnchor={labelOffset.anchor}
                     className="map-name"
                   >
                     {p.name}
                   </text>
                   <text
-                    x={x(p.lon) + L.dx}
-                    y={y(p.lat) + L.dy + 18}
-                    textAnchor={L.anchor}
+                    x={xFor(p.lon) + labelOffset.dx}
+                    y={yFor(p.lat) + labelOffset.dy + 18}
+                    textAnchor={labelOffset.anchor}
                     className="map-val"
                   >
                     {p.pm} µg/m³{p.source === "estimate" ? ` · ${t("map.est")}` : ""}

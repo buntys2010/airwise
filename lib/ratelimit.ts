@@ -1,17 +1,22 @@
 /**
- * Small in-memory limiters. Enough to blunt abuse on one or two instances (see docs/deploy.md for the max-instances cap);
+ * Small in-memory limiters. Enough to blunt abuse on one or two instances (see docs/deploy.md for
+ * the max-instances cap);
  * use the platform WAF or a shared store if the app is scaled out.
  */
 
 const lastOf = (times: number[]): number => times.at(-1) ?? 0;
 
-/** Sliding-window limiter per key. Stale keys are evicted by age, so a flood of new keys cannot wipe an attacker's own counter. */
+/**
+ * Sliding-window limiter per key. Stale keys are evicted by age, so a flood of new keys cannot wipe
+ * an attacker's own counter.
+ */
 export function createLimiter(limit: number, windowMs: number, maxKeys = 2000) {
   const hits = new Map<string, number[]>();
 
   function evict(now: number) {
     for (const [k, times] of hits) if (now - lastOf(times) >= windowMs) hits.delete(k);
-    // Still over the cap: drop the least active keys first (fewest hits, then oldest), so one-off flood keys go before a busy or blocked client.
+    // Still over the cap: drop the least active keys first (fewest hits, then oldest), so one-off
+    // flood keys go before a busy or blocked client.
     if (hits.size > maxKeys) {
       const order = [...hits.entries()].sort(
         (a, b) => a[1].length - b[1].length || lastOf(a[1]) - lastOf(b[1]),
@@ -30,7 +35,10 @@ export function createLimiter(limit: number, windowMs: number, maxKeys = 2000) {
   };
 }
 
-/** A global call budget (for example Gemini requests a minute) shared by every client. The limit is read on each call. */
+/**
+ * A global call budget (for example Gemini requests a minute) shared by every client. The limit is
+ * read on each call.
+ */
 export function createBudget(getLimit: () => number, windowMs: number) {
   let stamps: number[] = [];
   return {

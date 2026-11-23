@@ -2,9 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+
 import type { Key } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 
+/** The decorative sky and sun behind the page. Its thickness follows the --haze custom property. */
 export function Sky() {
   return (
     <div className="sky" aria-hidden="true">

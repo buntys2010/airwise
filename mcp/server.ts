@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { CITIES } from "../lib/data";
+import { CITIES } from "../lib/cities";
 import { COMMUTES, COOKINGS, HOMES } from "../lib/chat";
 import { PLAN_IDS } from "../lib/share";
 import { getCityAir, scoreActions, type Result } from "./tools";

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { NO_PLAN, fullPlan, type Profile } from "./engine";
+
+import { must } from "../test-support/must";
+import { fullPlan } from "./engine/actions";
+import { NO_PLAN, type Profile } from "./engine/model";
 import {
   decodeChoices,
   encodeChoices,
@@ -19,14 +22,14 @@ const profile: Profile = {
 
 describe("encodeChoices", () => {
   it("carries only choices: city, four household answers and the switched-on fixes", () => {
-    const q = new URLSearchParams(
+    const params = new URLSearchParams(
       encodeChoices({
         city: "lucknow",
         profile,
         plan: { ...NO_PLAN, sealGaps: true, purifier: true },
       }),
     );
-    expect([...q.keys()].sort()).toEqual([
+    expect([...params.keys()].sort()).toEqual([
       "city",
       "commute",
       "cooking",
@@ -35,8 +38,8 @@ describe("encodeChoices", () => {
       "plan",
       "vulnerable",
     ]);
-    expect(q.get("plan")).toBe("seal,purifier");
-    expect(q.get("vulnerable")).toBe("1");
+    expect(params.get("plan")).toBe("seal,purifier");
+    expect(params.get("vulnerable")).toBe("1");
   });
   it("never carries a computed figure", () => {
     const text = encodeChoices({ city: "delhi", profile, plan: fullPlan(profile) });
@@ -67,7 +70,7 @@ describe("decodeChoices", () => {
     const back = decodeChoices(encodeChoices({ city: "kolkata", profile, plan }));
     expect(back.city).toBe("kolkata");
     expect(back.profile).toEqual(profile);
-    expect(planToIds(back.plan!).sort()).toEqual(planToIds(plan).sort());
+    expect(planToIds(must(back.plan)).sort()).toEqual(planToIds(plan).sort());
   });
   it("drops anything outside the fixed lists, so a hand-edited link can only choose valid options", () => {
     const back = decodeChoices(

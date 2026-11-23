@@ -1,5 +1,6 @@
 /**
- * A daily-reminder calendar file, built entirely on the device. AirWise stores nothing: the user's own calendar app does the reminding,
+ * A daily-reminder calendar file, built entirely on the device. AirWise stores nothing: the user's
+ * own calendar app does the reminding,
  * and the event links back to the app with the household's choices (never numbers).
  */
 
@@ -14,7 +15,10 @@ export function icsEscape(text: string): string {
     .replace(/\r?\n/g, "\\n");
 }
 
-/** Folds a content line at 75 octets, as RFC 5545 requires, continuing with a single space. Splits on character boundaries. */
+/**
+ * Folds a content line at 75 octets, as RFC 5545 requires, continuing with a single space. Splits
+ * on character boundaries.
+ */
 export function foldLine(line: string): string {
   const enc = new TextEncoder();
   const out: string[] = [];
@@ -22,14 +26,14 @@ export function foldLine(line: string): string {
   let bytes = 0;
   const limit = 75;
   for (const ch of line) {
-    const b = enc.encode(ch).length;
-    if (bytes + b > limit) {
+    const byteLength = enc.encode(ch).length;
+    if (bytes + byteLength > limit) {
       out.push(cur);
       cur = " ";
       bytes = 1;
     }
     cur += ch;
-    bytes += b;
+    bytes += byteLength;
   }
   out.push(cur);
   return out.join("\r\n");
@@ -47,6 +51,7 @@ export interface ReminderOptions {
   description?: string;
 }
 
+/** A daily-reminder .ics file that links back to AirWise. Floating local time, first fired tomorrow. */
 export function buildReminderIcs({
   url,
   hour = 7,
@@ -55,7 +60,8 @@ export function buildReminderIcs({
   title = "Check today's air with AirWise",
   description,
 }: ReminderOptions): string {
-  // First occurrence is tomorrow, so the event never starts in the past. Floating local time: it fires at 7:00 wherever the phone is.
+  // First occurrence is tomorrow, so the event never starts in the past. Floating local time: it
+  // fires at 7:00 wherever the phone is.
   const first = new Date(now.getTime() + 24 * 3600 * 1000);
   const day = `${first.getFullYear()}${pad(first.getMonth() + 1)}${pad(first.getDate())}`;
   const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
@@ -83,5 +89,5 @@ export function buildReminderIcs({
     "END:VEVENT",
     "END:VCALENDAR",
   ];
-  return lines.map(foldLine).join("\r\n") + "\r\n";
+  return `${lines.map(foldLine).join("\r\n")}\r\n`;
 }

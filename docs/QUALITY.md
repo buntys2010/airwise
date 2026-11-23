@@ -20,8 +20,8 @@ Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and
 - `npm run dead` (knip) fails on unused files, exports and dependencies. `npm run dupes` (jscpd) fails above 1% duplicated lines; today it is 0%. A circular-import check (madge) finds none.
 - SonarQube Community scan of this repo (config in `sonar-project.properties`): 0 bugs, 0 vulnerabilities, 0 code smells, 0 security hotspots, 0% duplication, A on reliability, security and maintainability.
 - Coverage floor in `vitest.config.mts` (`npm run coverage`): CI fails if line, branch, function or statement coverage drops below it.
-- One source of numbers: [`lib/engine.ts`](../lib/engine.ts) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
-- Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/data.ts`](../lib/data.ts), [`lib/cities.ts`](../lib/cities.ts), [`lib/room.ts`](../lib/room.ts).
+- One source of numbers: [`lib/engine/`](../lib/engine) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
+- Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/air/`](../lib/data.ts), [`lib/cities.ts`](../lib/cities.ts), [`lib/room.ts`](../lib/room.ts).
 - Model assumptions are written down with ranges in [`methodology.md`](methodology.md).
 
 ## Security

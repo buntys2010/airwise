@@ -1,22 +1,20 @@
 import { ImageResponse } from "next/og";
+
+import { istClock } from "@/lib/air/live";
+import { getCityAir } from "@/lib/air/server";
 import { cigsSoFar } from "@/lib/cigsHourly";
-import { CITIES, getCityAir, istClock } from "@/lib/data";
+import { CITIES } from "@/lib/cities";
 import { FALLBACK_CITY } from "@/lib/cities";
-import {
-  NO_PLAN,
-  aqiFromPm,
-  categoryOf,
-  planSummary,
-  simulate,
-  type Plan,
-  type Profile,
-  pmAt,
-} from "@/lib/engine";
+import { planSummary } from "@/lib/engine/actions";
+import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
+import { NO_PLAN, type Plan, pmAt, type Profile, simulate } from "@/lib/engine/model";
 import { json } from "@/lib/http";
+import { categoryLabel } from "@/lib/i18n";
+import { withObservability } from "@/lib/observe";
 import { clientIp, createLimiter } from "@/lib/ratelimit";
 import { decodeChoices } from "@/lib/share";
-import { withObservability } from "@/lib/observe";
-import { ShareCardImage, cardSize, type CardData } from "./card";
+
+import { type CardData, cardSize, ShareCardImage } from "./card";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -33,7 +31,8 @@ const DEFAULT_PROFILE: Profile = {
 
 /**
  * GET /api/share-image?city=…&home=…&plan=seal,purifier&size=card|og
- * The query carries CHOICES only (same format as a share link). Every number is recomputed here from live air data, so a link cannot forge a figure.
+ * The query carries CHOICES only (same format as a share link). Every number is recomputed here
+ * from live air data, so a link cannot forge a figure.
  */
 export const GET = withObservability("share-image", async (req: Request) => {
   if (limited(clientIp(req)))
@@ -58,7 +57,7 @@ export const GET = withObservability("share-image", async (req: Request) => {
     og,
     cityName: city.name,
     aqi: aqiFromPm(pmAt(air.hourly, hour)),
-    level: categoryOf(pmAt(air.hourly, hour)).label,
+    level: categoryLabel(categoryOf(pmAt(air.hourly, hour)).tone),
     baseCigs: base.cigs,
     planCigs: withPlan.cigs,
     baseSoFar: cigsSoFar(base, hour),

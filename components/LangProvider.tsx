@@ -1,7 +1,8 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { Lang } from "@/lib/chat";
-import { t as translate, type Key } from "@/lib/i18n";
+
+import { type Key, t as translate } from "@/lib/i18n";
+import type { Lang } from "@/lib/lang";
 
 interface Ctx {
   lang: Lang;
@@ -11,12 +12,15 @@ interface Ctx {
 
 const LangContext = createContext<Ctx>({
   lang: "en",
-  setLang: () => {},
+  setLang: () => undefined,
   t: (k, v) => translate("en", k, v),
 });
 const STORE = "airwise.lang";
 
-/** Holds the interface language, remembers it on the device, and keeps <html lang> in step so screen readers pick the right voice. */
+/**
+ * Holds the interface language, remembers it on the device, and keeps <html lang> in step so screen
+ * readers pick the right voice.
+ */
 export function LangProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [lang, setLangState] = useState<Lang>("en");
   useEffect(() => {
@@ -45,4 +49,5 @@ export function LangProvider({ children }: Readonly<{ children: React.ReactNode 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
+/** The current language and its `t` translator. Must be used under LangProvider. */
 export const useLang = () => useContext(LangContext);

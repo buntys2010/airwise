@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, estimateHourly } from "./data";
+
+import { must } from "../test-support/must";
+import { estimateHourly } from "./air/live";
+import { CITIES } from "./cities";
+import { fullPlan } from "./engine/actions";
+import { NO_PLAN, type Profile, simulate } from "./engine/model";
 import { HAZE_MIN, hazeLevel } from "./haze";
-import { NO_PLAN, fullPlan, simulate, type Profile } from "./engine";
 
 describe("hazeLevel", () => {
   it("starts visibly hazy even on a moderate day", () => {
@@ -12,15 +16,15 @@ describe("hazeLevel", () => {
     expect(hazeLevel(300, 150, 150)).toBe(1);
     for (const pm of [0, 40, 160, 400, 5000])
       for (const f of [0, 0.3, 1, 3]) {
-        const h = hazeLevel(pm, 100, 100 * f);
-        expect(h).toBeGreaterThanOrEqual(HAZE_MIN);
-        expect(h).toBeLessThanOrEqual(1);
+        const haze = hazeLevel(pm, 100, 100 * f);
+        expect(haze).toBeGreaterThanOrEqual(HAZE_MIN);
+        expect(haze).toBeLessThanOrEqual(1);
       }
   });
   it("thins as exposure falls, in proportion to what was removed", () => {
     const all = [1, 0.75, 0.5, 0.25, 0];
-    const h = all.map((r) => hazeLevel(100, 100, 100 * r));
-    for (let i = 1; i < h.length; i++) expect(h[i]).toBeLessThan(h[i - 1]!);
+    const levels = all.map((r) => hazeLevel(100, 100, 100 * r));
+    for (let i = 1; i < levels.length; i++) expect(levels[i]).toBeLessThan(must(levels[i - 1]));
   });
   it("applying most fixes makes a clear, visible difference at moderate and high air", () => {
     for (const pm of [38, 71, 157, 250]) {
@@ -44,8 +48,8 @@ describe("hazeLevel", () => {
       const hourly = estimateHourly(c);
       const base = simulate(hourly, family, NO_PLAN).meanPm,
         plan = simulate(hourly, family, fullPlan(family)).meanPm;
-      const before = hazeLevel(hourly[7]!, base, base),
-        after = hazeLevel(hourly[7]!, base, plan);
+      const before = hazeLevel(must(hourly[7]), base, base),
+        after = hazeLevel(must(hourly[7]), base, plan);
       expect((before - after) / before).toBeGreaterThan(0.33);
     }
   });

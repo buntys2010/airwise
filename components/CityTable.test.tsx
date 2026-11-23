@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { MapPoint } from "@/lib/data";
+
+import type { MapPoint } from "@/lib/air/server";
+
+import { must } from "../test-support/must";
 import CityTable from "./CityTable";
 import { LangProvider } from "./LangProvider";
 
@@ -48,7 +51,7 @@ describe("CityTable", () => {
 
   it("sorts by name, then reverses when the same column is pressed again", () => {
     mount();
-    const nameButton = screen.getAllByRole("button", { name: /Sort by/ })[0]!;
+    const nameButton = must(screen.getAllByRole("button", { name: /Sort by/ })[0]);
     fireEvent.click(nameButton);
     expect(names().map((n) => n.slice(0, 4))).toEqual(["Delh", "Koch", "Pune"]);
     fireEvent.click(nameButton);
@@ -64,7 +67,7 @@ describe("CityTable", () => {
 
   it("reports the chosen city to the map", () => {
     const onSelect = mount();
-    fireEvent.click(screen.getAllByRole("button", { name: /Show/ })[0]!);
+    fireEvent.click(must(screen.getAllByRole("button", { name: /Show/ })[0]));
     expect(onSelect).toHaveBeenCalledWith("delhi");
   });
 });

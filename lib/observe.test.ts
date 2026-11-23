@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
+
+import { must } from "../test-support/must";
 import { requestIdFor, setRequestLogSink, withObservability } from "./observe";
 
 const lines: string[] = [];
@@ -15,17 +17,17 @@ describe("withObservability", () => {
       req(),
     );
     expect(res.status).toBe(201);
-    const id = res.headers.get("x-request-id")!;
+    const id = must(res.headers.get("x-request-id"));
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
     expect(lines).toHaveLength(1);
-    expect(JSON.parse(lines[0]!)).toMatchObject({
+    expect(JSON.parse(must(lines[0]))).toMatchObject({
       evt: "request",
       route: "t",
       method: "POST",
       status: 201,
       id,
     });
-    expect(typeof JSON.parse(lines[0]!).ms).toBe("number");
+    expect(typeof JSON.parse(must(lines[0])).ms).toBe("number");
   });
 
   it("turns a thrown error into a JSON 500 with the request id, and logs it without leaking the stack", async () => {
@@ -43,8 +45,8 @@ describe("withObservability", () => {
   });
 
   it("handles a rejected promise the same way", async () => {
-    const res = await withObservability("t", async () => {
-      throw new TypeError("bad");
+    const res = await withObservability("t", () => {
+      return Promise.reject(new TypeError("bad"));
     })(req());
     expect(res.status).toBe(500);
   });

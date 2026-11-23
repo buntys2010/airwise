@@ -1,11 +1,14 @@
 "use client";
-import { fmtHour, pmAt } from "@/lib/engine";
+import { fmtHour } from "@/lib/engine/actions";
+import { pmAt } from "@/lib/engine/model";
 import { ACTION_HI, CATEGORY_KEY, englishIn } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
 
 /**
- * "Today, in one look": computed on every open from your saved household and the live air. There is no server memory behind it.
+ * "Today, in one look": computed on every open from your saved household and the live air. There
+ * is no server memory behind it.
  */
 export function MorningBrief({ a }: Readonly<{ a: Airwise }>) {
   const { lang, t } = useLang();

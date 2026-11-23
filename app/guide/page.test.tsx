@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
 import { cleanup, render, screen } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, describe, expect, it } from "vitest";
+
 import Guide from "./page";
 
 afterEach(cleanup);

@@ -32,7 +32,7 @@ function sizes(og: boolean) {
 /** One cigarette. Widths are shares of a whole stick. */
 function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w: number }>) {
   const left = Math.max(0, total - burned);
-  const L = w * 0.84;
+  const labelWidth = w * 0.84;
   return (
     <div
       style={{ display: "flex", alignItems: "center", height: 26, marginBottom: 10, flexShrink: 0 }}
@@ -49,7 +49,7 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
       <div
         style={{
           display: "flex",
-          width: L,
+          width: labelWidth,
           height: 26,
           border: "2px dashed rgba(180,200,209,0.35)",
           borderLeft: "0",
@@ -59,7 +59,7 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
         <div
           style={{
             display: "flex",
-            width: Math.round(L * left),
+            width: Math.round(labelWidth * left),
             height: 22,
             background: "#f4f8f9",
           }}
@@ -68,7 +68,7 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
           <div
             style={{
               display: "flex",
-              width: Math.round(L * burned),
+              width: Math.round(labelWidth * burned),
               height: 22,
               background: "#6b7c84",
               borderRadius: "3px 11px 11px 3px",
@@ -83,8 +83,8 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
 function Rows({ value, sofar, w }: Readonly<{ value: number; sofar: number; w: number }>) {
   return (
     <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      {sticksFor(value, sofar).map((s, i) => (
-        <Stick key={i} total={s.total} burned={s.burned} w={w} />
+      {sticksFor(value, sofar).map((s) => (
+        <Stick key={s.id} total={s.total} burned={s.burned} w={w} />
       ))}
     </div>
   );
@@ -161,7 +161,7 @@ function Headline({ d }: Readonly<{ d: CardData }>) {
 
 /** The two stacks of cigarettes under the headline, on the tall card only. */
 function Comparison({ d }: Readonly<{ d: CardData }>) {
-  const w = sizes(false).stickWidth;
+  const stickWidth = sizes(false).stickWidth;
   return (
     <div style={{ display: "flex", flexDirection: "column", marginTop: 26, flexShrink: 0 }}>
       <div
@@ -176,7 +176,7 @@ function Comparison({ d }: Readonly<{ d: CardData }>) {
       >
         If nothing changes
       </div>
-      <Rows value={d.baseCigs} sofar={d.baseSoFar} w={w} />
+      <Rows value={d.baseCigs} sofar={d.baseSoFar} w={stickWidth} />
       {d.pct > 0 && (
         <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
           <div
@@ -192,7 +192,7 @@ function Comparison({ d }: Readonly<{ d: CardData }>) {
           >
             With the plan
           </div>
-          <Rows value={d.planCigs} sofar={d.planSoFar} w={w} />
+          <Rows value={d.planCigs} sofar={d.planSoFar} w={stickWidth} />
         </div>
       )}
     </div>
@@ -241,7 +241,7 @@ function Footer({ og }: Readonly<{ og: boolean }>) {
 
 /** The link-preview layout puts the cigarettes in a column beside the text. */
 function OgSticks({ d }: Readonly<{ d: CardData }>) {
-  const w = sizes(true).stickWidth;
+  const stickWidth = sizes(true).stickWidth;
   return (
     <div
       style={{
@@ -252,9 +252,9 @@ function OgSticks({ d }: Readonly<{ d: CardData }>) {
         marginLeft: 36,
       }}
     >
-      <Rows value={d.baseCigs} sofar={d.baseSoFar} w={w} />
+      <Rows value={d.baseCigs} sofar={d.baseSoFar} w={stickWidth} />
       {d.pct > 0 && <div style={{ display: "flex", height: 22 }} />}
-      {d.pct > 0 && <Rows value={d.planCigs} sofar={d.planSoFar} w={w} />}
+      {d.pct > 0 && <Rows value={d.planCigs} sofar={d.planSoFar} w={stickWidth} />}
     </div>
   );
 }

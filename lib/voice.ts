@@ -1,6 +1,8 @@
 /**
- * Browser voice helpers (Web Speech API). Everything is feature-detected: where a browser has no speech support the
- * controls are simply not shown and typing keeps working. Speech recognition in Chrome sends audio to the browser vendor's
+ * Browser voice helpers (Web Speech API). Everything is feature-detected: where a browser has no
+ * speech support the
+ * controls are simply not shown and typing keeps working. Speech recognition in Chrome sends audio
+ * to the browser vendor's
  * service; AirWise itself never receives or stores audio, only the text the user chooses to send.
  */
 
@@ -23,6 +25,7 @@ export interface RecognitionLike {
 
 export type RecognitionCtor = new () => RecognitionLike;
 
+/** The browser's speech-recognition constructor (standard or webkit-prefixed), or null where unsupported. */
 export function getRecognitionCtor(
   w: { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor } | undefined,
 ): RecognitionCtor | null {
@@ -54,6 +57,7 @@ interface SynthWindow {
   SpeechSynthesisUtterance?: new (text: string) => { lang: string };
 }
 
+/** Whether the browser can read text aloud. */
 export function canSpeak(w: SynthWindow | undefined): boolean {
   return Boolean(w?.speechSynthesis && w.SpeechSynthesisUtterance);
 }
@@ -64,13 +68,16 @@ export function speak(
   lang: string,
   w: SynthWindow | undefined = typeof window === "undefined" ? undefined : window,
 ): void {
-  if (!w || !canSpeak(w) || !text.trim()) return;
-  w.speechSynthesis!.cancel();
-  const u = new w.SpeechSynthesisUtterance!(text);
-  u.lang = lang;
-  w.speechSynthesis!.speak(u);
+  const synth = w?.speechSynthesis;
+  const Utterance = w?.SpeechSynthesisUtterance;
+  if (!synth || !Utterance || !text.trim()) return;
+  synth.cancel();
+  const utterance = new Utterance(text);
+  utterance.lang = lang;
+  synth.speak(utterance);
 }
 
+/** Stops any speech being read aloud. */
 export function stopSpeaking(
   w: SynthWindow | undefined = typeof window === "undefined" ? undefined : window,
 ): void {

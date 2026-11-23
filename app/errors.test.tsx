@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import ErrorPage from "./error";
 import GlobalError from "./global-error";
 import NotFound from "./not-found";
@@ -21,12 +22,14 @@ describe("error pages", () => {
   });
 
   it("leaves out the reference line when the error has no digest", () => {
-    render(<ErrorPage error={new Error("boom")} reset={() => {}} />);
+    render(<ErrorPage error={new Error("boom")} reset={() => undefined} />);
     expect(screen.queryByText(/Reference:/)).toBeNull();
   });
 
   it("the global error screen is a complete document with its own retry button", () => {
-    const html = renderToStaticMarkup(<GlobalError error={new Error("boom")} reset={() => {}} />);
+    const html = renderToStaticMarkup(
+      <GlobalError error={new Error("boom")} reset={() => undefined} />,
+    );
     expect(html).toContain("<html");
     expect(html).toContain("AirWise could not start");
     expect(html).toContain("Try again");

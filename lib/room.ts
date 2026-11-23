@@ -1,15 +1,29 @@
-import { NO_PLAN, simulate, type Cooking, type Home, type Plan, type Profile } from "./engine";
+import {
+  type Cooking,
+  type Home,
+  NO_PLAN,
+  type Plan,
+  type Profile,
+  simulate,
+} from "./engine/model";
+import { asRecord, finiteNumber, isRecord, type JsonRecord } from "./json";
 
 /**
  * Room findings and the product catalog.
- * Gemini may LOOK at a photo and say what it can see. Code decides what that means for the household and what it is worth:
- * the model never states a figure, and every number comes from lib/engine.ts.
+ * Gemini may LOOK at a photo and say what it can see. Code decides what that means for the
+ * household and what it is worth:
+ * the model never states a figure, and every number comes from lib/engine/.
  *
- * A photo shows what is THERE. It cannot prove what is absent. So the photo step maps only visible evidence to hotspots
- * (a visible gap, a visible gas or wood stove, a visible purifier), and everything else becomes a question the user answers.
+ * A photo shows what is THERE. It cannot prove what is absent. So the photo step maps only visible
+ * evidence to hotspots
+ * (a visible gap, a visible gas or wood stove, a visible purifier), and everything else becomes a
+ * question the user answers.
  */
 
-/** What a hotspot can be. `purifier_seen` comes from a photo; `no_purifier` only ever comes from the user's own answer. */
+/**
+ * What a hotspot can be. `purifier_seen` comes from a photo; `no_purifier` only ever comes from the
+ * user's own answer.
+ */
 export type FindingKind = "window_gap" | "gas_stove" | "purifier_seen" | "no_purifier";
 type RoomActionId = "sealGaps" | "induction" | "purifier";
 /** Display and sort order. */
@@ -52,6 +66,7 @@ const KIND_META: Record<FindingKind, { label: string; actionId: RoomActionId }> 
   no_purifier: { label: "No air purifier", actionId: "purifier" },
 };
 
+/** A hotspot for a finding kind, with its label and the fix it points to taken from KIND_META. */
 export function hotspotFor(kind: FindingKind, bbox: BBox | undefined, confidence: number): Hotspot {
   const { label, actionId } = KIND_META[kind];
   return { id: kind, kind, label, actionId, bbox, confidence };
@@ -82,17 +97,20 @@ export function profilePatch(
     patch.home = "typical"; // "no gap": stop assuming a leaky home
   if (hotspots.some((h) => h.kind === "gas_stove")) {
     if (current?.cooking !== "wood") patch.cooking = "lpg"; // a wood stove stays wood: it is the worse case
-  } else if (answers.stove === false && (!current || current.cooking !== "induction"))
+  } else if (answers.stove === false && current?.cooking !== "induction")
     patch.cooking = "induction"; // "no gas or wood": stop assuming smoke
   return patch;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Vision: schema, prompt and strict validation of the model's reply
 
 const MIN_CONFIDENCE = 0.4;
 
-/** Gemini responseSchema. Enums and numeric fields only: there is no free text for an image to smuggle instructions into. */
+/**
+ * Gemini responseSchema. Enums and numeric fields only: there is no free text for an image to
+ * smuggle instructions into.
+ */
 export const VISION_SCHEMA = {
   type: "OBJECT",
   properties: {
@@ -143,26 +161,25 @@ const isFrac = (v: unknown): v is number =>
   typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1;
 
 /**
- * Some models answer on a 0 to 1000 scale even when asked for 0 to 1 (seen on gemini-3.5-flash-lite). A box whose largest
- * value is above 1 but within 1000 is read as per-mille. Anything beyond that (pixels) is rejected, and the result is
+ * Some models answer on a 0 to 1000 scale even when asked for 0 to 1 (seen on
+ * gemini-3.5-flash-lite). A box whose largest
+ * value is above 1 but within 1000 is read as per-mille. Anything beyond that (pixels) is
+ * rejected, and the result is
  * validated as in-image either way.
  */
-function normaliseBox(b: Record<string, unknown>): Record<string, unknown> {
-  const vals = [b.x, b.y, b.w, b.h];
-  if (!vals.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0)) return b;
-  const max = Math.max(...(vals as number[]));
-  if (max <= 1 || max > 1000) return b;
-  return {
-    x: (b.x as number) / 1000,
-    y: (b.y as number) / 1000,
-    w: (b.w as number) / 1000,
-    h: (b.h as number) / 1000,
-  };
+function normaliseBox(box: JsonRecord): JsonRecord {
+  const values = [box.x, box.y, box.w, box.h].map(finiteNumber);
+  const numbers = values.filter((value): value is number => value !== null && value >= 0);
+  if (numbers.length !== values.length) return box;
+  const max = Math.max(...numbers);
+  if (max <= 1 || max > 1000) return box;
+  const [x, y, w, h] = numbers.map((value) => value / 1000);
+  return { x, y, w, h };
 }
 
 function validBox(raw: unknown): BBox | null {
-  if (!raw || typeof raw !== "object") return null;
-  const { x, y, w, h } = normaliseBox(raw as Record<string, unknown>);
+  if (!isRecord(raw)) return null;
+  const { x, y, w, h } = normaliseBox(raw);
   if (!isFrac(x) || !isFrac(y) || !isFrac(w) || !isFrac(h) || w <= 0 || h <= 0) return null;
   if (x + w > 1.0001 || y + h > 1.0001) return null;
   return { x, y, w, h };
@@ -170,16 +187,21 @@ function validBox(raw: unknown): BBox | null {
 
 /** One raw finding from the model as a hotspot, or null if it breaks any rule. */
 function validFinding(raw: unknown): { kind: VisionKind; box: BBox; conf: number } | null {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const kind = VISION_KINDS.find((k) => k === r.kind);
-  const box = validBox(r.bbox);
+  const fields = asRecord(raw);
+  const kind = VISION_KINDS.find((k) => k === fields.kind);
+  const box = validBox(fields.bbox);
   const conf =
-    typeof r.confidence === "number" && Number.isFinite(r.confidence) ? r.confidence : -1;
+    typeof fields.confidence === "number" && Number.isFinite(fields.confidence)
+      ? fields.confidence
+      : -1;
   if (!kind || !box || conf < MIN_CONFIDENCE || conf > 1) return null;
   return { kind, box, conf };
 }
 
-/** Strict validation: visible-evidence kinds only, boxes inside the image, confidence in range and above the floor, one finding per kind. */
+/**
+ * Strict validation: visible-evidence kinds only, boxes inside the image, confidence in range and
+ * above the floor, one finding per kind.
+ */
 export function validateVision(text: string): VisionOutcome {
   let json: unknown;
   try {
@@ -187,29 +209,32 @@ export function validateVision(text: string): VisionOutcome {
   } catch {
     return { status: "unreadable" };
   }
-  const j = json as { is_room?: unknown; findings?: unknown };
-  if (typeof j?.is_room !== "boolean" || !Array.isArray(j.findings))
+  const parsed = asRecord(json);
+  if (typeof parsed.is_room !== "boolean" || !Array.isArray(parsed.findings))
     return { status: "unreadable" };
-  if (!j.is_room) return { status: "not_room" };
+  if (!parsed.is_room) return { status: "not_room" };
   const seen = new Set<VisionKind>();
   const hotspots: Hotspot[] = [];
-  for (const raw of j.findings.slice(0, 12)) {
-    const f = validFinding(raw);
-    if (!f || seen.has(f.kind)) continue;
-    seen.add(f.kind);
-    hotspots.push(hotspotFor(f.kind, f.box, f.conf));
+  for (const raw of parsed.findings.slice(0, 12)) {
+    const finding = validFinding(raw);
+    if (!finding || seen.has(finding.kind)) continue;
+    seen.add(finding.kind);
+    hotspots.push(hotspotFor(finding.kind, finding.box, finding.conf));
   }
   hotspots.sort((a, b) => FINDING_KINDS.indexOf(a.kind) - FINDING_KINDS.indexOf(b.kind));
   return hotspots.length ? { status: "ok", hotspots } : { status: "none" };
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Evidence and answers together
 
 /**
- * Combines what the photo showed with what the user says. An explicit answer always wins over the photo (the user knows
- * their home). With no answer, visible evidence counts as a yes, and anything not visible stays unanswered: it adds no fix.
- * Hotspots keep their photo box when there is one; answer-only ones have none and are listed rather than drawn.
+ * Combines what the photo showed with what the user says. An explicit answer always wins over the
+ * photo (the user knows
+ * their home). With no answer, visible evidence counts as a yes, and anything not visible stays
+ * unanswered: it adds no fix.
+ * Hotspots keep their photo box when there is one; answer-only ones have none and are listed
+ * rather than drawn.
  */
 export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] {
   const seen = (k: FindingKind) => evidence.find((h) => h.kind === k);
@@ -218,35 +243,41 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
   if (window) out.push(seen("window_gap") ?? hotspotFor("window_gap", undefined, 1));
   const stove = answers.stove ?? (seen("gas_stove") ? true : undefined);
   if (stove) out.push(seen("gas_stove") ?? hotspotFor("gas_stove", undefined, 1));
-  const purifier = answers.purifier ?? (seen("purifier_seen") ? true : undefined);
-  if (purifier === true && seen("purifier_seen")) out.push(seen("purifier_seen")!);
+  const seenPurifier = seen("purifier_seen");
+  const purifier = answers.purifier ?? (seenPurifier ? true : undefined);
+  if (purifier === true && seenPurifier) out.push(seenPurifier);
   if (purifier === false) out.push(seen("no_purifier") ?? hotspotFor("no_purifier", undefined, 1));
   return out;
 }
 
-/** For each question: was it answered by the photo, by the user, or not at all. Drives the labels under the questions. */
+/** How a question was answered: by the user, by what the photo showed, or not at all. */
+interface QuestionState {
+  value: boolean | undefined;
+  source: "user" | "photo" | "none";
+}
+
+/**
+ * For each question: was it answered by the photo, by the user, or not at all. Drives the labels
+ * under the questions.
+ */
 export function questionState(
   evidence: Hotspot[],
   answers: Answers,
-): Record<QuestionId, { value: boolean | undefined; source: "user" | "photo" | "none" }> {
+): Record<QuestionId, QuestionState> {
   const photoYes: Record<QuestionId, boolean> = {
     window: evidence.some((h) => h.kind === "window_gap"),
     stove: evidence.some((h) => h.kind === "gas_stove"),
     purifier: evidence.some((h) => h.kind === "purifier_seen"),
   };
-  const state = {} as Record<
-    QuestionId,
-    { value: boolean | undefined; source: "user" | "photo" | "none" }
-  >;
-  for (const q of QUESTIONS) {
-    if (answers[q] !== undefined) state[q] = { value: answers[q], source: "user" };
-    else if (photoYes[q]) state[q] = { value: true, source: "photo" };
-    else state[q] = { value: undefined, source: "none" };
-  }
-  return state;
+  const stateOf = (q: QuestionId): QuestionState => {
+    if (answers[q] !== undefined) return { value: answers[q], source: "user" };
+    if (photoYes[q]) return { value: true, source: "photo" };
+    return { value: undefined, source: "none" };
+  };
+  return { window: stateOf("window"), stove: stateOf("stove"), purifier: stateOf("purifier") };
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Catalog: curated, static, no scraping. Ranked by the engine's exposure cut per rupee.
 
 type ProductKind = "purifier-hepa" | "purifier-boxfan" | "mask-n95" | "weather-strip" | "induction";
@@ -311,7 +342,10 @@ export interface RankedProduct extends Product {
 
 const retailerLink = (q: string) => `https://www.amazon.in/s?k=${encodeURIComponent(q)}`;
 
-/** Ranks the catalog by engine cut per rupee for this household, best value first. Items that change nothing are dropped. */
+/**
+ * Ranks the catalog by engine cut per rupee for this household, best value first. Items that change
+ * nothing are dropped.
+ */
 export function rankProducts(hourly: number[], profile: Profile): RankedProduct[] {
   const base = simulate(hourly, profile, NO_PLAN).meanPm;
   return CATALOG.map((p) => {
@@ -330,5 +364,6 @@ export function rankProducts(hourly: number[], profile: Profile): RankedProduct[
 }
 
 const formatRupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+/** A product's indicative price as text, for example '₹8,000 to ₹15,000'. */
 export const priceRange = (p: Pick<Product, "price">) =>
   `${formatRupees(p.price[0])} to ${formatRupees(p.price[1])}`;

@@ -1,8 +1,10 @@
-import { buildContext, offlineAnswer, offlineAnswerHi, parseChoices } from "../lib/chat";
-import { CITIES, estimateHourly } from "../lib/data";
+import { estimateHourly } from "../lib/air/live";
+import { buildContext, offlineAnswer, parseChoices } from "../lib/chat";
+import { CITIES } from "../lib/cities";
 import { isGrounded, unsupportedClaims, verify } from "../lib/guard";
-import { decodeChoices } from "../lib/share";
 import { validateVision } from "../lib/room";
+import { decodeChoices } from "../lib/share";
+import { must } from "../test-support/must";
 
 /**
  * The eval set: small, deterministic, offline cases for the parts of AirWise where a wrong answer is costly.
@@ -26,7 +28,10 @@ export interface Case {
   run: (verifier?: Verifier) => boolean;
 }
 
-/** The thing under test for the guard categories. Swappable so the regression check can substitute a broken one. */
+/**
+ * The thing under test for the guard categories. Swappable so the regression check can substitute a
+ * broken one.
+ */
 export type Verifier = (text: string, facts: unknown) => { ok: boolean };
 const real: Verifier = (text, facts) => verify(text, facts);
 
@@ -61,26 +66,30 @@ const vis = (id: string, text: string, expectStatus: string, kinds?: string[]): 
   category: "vision validation",
   expect: `status ${expectStatus}${kinds ? ` with ${kinds.join(", ")}` : ""}`,
   run: () => {
-    const o = validateVision(text);
+    const outcome = validateVision(text);
     return (
-      o.status === expectStatus &&
-      (!kinds || (o.status === "ok" && o.hotspots.map((h) => h.kind).join(",") === kinds.join(",")))
+      outcome.status === expectStatus &&
+      (!kinds ||
+        (outcome.status === "ok" &&
+          outcome.hotspots.map((h) => h.kind).join(",") === kinds.join(",")))
     );
   },
 });
 
-const delhi = estimateHourly(CITIES[0]!);
+const delhi = estimateHourly(must(CITIES[0]));
 const ctx = buildContext(
-  parseChoices({
-    city: "delhi",
-    home: "typical",
-    commute: "bike",
-    km: 8,
-    cooking: "lpg",
-    vulnerable: true,
-    plan: {},
-    lang: "en",
-  })!,
+  must(
+    parseChoices({
+      city: "delhi",
+      home: "typical",
+      commute: "bike",
+      km: 8,
+      cooking: "lpg",
+      vulnerable: true,
+      plan: {},
+      lang: "en",
+    }),
+  ),
   delhi,
   7,
 );
@@ -177,14 +186,14 @@ export const CASES: Case[] = [
     category: "shared links",
     expect: "valid choices decode",
     run: () => {
-      const d = decodeChoices(
+      const shared = decodeChoices(
         "city=delhi&home=sealed&commute=metro&km=12&cooking=induction&vulnerable=0",
       );
       return (
-        d.city === "delhi" &&
-        d.profile?.home === "sealed" &&
-        d.profile.km === 12 &&
-        d.profile.vulnerable === false
+        shared.city === "delhi" &&
+        shared.profile?.home === "sealed" &&
+        shared.profile.km === 12 &&
+        shared.profile.vulnerable === false
       );
     },
   },
@@ -193,8 +202,8 @@ export const CASES: Case[] = [
     category: "shared links",
     expect: "unknown city and values are dropped",
     run: () => {
-      const d = decodeChoices("city=atlantis&home=castle&commute=teleport");
-      return d.city === undefined && d.profile === undefined;
+      const shared = decodeChoices("city=atlantis&home=castle&commute=teleport");
+      return shared.city === undefined && shared.profile === undefined;
     },
   },
   {
@@ -217,8 +226,8 @@ export const CASES: Case[] = [
     category: "shared links",
     expect: "unknown plan ids are dropped",
     run: () => {
-      const p = decodeChoices("plan=hack,seal,<script>").plan;
-      return !!p && p.sealGaps === true && p.induction === false;
+      const sharedPlan = decodeChoices("plan=hack,seal,<script>").plan;
+      return sharedPlan?.sealGaps === true && sharedPlan.induction === false;
     },
   },
   {
@@ -245,7 +254,7 @@ export const CASES: Case[] = [
     id: "off-03",
     category: "offline answers",
     expect: "Hindi mask answer is Devanagari",
-    run: () => /[ऀ-ॿ]/.test(offlineAnswerHi("क्या मुझे मास्क चाहिए?", ctx)),
+    run: () => /[ऀ-ॿ]/u.test(offlineAnswer("क्या मुझे मास्क चाहिए?", ctx, "hi")),
   },
   {
     id: "off-04",
@@ -257,7 +266,7 @@ export const CASES: Case[] = [
     id: "off-05",
     category: "offline answers",
     expect: "Hindi general answer is grounded",
-    run: () => isGrounded(offlineAnswerHi("नमस्ते", ctx), ctx),
+    run: () => isGrounded(offlineAnswer("नमस्ते", ctx, "hi"), ctx),
   },
   {
     id: "off-06",
@@ -268,7 +277,7 @@ export const CASES: Case[] = [
       const hi = ["मास्क", "खिड़की", "प्यूरीफायर", "बच्चे", "रसोई", "मेट्रो", "नमस्ते"];
       return [
         ...qs.map((q) => offlineAnswer(q, ctx)),
-        ...hi.map((q) => offlineAnswerHi(q, ctx)),
+        ...hi.map((q) => offlineAnswer(q, ctx, "hi")),
       ].every((a) => unsupportedClaims(a).length === 0);
     },
   },
@@ -300,9 +309,9 @@ export function summarise(results: CaseResult[]): {
 } {
   const byCategory: Record<string, { total: number; passed: number }> = {};
   for (const r of results) {
-    const b = (byCategory[r.category] ??= { total: 0, passed: 0 });
-    b.total++;
-    if (r.passed) b.passed++;
+    const tally = (byCategory[r.category] ??= { total: 0, passed: 0 });
+    tally.total++;
+    if (r.passed) tally.passed++;
   }
   return { total: results.length, passed: results.filter((r) => r.passed).length, byCategory };
 }

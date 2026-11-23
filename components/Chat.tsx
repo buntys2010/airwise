@@ -1,6 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import { runInBackground } from "@/lib/background";
 import type { Key } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 import { useVoice } from "./useVoice";
 
@@ -15,7 +18,10 @@ interface Props {
 }
 
 const SUGGESTIONS: Key[] = ["chat.q1", "chat.q2", "chat.q3", "chat.q4"];
-/** The server answers within 12 s, either with Gemini's checked answer or with checked offline guidance. A little more here covers the network. */
+/**
+ * The server answers within 12 s, either with Gemini's checked answer or with checked offline
+ * guidance. A little more here covers the network.
+ */
 const CHAT_CLIENT_TIMEOUT_MS = 14_000;
 /** After this long, say that it is still working. */
 const SLOW_AFTER_MS = 3_000;
@@ -126,7 +132,7 @@ function AnswerBody({ busy, slow, error, answer, noteText }: Readonly<AnswerBody
     return (
       <>
         <p>{answer}</p>
-        <p className="dim" style={{ marginTop: 8, fontSize: "0.9rem" }}>
+        <p className="dim u-answer-note">
           {noteText}. {t("chat.disclaimer")}
         </p>
       </>
@@ -134,6 +140,7 @@ function AnswerBody({ busy, slow, error, answer, noteText }: Readonly<AnswerBody
   return <p className="dim">{t("chat.empty")}</p>;
 }
 
+/** The question box: suggested questions, text or voice input, and the answer with its grounding note. */
 export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
   const { lang, t } = useLang();
   const [q, setQ] = useState("");
@@ -151,11 +158,12 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
   useEffect(() => {
     if (prefill) setQ(prefill);
   }, [prefill]);
-  // A visible progress state: after a few seconds the card says it is still working, so a slow answer never looks like a hang.
+  // A visible progress state: after a few seconds the card says it is still working, so a slow
+  // answer never looks like a hang.
   useEffect(() => {
     if (!busy) {
       setSlow(false);
-      return;
+      return undefined;
     }
     const timer = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
     return () => clearTimeout(timer);
@@ -165,7 +173,8 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
     const text = question.trim();
     if (!text || busy) return;
     const id = ++latest.current;
-    const isLatest = () => id === latest.current; // a newer question was asked meanwhile: drop this stale outcome
+    // a newer question was asked meanwhile: drop this stale outcome
+    const isLatest = () => id === latest.current;
     setBusy(true);
     setError("");
     voice.clearMessage();
@@ -177,8 +186,8 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
       setAnswer(reply.answer);
       setNote(noteFor(reply));
       voice.readOut(reply.answer);
-    } catch (e) {
-      if (isLatest()) setError(errorMessage(e, t));
+    } catch (failure) {
+      if (isLatest()) setError(errorMessage(failure, t));
     } finally {
       clearTimeout(timer);
       if (isLatest()) setBusy(false);
@@ -199,7 +208,7 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
             type="button"
             onClick={() => {
               setQ(t(k));
-              void ask(t(k));
+              runInBackground(ask(t(k)));
             }}
           >
             {t(k)}
@@ -210,7 +219,7 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
         className="chatform"
         onSubmit={(e) => {
           e.preventDefault();
-          void ask(q);
+          runInBackground(ask(q));
         }}
       >
         <label htmlFor="q" className="sr-only">

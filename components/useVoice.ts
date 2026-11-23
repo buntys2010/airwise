@@ -1,23 +1,25 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Lang } from "@/lib/chat";
-import { SPEECH_LANG, type Key } from "@/lib/i18n";
+
+import { type Key, SPEECH_LANG } from "@/lib/i18n";
+import type { Lang } from "@/lib/lang";
 import {
-  VOICE_PROBLEM_KEY,
   canSpeak,
   getRecognitionCtor,
   mapVoiceError,
+  type RecognitionLike,
   speak,
   stopSpeaking,
   transcriptOf,
-  type RecognitionLike,
+  VOICE_PROBLEM_KEY,
 } from "@/lib/voice";
 
 type SpeechWindow = Parameters<typeof getRecognitionCtor>[0] & Parameters<typeof canSpeak>[0];
 const speechWindow = () => window as unknown as SpeechWindow;
 
 /**
- * Voice input and read-aloud for the chat. Feature-detected, and it never sends anything by itself: the transcript goes to
+ * Voice input and read-aloud for the chat. Feature-detected, and it never sends anything by
+ * itself: the transcript goes to
  * `onTranscript` so the user can check it before sending. Read-aloud is off until the user turns it on.
  */
 export function useVoice(lang: Lang, onTranscript: (text: string) => void) {
@@ -49,22 +51,22 @@ export function useVoice(lang: Lang, onTranscript: (text: string) => void) {
     }
     const Ctor = getRecognitionCtor(speechWindow());
     if (!Ctor) return;
-    const r = new Ctor();
-    r.lang = SPEECH_LANG[lang];
-    r.interimResults = false;
-    r.continuous = false;
-    r.maxAlternatives = 1;
-    r.onresult = (e) => {
+    const recognition = new Ctor();
+    recognition.lang = SPEECH_LANG[lang];
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (e) => {
       const text = transcriptOf(e);
       if (text) onTranscript(text);
       setMessage(text ? "voice.review" : "voice.nospeech");
     };
-    r.onerror = (e) => setMessage(VOICE_PROBLEM_KEY[mapVoiceError(e.error)]);
-    r.onend = () => setListening(false);
-    rec.current = r;
+    recognition.onerror = (e) => setMessage(VOICE_PROBLEM_KEY[mapVoiceError(e.error)]);
+    recognition.onend = () => setListening(false);
+    rec.current = recognition;
     setMessage(null);
     try {
-      r.start();
+      recognition.start();
       setListening(true);
     } catch {
       setMessage("voice.error");

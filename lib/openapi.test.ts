@@ -1,6 +1,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+
 import { describe, expect, it } from "vitest";
+
+import { must } from "../test-support/must";
 
 const root = path.resolve(import.meta.dirname, "..");
 const spec = readFileSync(path.join(root, "docs/openapi.yaml"), "utf8");
@@ -21,7 +24,7 @@ describe("docs/openapi.yaml", () => {
 
   it("documents the method each route exports", () => {
     for (const r of routes) {
-      const src = readFileSync(path.join(apiDir, r, routeFile(r)!), "utf8");
+      const src = readFileSync(path.join(apiDir, r, must(routeFile(r))), "utf8");
       const method = /export const (GET|POST) /.exec(src)?.[1]?.toLowerCase();
       expect(method, `${r} exports a handler`).toBeTruthy();
       const block =

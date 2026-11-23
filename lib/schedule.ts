@@ -1,4 +1,5 @@
-import { OUTDOOR_HOUR, bestHour, fmtHour, modeLabel, OPEN_MODES, type Profile } from "./engine";
+import { fmtHour, modeLabel } from "./engine/actions";
+import { bestHour, OPEN_MODES, OUTDOOR_HOUR, type Profile } from "./engine/model";
 
 export interface ScheduleEntry {
   hour: number;
@@ -8,8 +9,10 @@ export interface ScheduleEntry {
 }
 
 /**
- * A deterministic "clear-air day" for this household: what to do at each key hour, with the live outdoor PM2.5 at that hour.
- * Every number in the text comes from the data, so it can be shown as-is, or handed to Gemini to rephrase under the grounding guard.
+ * A deterministic "clear-air day" for this household: what to do at each key hour, with the live
+ * outdoor PM2.5 at that hour.
+ * Every number in the text comes from the data, so it can be shown as-is, or handed to Gemini to
+ * rephrase under the grounding guard.
  */
 const COOKING_ADVICE: Record<Profile["cooking"], string> = {
   induction: "Induction adds almost no smoke indoors. Run the hood anyway.",
@@ -17,6 +20,7 @@ const COOKING_ADVICE: Record<Profile["cooking"], string> = {
   lpg: "Gas leaves smoke in the kitchen. Run the chimney or crack a window by the stove while you cook, then close it.",
 };
 
+/** The household's clear-air day: what to do at each key hour, with the outdoor PM2.5 at that hour. */
 export function buildSchedule(hourly: number[], p: Profile): ScheduleEntry[] {
   const best = bestHour(hourly);
   const at = (h: number) => `${hourly[h]} µg/m³`;

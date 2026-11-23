@@ -1,5 +1,6 @@
 /**
- * Bundle budget. Reads the table that `next build` prints and fails if any page's first-load JS is over budget.
+ * Bundle budget. Reads the table that `next build` prints and fails if any page's first-load JS is
+ * over budget.
  * Usage: npm run build 2>&1 | tee build.log && node scripts/budget.mjs build.log
  */
 import { readFileSync } from "node:fs";
@@ -14,7 +15,7 @@ export function parseBuildLog(log) {
   const pages = {};
   let shared = null;
   for (const line of String(log).split(/\r?\n/)) {
-    const row = /^\W*[○ƒ●λ]\s+(\/\S*)\s+([\d.]+)\s*(kB|B)\s+([\d.]+)\s*(kB|B)\s*$/.exec(line);
+    const row = /^\W*[○ƒ●λ]\s+(\/\S*)\s+([\d.]+)\s*(kB|B)\s+([\d.]+)\s*(kB|B)\s*$/u.exec(line);
     if (row && !row[1].startsWith("/api/") && row[1] !== "/_not-found")
       pages[row[1]] = toKb(row[4], row[5]);
     const sh = /First Load JS shared by all\s+([\d.]+)\s*(kB|B)/.exec(line);
@@ -42,16 +43,23 @@ export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED
   };
 }
 
-if (process.argv[1] && process.argv[1].endsWith("budget.mjs")) {
+/**
+ * Command-line entry: reads a `next build` log, prints the figures, and sets the exit code (0 ok, 1
+ * over budget, 2 bad usage).
+ */
+function main() {
   const file = process.argv[2];
   if (!file) {
     console.error("usage: node scripts/budget.mjs build.log");
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const result = checkBudget(parseBuildLog(readFileSync(file, "utf8")));
   console.log(
     `First-load JS: home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`,
   );
-  for (const v of result.violations) console.error("FAIL " + v);
-  process.exit(result.ok ? 0 : 1);
+  for (const v of result.violations) console.error(`FAIL ${v}`);
+  process.exitCode = result.ok ? 0 : 1;
 }
+
+if (process.argv[1]?.endsWith("budget.mjs")) main();

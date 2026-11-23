@@ -1,7 +1,11 @@
-import { buildContext, type ChatContext, type Choices, type Lang } from "./chat";
-import { buildSchedule, type ScheduleEntry } from "./schedule";
-import { bestHour, buildActions, categoryOf, pmAt, type Profile, type Tone } from "./engine";
+import { buildContext, type ChatContext, type Choices } from "./chat";
+import { buildActions } from "./engine/actions";
+import { categoryOf, type Tone } from "./engine/aqi";
+import { bestHour, pmAt, type Profile } from "./engine/model";
 import { verify } from "./guard";
+import { asRecord } from "./json";
+import { type Lang } from "./lang";
+import { buildSchedule, type ScheduleEntry } from "./schedule";
 
 export interface DayPlan {
   headline: string;
@@ -21,7 +25,10 @@ const clean = (v: unknown, max: number): string =>
         .slice(0, max)
     : "";
 
-/** Built on the SERVER from the user's choices: the schedule and every number in it come from the engine and the air data. */
+/**
+ * Built on the SERVER from the user's choices: the schedule and every number in it come from the
+ * engine and the air data.
+ */
 export function buildPlanRequest(
   c: Choices,
   hourly: number[],
@@ -54,6 +61,7 @@ export const PLAN_SCHEMA = {
   required: ["headline", "steps"],
 };
 
+/** The model prompt for rewording the day's schedule, with the schedule fenced as data. */
 export function buildPlanPrompt(req: PlanRequest, lang: Lang = "en"): string {
   return [
     "You are AirWise. Rewrite the household's clear-air day as a warm, plain-language plan.",
@@ -75,7 +83,8 @@ export function buildPlanPrompt(req: PlanRequest, lang: Lang = "en"): string {
 }
 
 /**
- * Validates the model's JSON: right shape, bounded sizes, same step times as the schedule, and every number grounded in the facts.
+ * Validates the model's JSON: right shape, bounded sizes, same step times as the schedule, and
+ * every number grounded in the facts.
  * Returns null when anything is off, so the caller serves the deterministic plan instead.
  */
 export function validatePlan(text: string, req: PlanRequest): DayPlan | null {
@@ -85,19 +94,19 @@ export function validatePlan(text: string, req: PlanRequest): DayPlan | null {
   } catch {
     return null;
   }
-  const j = json as { headline?: unknown; steps?: unknown };
+  const parsed = asRecord(json);
   if (
-    typeof j.headline !== "string" ||
-    !Array.isArray(j.steps) ||
-    j.steps.length !== req.schedule.length
+    typeof parsed.headline !== "string" ||
+    !Array.isArray(parsed.steps) ||
+    parsed.steps.length !== req.schedule.length
   )
     return null;
-  const steps = j.steps.map((s) => ({
-    time: clean((s as { time?: unknown })?.time, 10),
-    text: clean((s as { text?: unknown })?.text, 360),
+  const steps = parsed.steps.map((s) => ({
+    time: clean(asRecord(s).time, 10),
+    text: clean(asRecord(s).text, 360),
   }));
   if (steps.some((s, i) => !s.text || s.time !== req.schedule[i]?.time)) return null;
-  const plan: DayPlan = { headline: clean(j.headline, 120), steps };
+  const plan: DayPlan = { headline: clean(parsed.headline, 120), steps };
   if (!plan.headline) return null;
   const facts = { context: req.context, schedule: req.schedule };
   const everything = [plan.headline, ...plan.steps.map((s) => s.text)].join("\n");
@@ -112,8 +121,9 @@ export function schedulePlan(req: PlanRequest): DayPlan {
   };
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Community plan: one page for a building, school or workplace. Deterministic; every figure comes from the engine.
+// -------------------------------------------------------------------------------------------------
+// Community plan: one page for a building, school or workplace. Deterministic; every figure comes
+// from the engine.
 
 type CommunityRule =
   | "rule.noBurning"
@@ -135,6 +145,7 @@ export interface CommunityPlan {
   rules: CommunityRule[];
 }
 
+/** The community notice for today's air: the three most useful fixes and the rules for this air level. */
 export function communityPlan(hourly: number[], profile: Profile, nowHour: number): CommunityPlan {
   const tone = categoryOf(pmAt(hourly, nowHour)).tone;
   const best = bestHour(hourly);

@@ -10,7 +10,7 @@ export default function ErrorPage({
 }>) {
   return (
     <div className="wrap">
-      <main id="main" style={{ paddingBlock: "64px" }}>
+      <main id="main" className="u-page-pad">
         <h1>Something went wrong.</h1>
         <p>The page could not load. Your choices are saved on this device, so nothing is lost.</p>
         {error.digest && (

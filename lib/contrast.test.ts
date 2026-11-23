@@ -1,32 +1,36 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
 import { describe, expect, it } from "vitest";
+
+import { must } from "../test-support/must";
 
 /** Reads the real design tokens from globals.css so the test cannot drift from the stylesheet. */
 const css = readFileSync(path.resolve(__dirname, "../app/globals.css"), "utf8");
 const token = (name: string): string => {
-  const m = css.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`));
-  if (!m) throw new Error(`token --${name} not found`);
-  return m[1] as string;
+  const found = css.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`));
+  if (!found) throw new Error(`token --${name} not found`);
+  return found[1] as string;
 };
 const num = (name: string): number => {
-  const m = css.match(new RegExp(`--${name}:\\s*([0-9.]+)`));
-  if (!m) throw new Error(`number --${name} not found`);
-  return Number(m[1]);
+  const found = css.match(new RegExp(`--${name}:\\s*([0-9.]+)`));
+  if (!found) throw new Error(`number --${name} not found`);
+  return Number(found[1]);
 };
 
 type RGB = [number, number, number];
 const rgb = (hex: string): RGB => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as RGB;
 const lin = (v: number) => {
-  const s = v / 255;
-  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  const scaled = v / 255;
+  return scaled <= 0.03928 ? scaled / 12.92 : Math.pow((scaled + 0.055) / 1.055, 2.4);
 };
 const lum = ([r, g, b]: RGB) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const ratio = (a: RGB, b: RGB) => {
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
-  return (hi! + 0.05) / (lo! + 0.05);
+  return (must(hi) + 0.05) / (must(lo) + 0.05);
 };
-const mix = (a: RGB, b: RGB, t: number): RGB => a.map((v, i) => v * (1 - t) + b[i]! * t) as RGB;
+const mix = (a: RGB, b: RGB, t: number): RGB =>
+  a.map((v, i) => v * (1 - t) + must(b[i]) * t) as RGB;
 
 const AA = 4.5;
 

@@ -1,4 +1,7 @@
-import { aqiFromPm, categoryOf, fmtHour, pmAt } from "@/lib/engine";
+import { fmtHour } from "@/lib/engine/actions";
+import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
+import { pmAt } from "@/lib/engine/model";
+import { categoryLabel } from "@/lib/i18n";
 
 const TONE_FILL: Record<string, string> = {
   good: "#45d1b7",
@@ -15,30 +18,65 @@ interface Props {
   usual: number;
 }
 
-/** 24 bars, one per hour. Colour is never the only signal: the best hour is outlined and labelled, and a table is provided for screen readers. */
+/** The chart's data as a table, for screen readers. */
+function HourTable({ hourly }: Readonly<{ hourly: number[] }>) {
+  return (
+    <table className="sr-only">
+      <caption>Outdoor PM2.5 and AQI by hour</caption>
+      <thead>
+        <tr>
+          <th>Hour</th>
+          <th>PM2.5 µg/m³</th>
+          <th>AQI</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {hourly.map((v, h) => (
+          <tr key={fmtHour(h)}>
+            <td>{fmtHour(h)}</td>
+            <td>{v}</td>
+            <td>{aqiFromPm(v)}</td>
+            <td>{categoryLabel(categoryOf(v).tone)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * 24 bars, one per hour. Colour is never the only signal: the best hour is outlined and labelled,
+ * and a table is provided for screen readers.
+ */
 export function HourChart({ hourly, best, usual }: Readonly<Props>) {
-  const W = 960,
-    H = 260,
+  const CHART_WIDTH = 960,
+    CHART_HEIGHT = 260,
     padL = 8,
     padB = 30,
     padT = 34;
   const max = Math.max(...hourly, 60);
-  const bw = (W - padL) / 24;
-  const y = (v: number) => padT + (H - padT - padB) * (1 - v / max);
+  const bw = (CHART_WIDTH - padL) / 24;
+  const yFor = (v: number) => padT + (CHART_HEIGHT - padT - padB) * (1 - v / max);
   const summary = `Outdoor PM2.5 by hour. Highest ${Math.max(...hourly)} at ${fmtHour(hourly.indexOf(Math.max(...hourly)))}. Cleanest afternoon hour ${fmtHour(best)} at ${hourly[best]}.`;
   return (
     <div className="panel chartbox">
-      <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary}>
+      <svg
+        className="chart"
+        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+        role="img"
+        aria-label={summary}
+      >
         {hourly.map((v, h) => {
-          const x = padL + h * bw;
+          const barLeft = padL + h * bw;
           const tone = categoryOf(v).tone;
           return (
             <rect
-              key={h}
-              x={x + 3}
-              y={y(v)}
+              key={fmtHour(h)}
+              x={barLeft + 3}
+              y={yFor(v)}
               width={bw - 6}
-              height={H - padB - y(v)}
+              height={CHART_HEIGHT - padB - yFor(v)}
               rx={5}
               fill={TONE_FILL[tone]}
               opacity={h === best || h === usual ? 1 : 0.78}
@@ -49,36 +87,32 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
           x={padL + best * bw}
           y={padT - 6}
           width={bw}
-          height={H - padT - padB + 6}
+          height={CHART_HEIGHT - padT - padB + 6}
           rx={7}
           fill="none"
-          stroke="#0f1f27"
+          className="hc-ink"
           strokeWidth={3}
         />
         <text
-          x={Math.min(W - 150, Math.max(padL, padL + best * bw - 52))}
+          x={Math.min(CHART_WIDTH - 150, Math.max(padL, padL + best * bw - 52))}
           y={padT - 14}
-          style={{ fill: "#0f1f27", fontWeight: 700, fontSize: 14 }}
+          className="hc-label hc-label-lg"
         >
           Best: {fmtHour(best)}
         </text>
         <line
           x1={padL + usual * bw + bw / 2}
           x2={padL + usual * bw + bw / 2}
-          y1={y(pmAt(hourly, usual)) - 4}
-          y2={y(pmAt(hourly, usual)) - 20}
-          stroke="#0f1f27"
+          y1={yFor(pmAt(hourly, usual)) - 4}
+          y2={yFor(pmAt(hourly, usual)) - 20}
+          className="hc-ink"
           strokeWidth={2}
         />
-        <text
-          x={padL + usual * bw - 4}
-          y={y(pmAt(hourly, usual)) - 26}
-          style={{ fill: "#0f1f27", fontWeight: 700, fontSize: 13 }}
-        >
+        <text x={padL + usual * bw - 4} y={yFor(pmAt(hourly, usual)) - 26} className="hc-label">
           Your usual outing
         </text>
         {[0, 6, 12, 18, 23].map((h) => (
-          <text key={h} x={padL + h * bw + bw / 2} y={H - 8} textAnchor="middle">
+          <text key={h} x={padL + h * bw + bw / 2} y={CHART_HEIGHT - 8} textAnchor="middle">
             {fmtHour(h)}
           </text>
         ))}
@@ -102,27 +136,7 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
           ),
         )}
       </div>
-      <table className="sr-only">
-        <caption>Outdoor PM2.5 and AQI by hour</caption>
-        <thead>
-          <tr>
-            <th>Hour</th>
-            <th>PM2.5 µg/m³</th>
-            <th>AQI</th>
-            <th>Level</th>
-          </tr>
-        </thead>
-        <tbody>
-          {hourly.map((v, h) => (
-            <tr key={h}>
-              <td>{fmtHour(h)}</td>
-              <td>{v}</td>
-              <td>{aqiFromPm(v)}</td>
-              <td>{categoryOf(v).label}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <HourTable hourly={hourly} />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { must } from "../test-support/must";
 import Page from "./page";
 import { cityBox, pickCity } from "./test-city";
 
@@ -11,14 +13,14 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
-  window.print = () => {};
+  window.print = () => undefined;
 });
 
 const live = Array.from({ length: 24 }, (_, i) => 120 + i);
@@ -29,24 +31,26 @@ function stubFetch(
     chat?: (body: Record<string, unknown>) => Promise<unknown> | unknown;
   } = {},
 ) {
-  const f = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
     if (String(url).startsWith("/api/chat")) {
       const result = await (opts.chat ?? (() => ({ answer: "Wear an N95.", verified: true })))(
         JSON.parse(init?.body as string),
       );
-      return { ok: true, json: async () => result };
+      return { ok: true, json: () => Promise.resolve(result) };
     }
     if (!opts.air) throw new Error("offline");
     return {
       ok: true,
-      json: async () =>
-        String(url).includes("air-quality")
-          ? { hourly: { pm2_5: live } }
-          : { current: { temperature_2m: 11, wind_speed_10m: 4 } },
+      json: () =>
+        Promise.resolve(
+          String(url).includes("air-quality")
+            ? { hourly: { pm2_5: live } }
+            : { current: { temperature_2m: 11, wind_speed_10m: 4 } },
+        ),
     };
   });
-  vi.stubGlobal("fetch", f);
-  return f;
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 beforeEach(() => {
   localStorage.clear();
@@ -104,10 +108,10 @@ describe("AirWise home", () => {
   it("has three keyboard-reachable hotspot buttons and a matching text list of fixes", () => {
     render(<Page />);
     for (const n of [1, 2, 3]) {
-      const m = marker(n);
-      expect(m.tagName).toBe("BUTTON");
-      expect(m.getAttribute("aria-pressed")).toBe("false");
-      expect(m.getAttribute("tabindex")).not.toBe("-1");
+      const markerEl = marker(n);
+      expect(markerEl.tagName).toBe("BUTTON");
+      expect(markerEl.getAttribute("aria-pressed")).toBe("false");
+      expect(markerEl.getAttribute("tabindex")).not.toBe("-1");
     }
     const list = screen.getByRole("list", { name: "Fixes found in your room" });
     expect(list.querySelectorAll(":scope > li")).toHaveLength(3);
@@ -117,7 +121,8 @@ describe("AirWise home", () => {
     render(<Page />);
     const hazeBefore = Number(document.documentElement.style.getPropertyValue("--haze"));
     const dial = screen.getByRole("group", { name: /daily exposure/i });
-    const label = (el: HTMLElement) => el.querySelector(".dialafter")!.getAttribute("aria-label")!;
+    const label = (el: HTMLElement) =>
+      must(must(el.querySelector(".dialafter")).getAttribute("aria-label"));
     const cigsBefore = parseFloat(label(dial));
     fireEvent.click(marker(1));
     expect(marker(1).getAttribute("aria-pressed")).toBe("true");
@@ -132,7 +137,7 @@ describe("AirWise home", () => {
   it("the row button and the hotspot stay in sync, and either one removes the fix again", () => {
     render(<Page />);
     const list = screen.getByRole("list", { name: "Fixes found in your room" });
-    fireEvent.click(within(list).getAllByRole("button", { name: "Do this" })[0]!);
+    fireEvent.click(must(within(list).getAllByRole("button", { name: "Do this" })[0]));
     expect(marker(1).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(marker(1));
     expect(marker(1).getAttribute("aria-pressed")).toBe("false");
@@ -149,7 +154,7 @@ describe("AirWise home", () => {
 
 describe("chat on the home screen", () => {
   it("sends only choices from fixed lists, never numbers, and shows the verified label", async () => {
-    const f = stubFetch({ chat: () => ({ answer: "Wear an N95.", verified: true }) });
+    const fetchMock = stubFetch({ chat: () => ({ answer: "Wear an N95.", verified: true }) });
     render(<Page />);
     fireEvent.click(marker(2));
     fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
@@ -159,7 +164,7 @@ describe("chat on the home screen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByText("Wear an N95.")).toBeTruthy();
     expect(screen.getByText(/Answered by Gemini, with every number checked/)).toBeTruthy();
-    const call = f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat"))!;
+    const call = must(fetchMock.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")));
     const body = JSON.parse(call[1].body as string);
     expect(Object.keys(body).sort()).toEqual(["choices", "question"]);
     expect(body.choices).toMatchObject({
@@ -193,12 +198,14 @@ describe("chat on the home screen", () => {
   });
 
   it("shows only the latest answer when questions are asked one after another", async () => {
-    let release: (v: unknown) => void = () => {};
+    let release: (value: unknown) => void = (_value: unknown) => undefined;
     const slow = new Promise((r) => {
       release = r;
     });
-    let n = 0;
-    stubFetch({ chat: () => (++n === 1 ? slow : { answer: "Second answer.", verified: true }) });
+    let callCount = 0;
+    stubFetch({
+      chat: () => (++callCount === 1 ? slow : { answer: "Second answer.", verified: true }),
+    });
     render(<Page />);
     fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
     const input = screen.getByLabelText(/Ask AirWise a question/);
@@ -250,7 +257,7 @@ describe("wording of the dial", () => {
 
 describe("user journey: household pills, stage dock and share pass", () => {
   it("ProfilePills render as radio groups, and one tap updates the household the chat sends", async () => {
-    const f = stubFetch({ chat: () => ({ answer: "Ok.", verified: true }) });
+    const fetchMock = stubFetch({ chat: () => ({ answer: "Ok.", verified: true }) });
     render(<Page />);
     const wood = screen.getByRole("radio", { name: /Wood or coal/ });
     expect(wood.getAttribute("aria-checked")).toBe("false");
@@ -270,10 +277,11 @@ describe("user journey: household pills, stage dock and share pass", () => {
     fireEvent.change(screen.getByLabelText(/Ask AirWise a question/), { target: { value: "ok?" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() =>
-      expect(f.mock.calls.some((c) => String(c[0]).startsWith("/api/chat"))).toBe(true),
+      expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/chat"))).toBe(true),
     );
     const body = JSON.parse(
-      f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat"))![1].body as string,
+      must(fetchMock.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")))[1]
+        .body as string,
     );
     expect(body.choices).toMatchObject({ cooking: "induction", vulnerable: false });
   });
@@ -288,12 +296,12 @@ describe("user journey: household pills, stage dock and share pass", () => {
       "Co-pilot",
       "Share",
     ]);
-    expect(tabs[0]!.getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(tabs[1]!);
-    expect(tabs[1]!.getAttribute("aria-pressed")).toBe("true");
-    expect(tabs[0]!.getAttribute("aria-pressed")).toBe("false");
+    expect(must(tabs[0]).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(must(tabs[1]));
+    expect(must(tabs[1]).getAttribute("aria-pressed")).toBe("true");
+    expect(must(tabs[0]).getAttribute("aria-pressed")).toBe("false");
     expect(screen.getByRole("heading", { name: "What to buy first, by value" })).toBeTruthy();
-    fireEvent.click(tabs[3]!);
+    fireEvent.click(must(tabs[3]));
     expect(screen.getByRole("heading", { name: "Your card" })).toBeTruthy();
   });
 
@@ -306,7 +314,7 @@ describe("user journey: household pills, stage dock and share pass", () => {
     const img = screen.getByRole("img", {
       name: /AirWise clean-air card for Lucknow: .+ cigarettes equivalent a day, .+ with this plan\./,
     }) as HTMLImageElement;
-    const src = new URL(img.getAttribute("src")!, "http://x");
+    const src = new URL(must(img.getAttribute("src")), "http://x");
     expect(src.pathname).toBe("/api/share-image");
     expect(src.searchParams.get("city")).toBe("lucknow");
     expect(
@@ -316,7 +324,7 @@ describe("user journey: household pills, stage dock and share pass", () => {
     ).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /Share the card on WhatsApp/ }));
     await waitFor(() => expect(open).toHaveBeenCalled());
-    expect(String(open.mock.calls[0]![0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(String(must(open.mock.calls[0])[0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
     expect(await screen.findByText("WhatsApp opened with your link.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Download the image" }).getAttribute("download")).toBe(
       "airwise-plan.png",

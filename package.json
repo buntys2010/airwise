@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dead": "knip",
+    "circular": "madge --circular --extensions ts,tsx --ts-config tsconfig.json --exclude \"\\\\.test\\\\.\" app components lib mcp",
     "dupes": "jscpd app components lib --ignore \"**/*.test.*\" --min-lines 5 --min-tokens 50 --threshold 1"
   },
   "dependencies": {
@@ -39,11 +40,13 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
     "eslint-plugin-sonarjs": "^4.2.2",
     "globals": "^17.14.0",
     "jscpd": "^5.4.3",
     "jsdom": "^29.1.1",
     "knip": "^6.47.0",
+    "madge": "^8.0.0",
     "prettier": "^3.10.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.73.0",

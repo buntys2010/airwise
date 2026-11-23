@@ -1,13 +1,16 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { must } from "../test-support/must";
 import { FocusGuard } from "./FocusGuard";
 
 const rect = (top: number, bottom: number) =>
   ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top }) as DOMRect;
 
 function setup(barPosition: string) {
-  document.body.innerHTML = `<nav class="dock"><button id="in-bar">tab</button></nav><button id="field">x</button>`;
+  document.body.innerHTML =
+    '<nav class="dock"><button id="in-bar">tab</button></nav><button id="field">x</button>';
   const bar = document.querySelector("nav.dock") as HTMLElement;
   bar.getBoundingClientRect = () => rect(600, 660);
   (document.getElementById("field") as HTMLElement).getBoundingClientRect = () => rect(580, 620);
@@ -18,7 +21,7 @@ function setup(barPosition: string) {
 }
 
 const focus = (id: string) =>
-  document.getElementById(id)!.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+  must(document.getElementById(id)).dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
 
 describe("FocusGuard", () => {
   const scrollBy = vi.fn();

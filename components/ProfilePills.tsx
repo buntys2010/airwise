@@ -1,8 +1,9 @@
 "use client";
 import { useRef } from "react";
-import type { Commute, Cooking, Home, Profile } from "@/lib/engine";
-import type { Lang } from "@/lib/chat";
-import { t as translate, type Key } from "@/lib/i18n";
+
+import type { Commute, Cooking, Home, Profile } from "@/lib/engine/model";
+import { type Key, t as translate } from "@/lib/i18n";
+import type { Lang } from "@/lib/lang";
 
 interface Props {
   profile: Profile;

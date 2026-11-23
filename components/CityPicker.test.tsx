@@ -3,8 +3,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { LangProvider } from "./LangProvider";
+
+import { must } from "../test-support/must";
 import { CityPicker } from "./CityPicker";
+import { LangProvider } from "./LangProvider";
 
 function Harness({ onPick }: { onPick: (id: string) => void }) {
   const [v, setV] = useState("delhi");
@@ -25,14 +27,16 @@ afterEach(cleanup);
 
 describe("CityPicker", () => {
   it("opens with every city, filters as you type, and finds old names and states", () => {
-    render(<Harness onPick={() => {}} />);
+    render(<Harness onPick={() => undefined} />);
     fireEvent.focus(box());
     expect(box().getAttribute("aria-expanded")).toBe("true");
     expect(screen.getAllByRole("option").length).toBe(50);
     fireEvent.change(box(), { target: { value: "bombay" } });
-    expect(screen.getAllByRole("option")[0]!.textContent).toContain("Mumbai");
+    expect(must(screen.getAllByRole("option")[0]).textContent).toContain("Mumbai");
     fireEvent.change(box(), { target: { value: "kerala" } });
-    expect(screen.getAllByRole("option").every((o) => /Kerala/.test(o.textContent!))).toBe(true);
+    expect(screen.getAllByRole("option").every((o) => /Kerala/.test(must(o.textContent)))).toBe(
+      true,
+    );
     fireEvent.change(box(), { target: { value: "zzzz" } });
     expect(screen.queryAllByRole("option")).toHaveLength(0);
     expect(screen.getByRole("status").textContent).toMatch(/No city matches/);
@@ -54,28 +58,28 @@ describe("CityPicker", () => {
     expect(box().getAttribute("aria-activedescendant")).toBeTruthy();
   });
   it("has no accessibility violations open or closed", async () => {
-    const { container } = render(<Harness onPick={() => {}} />);
+    const { container } = render(<Harness onPick={() => undefined} />);
     for (const open of [false, true]) {
       if (open) fireEvent.focus(box());
-      const r = await axe.run(container, {
+      const results = await axe.run(container, {
         rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
       });
-      expect(r.violations.map((v) => v.id)).toEqual([]);
+      expect(results.violations.map((v) => v.id)).toEqual([]);
     }
   });
 });
 
 describe("CityPicker keyboard details", () => {
   it("opens on ArrowUp, then Home and End jump to the first and last option", () => {
-    render(<Harness onPick={() => {}} />);
+    render(<Harness onPick={() => undefined} />);
     fireEvent.focus(box());
     fireEvent.keyDown(box(), { key: "End" });
     const options = screen.getAllByRole("option");
-    expect(options.at(-1)!.className).toContain("active");
+    expect(must(options.at(-1)).className).toContain("active");
     fireEvent.keyDown(box(), { key: "Home" });
-    expect(screen.getAllByRole("option")[0]!.className).toContain("active");
+    expect(must(screen.getAllByRole("option")[0]).className).toContain("active");
     fireEvent.keyDown(box(), { key: "ArrowUp" });
-    expect(screen.getAllByRole("option").at(-1)!.className).toContain("active");
+    expect(must(screen.getAllByRole("option").at(-1)).className).toContain("active");
   });
 
   it("ignores keys it does not use, and Enter with the list closed", () => {

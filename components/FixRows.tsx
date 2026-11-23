@@ -1,11 +1,15 @@
 "use client";
-import type { ActionResult } from "@/lib/engine";
+import type { ActionResult } from "@/lib/engine/actions";
 import { ACTION_HI, englishIn, type Key } from "@/lib/i18n";
 import type { Hotspot } from "@/lib/room";
+
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
 
-/** One plain row per finding: what was seen, the fix, what it is worth. This list is also the text equivalent of the room markers. */
+/**
+ * One plain row per finding: what was seen, the fix, what it is worth. This list is also the text
+ * equivalent of the room markers.
+ */
 export function FixRows({ a, hotspots }: Readonly<{ a: Airwise; hotspots: Hotspot[] }>) {
   const { lang, t } = useLang();
   const rows = hotspots

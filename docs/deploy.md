@@ -35,8 +35,9 @@ The answer cache (`lib/cache.ts`), the rate limiter (`lib/ratelimit.ts`) and the
 ## Google Cloud Run
 ```bash
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com secretmanager.googleapis.com
-printf '%s' "$GEMINI_API_KEY" | gcloud secrets create gemini-api-key --data-file=-
+SECRET_NAME=gemini-api-key
+printf '%s' "$GEMINI_API_KEY" | gcloud secrets create "$SECRET_NAME" --data-file=-
 gcloud run deploy airwise --source . --region asia-south1 --allow-unauthenticated \
-  --set-secrets GEMINI_API_KEY=gemini-api-key:latest --min-instances 0 --max-instances 3
+  --set-secrets "GEMINI_API_KEY=${SECRET_NAME}:latest" --min-instances 0 --max-instances 3
 ```
 Cloud Run builds with the Node buildpack (`npm run build`, `npm start`). Never commit the key; keep it in Secret Manager or the host's environment settings. Keep max instances low: the limiter and budget are per instance.

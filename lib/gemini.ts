@@ -48,6 +48,15 @@ export const REASON_TEXT: Record<FailureReason, string> = {
   empty: "Gemini returned nothing",
 };
 
+/** Overall time budget for a model chain when the caller gives none. */
+const DEFAULT_BUDGET_MS = 12_000;
+/** Longest one model call may take when the caller gives no limit. */
+const DEFAULT_CALL_TIMEOUT_MS = 12_000;
+/** Not worth starting another model call with less than this left. */
+const MIN_REMAINING_MS = 250;
+const BUDGET_WINDOW_MS = 60_000;
+const DEFAULT_CALLS_PER_MIN = 40;
+
 const DEFAULT_MODEL = "gemini-2.5-flash";
 /** Lite models have their own quotas, so a rate-limited primary does not take the feature down. */
 const DEFAULT_FALLBACKS = "gemini-flash-lite-latest,gemini-3.5-flash-lite";
@@ -64,7 +73,8 @@ export function modelChain(env: NodeJS.ProcessEnv = process.env): string[] {
 }
 
 /**
- * Gemini 2.5 models "think" with hidden tokens that otherwise consume the output budget and return empty text,
+ * Gemini 2.5 models "think" with hidden tokens that otherwise consume the output budget and return
+ * empty text,
  * so thinking is switched off for them. Newer models reject that setting, so it is only sent to 2.5.
  */
 export function generationConfig(
@@ -83,13 +93,23 @@ export function generationConfig(
   };
 }
 
-/** A whole number of at least 1, or the fallback: `0`, a negative or text must not silently disable every model call. */
+/**
+ * A whole number of at least 1, or the fallback: `0`, a negative or text must not silently disable
+ * every model call.
+ */
 export function positiveInt(raw: string | undefined, fallback: number): number {
-  const n = Number(raw);
-  return Number.isInteger(n) && n >= 1 ? n : fallback;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : fallback;
 }
-/** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
-const budget = createBudget(() => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, 40), 60_000);
+/**
+ * A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and
+ * money, on a paid key).
+ */
+const budget = createBudget(
+  () => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, DEFAULT_CALLS_PER_MIN),
+  BUDGET_WINDOW_MS,
+);
+/** Test hook: refill the per-minute Gemini call budget. */
 export const resetGeminiBudget = () => budget.reset();
 
 let sink: (line: string) => void = (line) => {
@@ -158,10 +178,10 @@ async function callModel(
     );
     if (!res.ok) return { ok: false, reason: reasonForStatus(res.status) };
     return readReply((await res.json()) as ModelReply);
-  } catch (e) {
+  } catch (error) {
     return {
       ok: false,
-      reason: e instanceof Error && e.name === "AbortError" ? "timeout" : "network",
+      reason: error instanceof Error && error.name === "AbortError" ? "timeout" : "network",
     };
   } finally {
     clearTimeout(timer);
@@ -179,19 +199,21 @@ const PRIORITY: FailureReason[] = [
 ];
 
 /**
- * Calls the Gemini API from the server, walking the model chain until one answers or the overall budget runs out.
- * Always resolves: a typed failure reason on any problem, so callers can show it and fall back to deterministic output.
+ * Calls the Gemini API from the server, walking the model chain until one answers or the overall
+ * budget runs out.
+ * Always resolves: a typed failure reason on any problem, so callers can show it and fall back to
+ * deterministic output.
  * The key travels in a header, never in the URL, and is read only from the environment.
  */
 export async function generateDetailed(opts: GenerateOptions): Promise<GenResult> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, reason: "no_key" };
   const started = Date.now();
-  const overall = opts.budgetMs ?? 12_000;
+  const overall = opts.budgetMs ?? DEFAULT_BUDGET_MS;
   const seen: FailureReason[] = [];
   for (const model of modelChain()) {
     const remaining = overall - (Date.now() - started);
-    if (remaining <= 250) {
+    if (remaining <= MIN_REMAINING_MS) {
       seen.push("timeout");
       break;
     }
@@ -200,23 +222,28 @@ export async function generateDetailed(opts: GenerateOptions): Promise<GenResult
       return { ok: false, reason: "budget" };
     }
     const t0 = Date.now();
-    const r = await callModel(model, key, opts, Math.min(opts.timeoutMs ?? 12_000, remaining));
+    const attempt = await callModel(
+      model,
+      key,
+      opts,
+      Math.min(opts.timeoutMs ?? DEFAULT_CALL_TIMEOUT_MS, remaining),
+    );
     log({
       kind: opts.kind,
       model,
-      ok: r.ok,
-      reason: r.ok ? undefined : r.reason,
+      ok: attempt.ok,
+      reason: attempt.ok ? undefined : attempt.reason,
       ms: Date.now() - t0,
       images: opts.images?.length ?? 0,
     });
-    if (r.ok) return { ok: true, text: r.text, model };
-    seen.push(r.reason);
+    if (attempt.ok) return { ok: true, text: attempt.text, model };
+    seen.push(attempt.reason);
   }
   return { ok: false, reason: PRIORITY.find((p) => seen.includes(p)) ?? "unavailable" };
 }
 
 /** Thin wrapper kept for simple callers: the text, or null on any failure. */
 export async function generate(opts: GenerateOptions): Promise<string | null> {
-  const r = await generateDetailed(opts);
-  return r.ok ? r.text : null;
+  const result = await generateDetailed(opts);
+  return result.ok ? result.text : null;
 }

@@ -1,14 +1,15 @@
-#!/usr/bin/env node
 /**
  * `npm run check`: one command that proves the build is healthy and prints a proof card of real numbers.
- * Runs the type-check, the whole test suite (which includes the accessibility scans and the eval set), a production
+ * Runs the type-check, the whole test suite (which includes the accessibility scans and the eval
+ * set), a production
  * build with the bundle budget, and the dependency audit. Exits 1 if anything fails.
  */
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { checkBudget, parseBuildLog, PAGE_BUDGET_KB } from "./budget.mjs";
+
+import { checkBudget, PAGE_BUDGET_KB, parseBuildLog } from "./budget.mjs";
 
 const shell = process.platform === "win32";
 const run = (cmd, args, opts = {}) =>
@@ -100,6 +101,6 @@ for (const [label, text] of rows) console.log(`  ${label.padEnd(width)}  ${text}
 console.log(failed ? "\nResult: FAIL\n" : "\nResult: all checks passed\n");
 writeFileSync(
   path.join(process.cwd(), ".last-check.txt"),
-  rows.map((r) => `${r[0].padEnd(width)}  ${r[1]}`).join("\n") + "\n",
+  `${rows.map((r) => `${r[0].padEnd(width)}  ${r[1]}`).join("\n")}\n`,
 );
-process.exit(failed ? 1 : 0);
+process.exitCode = failed ? 1 : 0;

@@ -6,12 +6,17 @@ type Handler = (req: Request) => Response | Promise<Response>;
 let sink: (line: string) => void = (line) => {
   if (process.env.NODE_ENV !== "test") console.info(line);
 };
+/** Test hook: send request log lines to `fn` instead of the console. */
 export function setRequestLogSink(fn: (line: string) => void) {
   sink = fn;
 }
 
-/** A caller-supplied id is kept only if it is short and harmless; anything else is replaced, so logs cannot be forged or flooded. */
+/**
+ * A caller-supplied id is kept only if it is short and harmless; anything else is replaced, so logs
+ * cannot be forged or flooded.
+ */
 const SAFE_ID = /^[A-Za-z0-9_-]{8,64}$/;
+/** The caller's x-request-id if it is safe, otherwise a fresh random id. */
 export function requestIdFor(req: Request): string {
   const given = req.headers.get("x-request-id");
   return given && SAFE_ID.test(given) ? given : crypto.randomUUID();
@@ -19,9 +24,11 @@ export function requestIdFor(req: Request): string {
 
 /**
  * Wraps an API route so every request is observable and no throw escapes as a bare 500:
- *  - one structured JSON line per request: route, method, status, duration, request id (never the body, question or image);
+ *  - one structured JSON line per request: route, method, status, duration, request id (never the
+ * body, question or image);
  *  - an `x-request-id` response header, so a user report can be matched to a log line;
- *  - an unexpected error is logged (name and message only) and answered with a JSON 500 that carries the same id.
+ *  - an unexpected error is logged (name and message only) and answered with a JSON 500 that
+ * carries the same id.
  */
 export function withObservability(
   route: string,
@@ -34,15 +41,15 @@ export function withObservability(
     try {
       res = await handler(req);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error(String(err));
+      const failure = err instanceof Error ? err : new Error(String(err));
       sink(
         JSON.stringify({
           evt: "error",
           route,
           method: req.method,
           id,
-          name: e.name,
-          message: e.message.slice(0, 300),
+          name: failure.name,
+          message: failure.message.slice(0, 300),
         }),
       );
       res = NextResponse.json(

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+
 import { clientIp } from "./ratelimit";
 
+/** A JSON response with a status and optional headers. */
 export const json = (body: unknown, status = 200, headers?: Record<string, string>) =>
   NextResponse.json(body, { status, headers });
 
@@ -20,7 +22,7 @@ async function readLimited(
     if (done) break;
     totalBytes += value.byteLength;
     if (totalBytes > maxBytes) {
-      await reader.cancel().catch(() => {});
+      await reader.cancel().catch(() => undefined); // already over the limit: a failed cancel changes nothing
       return null;
     }
     raw += decoder.decode(value, { stream: true });

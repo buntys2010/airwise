@@ -28,6 +28,7 @@ jobs:
         run: |
           npm run dead
           npm run dupes
+          npm run circular
       - name: Tests with coverage floor
         run: npm run coverage
       - run: npm run eval

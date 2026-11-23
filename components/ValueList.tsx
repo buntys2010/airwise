@@ -1,9 +1,13 @@
 "use client";
-import { priceRange, type RankedProduct } from "@/lib/room";
 import { englishIn } from "@/lib/i18n";
+import { priceRange, type RankedProduct } from "@/lib/room";
+
 import { useLang } from "./LangProvider";
 
-/** The catalog ranked by how much of your exposure each rupee removes, for this household. Prices are indicative. */
+/**
+ * The catalog ranked by how much of your exposure each rupee removes, for this household. Prices
+ * are indicative.
+ */
 export function ValueList({ products }: Readonly<{ products: RankedProduct[] }>) {
   const { lang, t } = useLang();
   return (

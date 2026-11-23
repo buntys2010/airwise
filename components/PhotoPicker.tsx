@@ -1,7 +1,10 @@
 "use client";
 import { useId, useRef } from "react";
+
+import { runInBackground } from "@/lib/background";
 import type { Key } from "@/lib/i18n";
-import { QUESTIONS, type QuestionId } from "@/lib/room";
+import { type QuestionId, QUESTIONS } from "@/lib/room";
+
 import { useLang } from "./LangProvider";
 import type { Room } from "./useRoom";
 
@@ -16,7 +19,8 @@ const QUESTION_KEY: Record<QuestionId, Key> = {
 
 /**
  * Photo input, the plain-language disclosure, and the questions.
- * A photo cannot show what is not there, so anything the photo did not show is asked, one tap each. Unanswered adds nothing to the plan.
+ * A photo cannot show what is not there, so anything the photo did not show is asked, one tap
+ * each. Unanswered adds nothing to the plan.
  */
 export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
   const { t } = useLang();
@@ -57,8 +61,8 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
           tabIndex={-1}
           aria-label="Choose a photo of your room"
           onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void room.pickFile(f);
+            const file = e.target.files?.[0];
+            if (file) runInBackground(room.pickFile(file));
             e.target.value = "";
           }}
         />
@@ -74,7 +78,7 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
           </p>
           <p className="qintro">{t("check.intro")}</p>
           {QUESTIONS.map((q) => {
-            const s = room.questions[q];
+            const answer = room.questions[q];
             return (
               <fieldset key={q} className="question">
                 <legend>{t(QUESTION_KEY[q])}</legend>
@@ -84,7 +88,7 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
                       <input
                         type="radio"
                         name={`${id}-${q}`}
-                        checked={s.value === v}
+                        checked={answer.value === v}
                         onChange={() => room.answer(q, v)}
                       />
                       <span>{t(v ? "check.yes" : "check.no")}</span>
@@ -92,7 +96,9 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
                   ))}
                 </div>
                 <p className="qnote">
-                  {s.source === "photo" || s.source === "none" ? sourceNote[s.source] : ""}
+                  {answer.source === "photo" || answer.source === "none"
+                    ? sourceNote[answer.source]
+                    : ""}
                 </p>
               </fieldset>
             );

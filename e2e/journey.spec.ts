@@ -1,4 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+import { must } from "../test-support/must";
 
 /**
  * The core journey in a real browser, with the network stubbed so it is deterministic and works offline:
@@ -177,9 +179,9 @@ test.describe("core journey", () => {
   test("the app can be installed: the manifest and icons are served", async ({ request }) => {
     const manifest = await request.get("/manifest.webmanifest");
     expect(manifest.ok()).toBe(true);
-    const m = await manifest.json();
-    expect(m.display).toBe("standalone");
-    for (const icon of m.icons) {
+    const manifestJson = await manifest.json();
+    expect(manifestJson.display).toBe("standalone");
+    for (const icon of manifestJson.icons) {
       const res = await request.get(icon.src);
       expect(res.ok(), icon.src).toBe(true);
       expect(res.headers()["content-type"]).toMatch(/image\/png/);
@@ -201,19 +203,23 @@ test.describe("phone, 390 x 844", () => {
     const obscured: string[] = [];
     for (let i = 0; i < 90; i++) {
       await page.keyboard.press("Tab");
-      // Wait for any smooth scrolling to finish: what matters is where the control ends up, not where it is mid-scroll.
+      // Wait for any smooth scrolling to finish: what matters is where the control ends up, not
+      // where it is mid-scroll.
       await page.evaluate(
         () =>
           new Promise<void>((done) => {
             let last = -1,
               same = 0;
             const tick = () => {
-              const y = window.scrollY;
-              if (y === last) {
-                if (++same >= 4) return done();
+              const currentY = window.scrollY;
+              if (currentY === last) {
+                if (++same >= 4) {
+                  done();
+                  return;
+                }
               } else {
                 same = 0;
-                last = y;
+                last = currentY;
               }
               requestAnimationFrame(tick);
             };
@@ -224,11 +230,15 @@ test.describe("phone, 390 x 844", () => {
         const el = document.activeElement as HTMLElement | null;
         const navEl = document.querySelector("nav.dock") as HTMLElement | null;
         if (!el || !navEl || el === document.body) return null;
-        const r = el.getBoundingClientRect(),
-          n = navEl.getBoundingClientRect();
+        const rect = el.getBoundingClientRect(),
+          navRect = navEl.getBoundingClientRect();
         const inside = navEl.contains(el);
         const hidden =
-          !inside && r.bottom > n.top && r.top < n.bottom && r.right > n.left && r.left < n.right;
+          !inside &&
+          rect.bottom > navRect.top &&
+          rect.top < navRect.bottom &&
+          rect.right > navRect.left &&
+          rect.left < navRect.right;
         const id = `${el.tagName}:${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28)}`;
         return { id, hidden };
       });
@@ -261,11 +271,12 @@ test.describe("phone, 390 x 844", () => {
     const input = page.getByLabel("Ask AirWise a question");
     await input.scrollIntoViewIfNeeded();
     const ib = await input.boundingBox();
-    expect(ib!.width).toBeGreaterThan(280);
+    expect(must(ib).width).toBeGreaterThan(280);
     for (const name of ["Send", "Add a photo of your room"]) {
-      const b = await page.getByRole("button", { name }).first().boundingBox();
-      expect(b!.height, name).toBeGreaterThanOrEqual(43.5);
-      expect(b!.y, name).toBeGreaterThan(ib!.y + ib!.height - 1); // the buttons are on the row below the input
+      const box = await page.getByRole("button", { name }).first().boundingBox();
+      expect(must(box).height, name).toBeGreaterThanOrEqual(43.5);
+      // the buttons are on the row below the input
+      expect(must(box).y, name).toBeGreaterThan(must(ib).y + must(ib).height - 1);
     }
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,

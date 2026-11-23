@@ -1,14 +1,20 @@
 "use client";
 import Link from "next/link";
-import { weatherKey } from "@/lib/data";
-import { fmtHour, pmAt } from "@/lib/engine";
+
+import { weatherKey } from "@/lib/air/live";
+import { fmtHour } from "@/lib/engine/actions";
+import { pmAt } from "@/lib/engine/model";
 import { ADVICE_KEY, CATEGORY_KEY } from "@/lib/i18n";
+
 import { CityCigs } from "./CityCigs";
 import { CityPicker } from "./CityPicker";
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
 
-/** First thing on screen: where you are, how bad the air is (icon and word, never colour alone), and what you can do about it. */
+/**
+ * First thing on screen: where you are, how bad the air is (icon and word, never colour alone), and
+ * what you can do about it.
+ */
 export function SeverityStrip({ a }: Readonly<{ a: Airwise }>) {
   const { lang, t } = useLang();
   const level = t(CATEGORY_KEY[a.cat.tone]);
