@@ -6,7 +6,7 @@ import { useLang } from "@/components/LangProvider";
 import { useAirwise, type Airwise } from "@/components/useAirwise";
 import { fmtHour, type Cooking, type Home } from "@/lib/engine";
 import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
-import { communityPlan } from "@/lib/plan";
+import { communityPlan, type CommunityPlan } from "@/lib/plan";
 import { runInBackground } from "@/lib/background";
 
 const HOME_OPTIONS: { v: Home; en: string; hi: string }[] = [
@@ -106,6 +106,67 @@ function ProfileForm({
   );
 }
 
+/** The printable notice itself, with the buttons to print or share it. */
+function NoticeSection({
+  title,
+  level,
+  plan,
+  cityName,
+  message,
+  onShare,
+}: Readonly<{
+  title: string;
+  level: string;
+  plan: CommunityPlan;
+  cityName: string;
+  message: string;
+  onShare: () => void;
+}>) {
+  const { lang, t } = useLang();
+  return (
+    <section id="notice-sec" aria-labelledby="h-notice">
+      <article id="community-plan" className="notice">
+        <h2 id="h-notice">{title}</h2>
+        <p className="u-notice-line">
+          <strong>{t("comm.now", { city: cityName, level, pm: plan.nowPm })}</strong>
+        </p>
+        <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
+
+        <h3>{t("comm.homes")}</h3>
+        <ol>
+          {plan.fixes.map((f) => {
+            const hi = lang === "hi" ? ACTION_HI[f.id] : undefined;
+            return (
+              <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>
+                {t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}
+              </li>
+            );
+          })}
+        </ol>
+
+        <h3>{t("comm.together")}</h3>
+        <ul>
+          {plan.rules.map((r) => (
+            <li key={r}>{t(r as Key, { hour: fmtHour(plan.bestHour) })}</li>
+          ))}
+        </ul>
+        <p className="fine">{t("comm.foot")}</p>
+      </article>
+      <div className="toolrow noprint u-mt-16">
+        <button type="button" className="btn" onClick={() => window.print()}>
+          {t("comm.print")}
+        </button>
+        <button type="button" className="btn ghost" onClick={onShare}>
+          {t("comm.share")}
+        </button>
+      </div>
+      <p className="statusline noprint" role="status" aria-live="polite">
+        {message}
+      </p>
+    </section>
+  );
+}
+
 /** One printable page for a building, school or workplace. Every figure comes from the engine and live air; the link shares choices only. */
 export default function CommunityPage() {
   const { lang, t } = useLang();
@@ -157,46 +218,14 @@ export default function CommunityPage() {
           <ProfileForm name={name} setName={setName} airwise={airwise} />
         </section>
 
-        <section id="notice-sec" aria-labelledby="h-notice">
-          <article id="community-plan" className="notice">
-            <h2 id="h-notice">{title}</h2>
-            <p className="u-notice-line">
-              <strong>{t("comm.now", { city: airwise.city.name, level, pm: plan.nowPm })}</strong>
-            </p>
-            <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
-
-            <h3>{t("comm.homes")}</h3>
-            <ol>
-              {plan.fixes.map((f) => {
-                const hi = lang === "hi" ? ACTION_HI[f.id] : undefined;
-                return (
-                  <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>
-                    {t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}
-                  </li>
-                );
-              })}
-            </ol>
-
-            <h3>{t("comm.together")}</h3>
-            <ul>
-              {plan.rules.map((r) => (
-                <li key={r}>{t(r as Key, { hour: fmtHour(plan.bestHour) })}</li>
-              ))}
-            </ul>
-            <p className="fine">{t("comm.foot")}</p>
-          </article>
-          <div className="toolrow noprint u-mt-16">
-            <button type="button" className="btn" onClick={() => window.print()}>
-              {t("comm.print")}
-            </button>
-            <button type="button" className="btn ghost" onClick={() => runInBackground(share())}>
-              {t("comm.share")}
-            </button>
-          </div>
-          <p className="statusline noprint" role="status" aria-live="polite">
-            {msg}
-          </p>
-        </section>
+        <NoticeSection
+          title={title}
+          level={level}
+          plan={plan}
+          cityName={airwise.city.name}
+          message={msg}
+          onShare={() => runInBackground(share())}
+        />
       </main>
     </div>
   );
