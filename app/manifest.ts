@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Makes AirWise installable ("Add to Home Screen"). No service worker: the app needs the network for live air anyway,
+ * Makes AirWise installable ("Add to Home Screen"). No service worker: the app needs the network
+ * for live air anyway,
  * and installability only needs a manifest with icons over HTTPS.
  */
 export default function manifest(): MetadataRoute.Manifest {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { GET } from "./route";
 
 let callCount = 0;
@@ -23,7 +24,8 @@ describe("GET /api/share-image", () => {
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
   });
 
-  // Each allowed request renders a real image (about 3.5 s on a CI runner), so the default 30 s is not enough for 21 calls.
+  // Each allowed request renders a real image (about 3.5 s on a CI runner), so the default 30 s is
+  // not enough for 21 calls.
   const RATE_LIMIT_TEST_TIMEOUT_MS = 180_000;
 
   it(

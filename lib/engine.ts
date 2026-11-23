@@ -40,7 +40,10 @@ export const NO_PLAN: Plan = {
 /** Share of outdoor PM2.5 that reaches indoor air. */
 const INFILTRATION: Record<Home, number> = { sealed: 0.35, typical: 0.6, leaky: 0.85 };
 export type PurifierKind = "hepa" | "boxfan";
-/** Share of indoor PM2.5 that remains while the unit runs. HEPA: right-sized unit. Box fan: a MERV 13 filter taped to a 20-inch fan (DIY, less effective). See docs/methodology.md. */
+/**
+ * Share of indoor PM2.5 that remains while the unit runs. HEPA: right-sized unit. Box fan: a MERV
+ * 13 filter taped to a 20-inch fan (DIY, less effective). See docs/methodology.md.
+ */
 const PURIFIER_FACTORS: Record<PurifierKind, number> = { hepa: 0.4, boxfan: 0.6 };
 const PURIFIER_FACTOR = PURIFIER_FACTORS.hepa;
 const MASK_EFFECT: Record<Mask, number> = { none: 0, cloth: 0.1, n95: 0.6 }; // fit-adjusted
@@ -105,7 +108,10 @@ const BREAKS: { pm: number; aqi: number }[] = [
 /** A number rounded to one decimal, as shown to people and passed to the model. */
 export const round1 = (n: number): number => Math.round(n * 10) / 10;
 
-/** One hour of a 24-value series. Series are always 24 long; a missing hour reads as 0 rather than crashing a render. */
+/**
+ * One hour of a 24-value series. Series are always 24 long; a missing hour reads as 0 rather than
+ * crashing a render.
+ */
 export const pmAt = (hourly: readonly number[], hour: number): number => hourly[hour] ?? 0;
 
 /** US-EPA style AQI from PM2.5 (µg/m³), piecewise linear. */
@@ -123,7 +129,10 @@ export function aqiFromPm(pm: number): number {
   return 500;
 }
 
-/** Upper AQI bound of each band, with what the band is called and what to do in it. The last band has no upper bound. */
+/**
+ * Upper AQI bound of each band, with what the band is called and what to do in it. The last band
+ * has no upper bound.
+ */
 const CATEGORY_BANDS: { maxAqi: number; category: Category }[] = [
   {
     maxAqi: 50,
@@ -187,7 +196,10 @@ export interface Sim {
   co2Kg: number;
   outdoorHour: number;
   commute: Commute;
-  /** The day's dose hour by hour (µg/m³ x hours). Sums to the whole day, so a part of the day can be added up consistently. */
+  /**
+   * The day's dose hour by hour (µg/m³ x hours). Sums to the whole day, so a part of the day can be
+   * added up consistently.
+   */
   perHour: number[];
 }
 
@@ -258,7 +270,10 @@ export function simulate(hourly: number[], p: Profile, plan: Plan): Sim {
   };
 }
 
-/** Sum of a per-hour series up to `hoursElapsed` (may be fractional: 16.5 counts hour 16 for half). Out-of-range or non-finite input is clamped. */
+/**
+ * Sum of a per-hour series up to `hoursElapsed` (may be fractional: 16.5 counts hour 16 for half).
+ * Out-of-range or non-finite input is clamped.
+ */
 function sumUntil(series: number[], hoursElapsed: number): number {
   const clamped = Math.min(
     series.length,
@@ -272,7 +287,8 @@ function sumUntil(series: number[], hoursElapsed: number): number {
 }
 
 /**
- * Cigarettes' worth of air breathed so far today, from the SAME hourly model as simulate(), so the pieces add up:
+ * Cigarettes' worth of air breathed so far today, from the SAME hourly model as simulate(), so the
+ * pieces add up:
  * it is 0 at the start of the day and equals the whole-day figure (simulate().cigs) at hour 24.
  */
 export function cigsSoFar(hourly: number[], p: Profile, plan: Plan, hoursElapsed: number): number {
@@ -281,7 +297,8 @@ export function cigsSoFar(hourly: number[], p: Profile, plan: Plan, hoursElapsed
 
 /**
  * Cigarettes' worth of PM2.5 a person breathes standing outdoors all day in this city at today's levels:
- * the day's mean PM2.5 over the same rule-of-thumb constant (CIGARETTE_PM). City air only, not household-specific.
+ * the day's mean PM2.5 over the same rule-of-thumb constant (CIGARETTE_PM). City air only, not
+ * household-specific.
  */
 export function outdoorCigs(hourly: number[]): number {
   return hourly.length === 0 ? 0 : sumUntil(hourly, hourly.length) / hourly.length / CIGARETTE_PM;
@@ -319,7 +336,10 @@ const MODE_LABEL: Record<Commute, string> = {
 /** Plain-language name of a commute mode. */
 export const modeLabel = (c: Commute) => MODE_LABEL[c];
 
-/** The commute an "easier on the lungs" swap would move to, or null when the current one is already low-exposure. */
+/**
+ * The commute an "easier on the lungs" swap would move to, or null when the current one is already
+ * low-exposure.
+ */
 function swapTarget(p: Profile): Commute | null {
   return p.commute === "metro" || p.commute === "walk" || p.commute === "cycle" ? null : "metro";
 }
@@ -399,7 +419,8 @@ const shiftOutdoorAction: ActionBuilder = ({ hourly, best, solo }) => ({
 
 const swapCommuteAction: ActionBuilder = ({ p, solo }) => {
   const target = swapTarget(p);
-  // When no swap helps, the card still shows (as "keep it") against the nearest sensible alternative, so its math stays honest.
+  // When no swap helps, the card still shows (as "keep it") against the nearest sensible
+  // alternative, so its math stays honest.
   const swapTo: Commute = target ?? (p.commute === "metro" ? "walk" : p.commute);
   const applicable = target !== null;
   return {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { POST } from "./route";
 
 // The air lookup throws: an unexpected failure that no route handles itself.

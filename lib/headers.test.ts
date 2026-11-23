@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { must } from "../test-support/must";
 const CONFIG_PATH = "../next.config.mjs";
 

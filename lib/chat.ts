@@ -1,25 +1,25 @@
-import { CITIES, type City } from "./data";
+import { CITIES, type City } from "./cities";
 import {
-  NO_PLAN,
-  OUTDOOR_HOUR,
   bestHour,
   buildActions,
   categoryOf,
   cigsSoFar,
-  fmtHour,
-  outdoorCigs,
-  outdoorCigsSoFar,
-  planSummary,
-  pmAt,
-  round1,
-  simulate,
   type Commute,
   type Cooking,
+  fmtHour,
   type Home,
   type Mask,
+  NO_PLAN,
+  OUTDOOR_HOUR,
+  outdoorCigs,
+  outdoorCigsSoFar,
   type Plan,
+  planSummary,
+  pmAt,
   type Profile,
   type PurifierKind,
+  round1,
+  simulate,
 } from "./engine";
 
 export const MAX_QUESTION = 400;
@@ -27,7 +27,10 @@ export const MAX_QUESTION = 400;
 export type Lang = "en" | "hi";
 const LANGS: Lang[] = ["en", "hi"];
 
-/** Everything the model is allowed to know. Built on the SERVER from the user's choices and the engine; never from client numbers. */
+/**
+ * Everything the model is allowed to know. Built on the SERVER from the user's choices and the
+ * engine; never from client numbers.
+ */
 export interface ChatContext {
   city: string;
   pm: number;
@@ -44,7 +47,10 @@ export interface ChatContext {
   usualPm: number;
   /** Cigarettes' worth breathed so far today with the plan, from the engine's hourly model. */
   soFar: number;
-  /** Cigarettes' worth for a person outdoors all day in this city today, and so far today (city air, not the household). */
+  /**
+   * Cigarettes' worth for a person outdoors all day in this city today, and so far today (city air,
+   * not the household).
+   */
   outdoorDay: number;
   outdoorSoFar: number;
 }
@@ -81,7 +87,10 @@ export function parsePlan(raw: unknown): Plan {
   };
 }
 
-/** Validates the household choices a client sends. Anything off-list returns null, so no unchecked value reaches the engine. */
+/**
+ * Validates the household choices a client sends. Anything off-list returns null, so no unchecked
+ * value reaches the engine.
+ */
 export function parseChoices(raw: unknown): Choices | null {
   if (!raw || typeof raw !== "object") return null;
   const fields = raw as Record<string, unknown>;
@@ -102,7 +111,10 @@ export function parseChoices(raw: unknown): Choices | null {
   };
 }
 
-/** The facts for a question, recomputed from the engine and the air data. This is the single way facts are built. */
+/**
+ * The facts for a question, recomputed from the engine and the air data. This is the single way
+ * facts are built.
+ */
 export function buildContext(
   c: Choices,
   hourly: number[],
@@ -145,7 +157,10 @@ export function cleanQuestion(q: unknown): string | null {
   return text && text.length <= MAX_QUESTION ? text : null;
 }
 
-/** Deterministic answer used when Gemini is unavailable or its reply fails verification. Facts come from the engine. */
+/**
+ * Deterministic answer used when Gemini is unavailable or its reply fails verification. Facts come
+ * from the engine.
+ */
 export function offlineAnswer(q: string, c: ChatContext, lang: Lang = "en"): string {
   if (lang === "hi") return offlineAnswerHi(q, c);
   const text = q.toLowerCase();
@@ -183,7 +198,10 @@ export function buildPrompt(question: string, c: ChatContext, lang: Lang = "en")
   ].join("\n");
 }
 
-/** Hindi version of the deterministic answers. Numbers stay ASCII digits so the guard and screen readers treat them the same. */
+/**
+ * Hindi version of the deterministic answers. Numbers stay ASCII digits so the guard and screen
+ * readers treat them the same.
+ */
 export function offlineAnswerHi(q: string, c: ChatContext): string {
   const text = q.toLowerCase();
   const save = Math.max(0, c.baselineCigs - c.planCigs).toFixed(1);

@@ -1,7 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 3300);
-/** Locally the tests use the Chrome already installed on the machine. CI installs Chromium with `npx playwright install chromium`. */
+/**
+ * Locally the tests use the Chrome already installed on the machine. CI installs Chromium with `npx
+ * playwright install chromium`.
+ */
 const channel = process.env.CI ? undefined : "chrome";
 
 export default defineConfig({

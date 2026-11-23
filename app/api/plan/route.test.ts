@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { resetGeminiBudget } from "@/lib/gemini";
-import { POST } from "./route";
+
 import { must } from "../../../test-support/must";
+import { POST } from "./route";
 
 vi.mock("@/lib/data", async (orig) => {
   const real = await orig<typeof import("@/lib/data")>();
@@ -39,7 +41,10 @@ const call = (body: unknown, ip = `10.1.0.${++callCount}`) =>
   );
 const bodyOf = (f: ReturnType<typeof vi.fn>) =>
   JSON.parse((must(f.mock.calls[0])[1] as RequestInit).body as string);
-/** Echoes the step times Gemini was asked to keep, so the reply is valid for whatever schedule the server built. */
+/**
+ * Echoes the step times Gemini was asked to keep, so the reply is valid for whatever schedule the
+ * server built.
+ */
 const echoPlan = (headline: string, textOf = (title: string) => `${title}.`) =>
   vi.fn().mockImplementation((_url: string, init: RequestInit) => {
     const prompt: string = JSON.parse(init.body as string).contents[0].parts[0].text;

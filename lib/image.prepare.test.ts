@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { prepareImage } from "./image";
 
 type Behaviour = { decode: boolean; ctx: boolean; blob: boolean; read: boolean };

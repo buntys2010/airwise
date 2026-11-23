@@ -1,20 +1,22 @@
 import { COMMUTES, COOKINGS, HOMES } from "../lib/chat";
-import { CITIES, loadAir, type AirResult } from "../lib/data";
+import { CITIES } from "../lib/cities";
+import { type AirResult, loadAir } from "../lib/data";
 import {
-  NO_PLAN,
   aqiFromPm,
   bestHour,
   buildActions,
   categoryOf,
+  NO_PLAN,
   pmAt,
+  type Profile,
   round1,
   simulate,
-  type Profile,
 } from "../lib/engine";
-import { PLAN_IDS, idsToPlan, sanitizePlan } from "../lib/share";
+import { idsToPlan, PLAN_IDS, sanitizePlan } from "../lib/share";
 
 /**
- * The two tools, as plain functions. They use the same engine as the AirWise app, so a number from here is the same number the
+ * The two tools, as plain functions. They use the same engine as the AirWise app, so a number from
+ * here is the same number the
  * app shows. They are read-only and store nothing. Errors are structured so an agent can fix its own call.
  */
 interface ToolError {

@@ -1,14 +1,18 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { shareUrl, encodeChoices, whatsappLink } from "@/lib/share";
+
+import { runInBackground } from "@/lib/background";
+import { encodeChoices, shareUrl, whatsappLink } from "@/lib/share";
+
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
-import { runInBackground } from "@/lib/background";
 
 /**
- * The share card is a real picture, rendered on the server from CHOICES only (the same query a share link carries), so every number on it
- * is recomputed from live air data. On a phone the picture goes straight into WhatsApp; elsewhere the link is shared and its preview shows the card.
+ * The share card is a real picture, rendered on the server from CHOICES only (the same query a
+ * share link carries), so every number on it
+ * is recomputed from live air data. On a phone the picture goes straight into WhatsApp; elsewhere
+ * the link is shared and its preview shows the card.
  */
 export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
   const { t } = useLang();
@@ -68,7 +72,8 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
     } finally {
       setBusy(false);
     }
-    // No file sharing here (most desktops): open WhatsApp with the text and the link, whose preview is this card.
+    // No file sharing here (most desktops): open WhatsApp with the text and the link, whose preview
+    // is this card.
     window.open(whatsappLink(text, link), "_blank", "noopener,noreferrer");
     say(t("share.opened"));
   }

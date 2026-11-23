@@ -1,23 +1,25 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import type { Lang } from "@/lib/chat";
-import { SPEECH_LANG, type Key } from "@/lib/i18n";
+import { type Key, SPEECH_LANG } from "@/lib/i18n";
 import {
-  VOICE_PROBLEM_KEY,
   canSpeak,
   getRecognitionCtor,
   mapVoiceError,
+  type RecognitionLike,
   speak,
   stopSpeaking,
   transcriptOf,
-  type RecognitionLike,
+  VOICE_PROBLEM_KEY,
 } from "@/lib/voice";
 
 type SpeechWindow = Parameters<typeof getRecognitionCtor>[0] & Parameters<typeof canSpeak>[0];
 const speechWindow = () => window as unknown as SpeechWindow;
 
 /**
- * Voice input and read-aloud for the chat. Feature-detected, and it never sends anything by itself: the transcript goes to
+ * Voice input and read-aloud for the chat. Feature-detected, and it never sends anything by
+ * itself: the transcript goes to
  * `onTranscript` so the user can check it before sending. Read-aloud is off until the user turns it on.
  */
 export function useVoice(lang: Lang, onTranscript: (text: string) => void) {

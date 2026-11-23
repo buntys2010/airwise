@@ -1,7 +1,8 @@
 import { CIGARETTE_PM, type Sim } from "./engine";
 
 /**
- * Cigarettes equivalent so far today: the first `hour + 1` hours of the day's exposure, on the same rule of thumb as the daily figure
+ * Cigarettes equivalent so far today: the first `hour + 1` hours of the day's exposure, on the
+ * same rule of thumb as the daily figure
  * (about 22 µg/m³ of PM2.5 per cigarette a day). A rule of thumb, not a measurement of anyone's health.
  */
 export function cigsSoFar(sim: Pick<Sim, "perHour">, hour: number): number {
@@ -20,7 +21,10 @@ export interface Stick {
   burned: number;
 }
 
-/** One stick per whole cigarette (the last may be partial). `value` is the day's figure and `sofar` the part already used up. */
+/**
+ * One stick per whole cigarette (the last may be partial). `value` is the day's figure and `sofar`
+ * the part already used up.
+ */
 export function sticksFor(value: number, sofar: number): Stick[] {
   const figure = Math.max(0, value);
   const stickCount = Math.max(1, Math.ceil(figure - 1e-9));

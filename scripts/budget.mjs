@@ -1,5 +1,6 @@
 /**
- * Bundle budget. Reads the table that `next build` prints and fails if any page's first-load JS is over budget.
+ * Bundle budget. Reads the table that `next build` prints and fails if any page's first-load JS is
+ * over budget.
  * Usage: npm run build 2>&1 | tee build.log && node scripts/budget.mjs build.log
  */
 import { readFileSync } from "node:fs";
@@ -42,7 +43,10 @@ export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED
   };
 }
 
-/** Command-line entry: reads a `next build` log, prints the figures, and sets the exit code (0 ok, 1 over budget, 2 bad usage). */
+/**
+ * Command-line entry: reads a `next build` log, prints the figures, and sets the exit code (0 ok, 1
+ * over budget, 2 bad usage).
+ */
 function main() {
   const file = process.argv[2];
   if (!file) {

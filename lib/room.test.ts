@@ -1,22 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, estimateHourly } from "./data";
-import { NO_PLAN, simulate, type Profile } from "./engine";
+
+import { must } from "../test-support/must";
+import { CITIES } from "./cities";
+import { estimateHourly } from "./data";
+import { NO_PLAN, type Profile, simulate } from "./engine";
 import {
   CATALOG,
   FINDING_KINDS,
-  SAMPLE_HOTSPOTS,
-  VISION_KINDS,
-  VISION_PROMPT,
-  VISION_SCHEMA,
   hotspotFor,
   mergeFindings,
   priceRange,
   profilePatch,
   questionState,
   rankProducts,
+  SAMPLE_HOTSPOTS,
   validateVision,
+  VISION_KINDS,
+  VISION_PROMPT,
+  VISION_SCHEMA,
 } from "./room";
-import { must } from "../test-support/must";
 
 const box = { x: 0.1, y: 0.2, w: 0.3, h: 0.3 };
 const reply = (o: unknown) => JSON.stringify(o);

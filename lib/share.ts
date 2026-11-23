@@ -1,10 +1,12 @@
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
-import { CITIES } from "./data";
+import { CITIES } from "./cities";
 import { NO_PLAN, type Plan, type Profile } from "./engine";
 
 /**
- * Shareable links carry CHOICES only: a city, four household answers and which fixes are switched on. Never a number.
- * Whoever opens a link gets the numbers recomputed from their own live air data by the engine, so nobody can forge a figure.
+ * Shareable links carry CHOICES only: a city, four household answers and which fixes are switched
+ * on. Never a number.
+ * Whoever opens a link gets the numbers recomputed from their own live air data by the engine, so
+ * nobody can forge a figure.
  */
 export interface SharedChoices {
   city?: string;
@@ -56,7 +58,10 @@ export function idsToPlan(ids: string[]): Plan {
   };
 }
 
-/** The commute swap is a real change only for modes that are not already walk, cycle or metro. Drops it otherwise, so a link or tool call cannot claim a gain the engine's own rules say is not there. */
+/**
+ * The commute swap is a real change only for modes that are not already walk, cycle or metro. Drops
+ * it otherwise, so a link or tool call cannot claim a gain the engine's own rules say is not there.
+ */
 export function sanitizePlan(plan: Plan, commute: Profile["commute"]): Plan {
   return plan.swapCommute && (commute === "walk" || commute === "cycle" || commute === "metro")
     ? { ...plan, swapCommute: null }
@@ -81,7 +86,10 @@ export function encodeChoices(c: { city: string; profile: Profile; plan: Plan })
 const oneOf = <T extends string>(list: readonly T[], v: string | null): T | undefined =>
   v && (list as readonly string[]).includes(v) ? (v as T) : undefined;
 
-/** Reads a query string. Anything outside the fixed lists is dropped, so a hand-edited link can only ever choose from valid options. */
+/**
+ * Reads a query string. Anything outside the fixed lists is dropped, so a hand-edited link can only
+ * ever choose from valid options.
+ */
 export function decodeChoices(search: string): SharedChoices {
   const params = new URLSearchParams(search);
   const out: SharedChoices = {};
@@ -108,7 +116,8 @@ export function decodeChoices(search: string): SharedChoices {
         .slice(0, 20)
         .filter((id) => (PLAN_IDS as readonly string[]).includes(id)),
     );
-    out.plan = profile.commute ? sanitizePlan(plan, profile.commute) : plan; // without a commute in the link, the final profile is checked by the caller
+    // without a commute in the link, the final profile is checked by the caller
+    out.plan = profile.commute ? sanitizePlan(plan, profile.commute) : plan;
   }
   return out;
 }
@@ -122,7 +131,10 @@ export function shareUrl(
   return `${safeOrigin}/?${encodeChoices(c)}`;
 }
 
-/** A wa.me link that opens WhatsApp with a ready message. The text is words plus the choices-only link, never a figure. */
+/**
+ * A wa.me link that opens WhatsApp with a ready message. The text is words plus the choices-only
+ * link, never a figure.
+ */
 export function whatsappLink(text: string, url: string): string {
   const cleanText = text.replace(/[\r\n]/g, " ").trim();
   const message = `${cleanText} ${url}`;

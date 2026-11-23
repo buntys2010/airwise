@@ -1,8 +1,12 @@
 "use client";
 import { useEffect } from "react";
+
 import { scrollNeeded } from "@/lib/focus";
 
-/** Keeps a keyboard-focused control from being hidden under the fixed bottom bar on phones (the home dock, or the global nav on other pages). Renders nothing. */
+/**
+ * Keeps a keyboard-focused control from being hidden under the fixed bottom bar on phones (the home
+ * dock, or the global nav on other pages). Renders nothing.
+ */
 export function FocusGuard() {
   useEffect(() => {
     function onFocus(e: FocusEvent) {

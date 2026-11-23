@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { CITIES, FALLBACK_CITY, searchCities, type City } from "@/lib/cities";
+
+import { CITIES, type City, FALLBACK_CITY, searchCities } from "@/lib/cities";
+
 import { useLang } from "./LangProvider";
 
 const MAX_SHOWN = 50;
@@ -37,7 +39,10 @@ interface CityListProps {
   onHover: (i: number) => void;
 }
 
-/** The popup list of matching cities. Keyboard operation lives on the input; options only need pointer handlers. */
+/**
+ * The popup list of matching cities. Keyboard operation lives on the input; options only need
+ * pointer handlers.
+ */
 function CityList({
   id,
   listRef,
@@ -83,7 +88,8 @@ function CityList({
 }
 
 /**
- * A searchable city picker (ARIA 1.2 editable combobox with a list). Type a city, an old name (Bombay, Madras) or a state;
+ * A searchable city picker (ARIA 1.2 editable combobox with a list). Type a city, an old name
+ * (Bombay, Madras) or a state;
  * arrow keys move, Enter chooses, Escape closes. The English name always works. Nothing here uses GPS.
  */
 export function CityPicker({
@@ -96,7 +102,8 @@ export function CityPicker({
   const [text, setText] = useState(current.name);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const [typing, setTyping] = useState(false); // false right after opening: show every city, not only the chosen one
+  // false right after opening: show every city, not only the chosen one
+  const [typing, setTyping] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {

@@ -1,15 +1,21 @@
-import { NO_PLAN, simulate, type Cooking, type Home, type Plan, type Profile } from "./engine";
+import { type Cooking, type Home, NO_PLAN, type Plan, type Profile, simulate } from "./engine";
 
 /**
  * Room findings and the product catalog.
- * Gemini may LOOK at a photo and say what it can see. Code decides what that means for the household and what it is worth:
+ * Gemini may LOOK at a photo and say what it can see. Code decides what that means for the
+ * household and what it is worth:
  * the model never states a figure, and every number comes from lib/engine.ts.
  *
- * A photo shows what is THERE. It cannot prove what is absent. So the photo step maps only visible evidence to hotspots
- * (a visible gap, a visible gas or wood stove, a visible purifier), and everything else becomes a question the user answers.
+ * A photo shows what is THERE. It cannot prove what is absent. So the photo step maps only visible
+ * evidence to hotspots
+ * (a visible gap, a visible gas or wood stove, a visible purifier), and everything else becomes a
+ * question the user answers.
  */
 
-/** What a hotspot can be. `purifier_seen` comes from a photo; `no_purifier` only ever comes from the user's own answer. */
+/**
+ * What a hotspot can be. `purifier_seen` comes from a photo; `no_purifier` only ever comes from the
+ * user's own answer.
+ */
 export type FindingKind = "window_gap" | "gas_stove" | "purifier_seen" | "no_purifier";
 type RoomActionId = "sealGaps" | "induction" | "purifier";
 /** Display and sort order. */
@@ -88,12 +94,15 @@ export function profilePatch(
   return patch;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Vision: schema, prompt and strict validation of the model's reply
 
 const MIN_CONFIDENCE = 0.4;
 
-/** Gemini responseSchema. Enums and numeric fields only: there is no free text for an image to smuggle instructions into. */
+/**
+ * Gemini responseSchema. Enums and numeric fields only: there is no free text for an image to
+ * smuggle instructions into.
+ */
 export const VISION_SCHEMA = {
   type: "OBJECT",
   properties: {
@@ -144,8 +153,10 @@ const isFrac = (v: unknown): v is number =>
   typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1;
 
 /**
- * Some models answer on a 0 to 1000 scale even when asked for 0 to 1 (seen on gemini-3.5-flash-lite). A box whose largest
- * value is above 1 but within 1000 is read as per-mille. Anything beyond that (pixels) is rejected, and the result is
+ * Some models answer on a 0 to 1000 scale even when asked for 0 to 1 (seen on
+ * gemini-3.5-flash-lite). A box whose largest
+ * value is above 1 but within 1000 is read as per-mille. Anything beyond that (pixels) is
+ * rejected, and the result is
  * validated as in-image either way.
  */
 function normaliseBox(b: Record<string, unknown>): Record<string, unknown> {
@@ -182,7 +193,10 @@ function validFinding(raw: unknown): { kind: VisionKind; box: BBox; conf: number
   return { kind, box, conf };
 }
 
-/** Strict validation: visible-evidence kinds only, boxes inside the image, confidence in range and above the floor, one finding per kind. */
+/**
+ * Strict validation: visible-evidence kinds only, boxes inside the image, confidence in range and
+ * above the floor, one finding per kind.
+ */
 export function validateVision(text: string): VisionOutcome {
   let json: unknown;
   try {
@@ -206,13 +220,16 @@ export function validateVision(text: string): VisionOutcome {
   return hotspots.length ? { status: "ok", hotspots } : { status: "none" };
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Evidence and answers together
 
 /**
- * Combines what the photo showed with what the user says. An explicit answer always wins over the photo (the user knows
- * their home). With no answer, visible evidence counts as a yes, and anything not visible stays unanswered: it adds no fix.
- * Hotspots keep their photo box when there is one; answer-only ones have none and are listed rather than drawn.
+ * Combines what the photo showed with what the user says. An explicit answer always wins over the
+ * photo (the user knows
+ * their home). With no answer, visible evidence counts as a yes, and anything not visible stays
+ * unanswered: it adds no fix.
+ * Hotspots keep their photo box when there is one; answer-only ones have none and are listed
+ * rather than drawn.
  */
 export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] {
   const seen = (k: FindingKind) => evidence.find((h) => h.kind === k);
@@ -228,7 +245,10 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
   return out;
 }
 
-/** For each question: was it answered by the photo, by the user, or not at all. Drives the labels under the questions. */
+/**
+ * For each question: was it answered by the photo, by the user, or not at all. Drives the labels
+ * under the questions.
+ */
 export function questionState(
   evidence: Hotspot[],
   answers: Answers,
@@ -250,7 +270,7 @@ export function questionState(
   return state;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // Catalog: curated, static, no scraping. Ranked by the engine's exposure cut per rupee.
 
 type ProductKind = "purifier-hepa" | "purifier-boxfan" | "mask-n95" | "weather-strip" | "induction";
@@ -315,7 +335,10 @@ export interface RankedProduct extends Product {
 
 const retailerLink = (q: string) => `https://www.amazon.in/s?k=${encodeURIComponent(q)}`;
 
-/** Ranks the catalog by engine cut per rupee for this household, best value first. Items that change nothing are dropped. */
+/**
+ * Ranks the catalog by engine cut per rupee for this household, best value first. Items that change
+ * nothing are dropped.
+ */
 export function rankProducts(hourly: number[], profile: Profile): RankedProduct[] {
   const base = simulate(hourly, profile, NO_PLAN).meanPm;
   return CATALOG.map((p) => {

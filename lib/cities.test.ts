@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, INDIA_BOUNDS, ZONE_LEVELS, searchCities } from "./cities";
+
 import { must } from "../test-support/must";
+import { CITIES, INDIA_BOUNDS, searchCities, ZONE_LEVELS } from "./cities";
 
 const CAPITALS = [
   "Delhi",

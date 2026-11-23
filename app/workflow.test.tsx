@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { LangProvider } from "@/components/LangProvider";
 import { STORE_KEY } from "@/lib/store";
+
+import { must } from "../test-support/must";
 import Page from "./page";
 import { cityBox, cityName, pickCity } from "./test-city";
-import { must } from "../test-support/must";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 

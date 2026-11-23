@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { CITIES, estimateHourly, type AirResult } from "../lib/data";
-import { getCityAir, scoreActions, type LoadAir } from "./tools";
+
+import { CITIES } from "../lib/cities";
+import { type AirResult, estimateHourly } from "../lib/data";
 import { must } from "../test-support/must";
+import { getCityAir, type LoadAir, scoreActions } from "./tools";
 
 const live = (id: string): AirResult => ({
   hourly: estimateHourly(must(CITIES.find((c) => c.id === id))),

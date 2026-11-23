@@ -1,6 +1,7 @@
 "use client";
 import type { Key } from "@/lib/i18n";
 import type { Hotspot } from "@/lib/room";
+
 import { useLang } from "./LangProvider";
 import { SampleRoom } from "./SampleRoom";
 import type { Airwise } from "./useAirwise";
@@ -16,7 +17,10 @@ interface Props {
   footer?: React.ReactNode;
 }
 
-/** The room is the interface: numbered markers on the room and a smog layer driven by the same exposure number. */
+/**
+ * The room is the interface: numbered markers on the room and a smog layer driven by the same
+ * exposure number.
+ */
 export function RoomPanel({ a, hotspots, photoUrl, onPick, footer }: Readonly<Props>) {
   const { t } = useLang();
   const drawn = hotspots.filter((h) => h.bbox).length;

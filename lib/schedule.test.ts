@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, estimateHourly } from "./data";
+
+import { must } from "../test-support/must";
+import { CITIES } from "./cities";
+import { estimateHourly } from "./data";
 import { bestHour, type Profile } from "./engine";
 import { isGrounded } from "./guard";
 import { buildSchedule } from "./schedule";
-import { must } from "../test-support/must";
 
 const hourly = estimateHourly(must(CITIES[0]));
 const family: Profile = {

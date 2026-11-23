@@ -1,10 +1,13 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
+
 import { afterAll, describe, expect, it } from "vitest";
+
 import { CASES, runCases, summarise } from "./cases";
 
 /**
- * `npm run eval` runs this. Every case must pass. With EVAL_WRITE_REPORT=1 it also rewrites docs/EVAL_REPORT.md,
+ * `npm run eval` runs this. Every case must pass. With EVAL_WRITE_REPORT=1 it also rewrites
+ * docs/EVAL_REPORT.md,
  * which is committed, so the report in the repo is the output of a real run.
  */
 const results = runCases();

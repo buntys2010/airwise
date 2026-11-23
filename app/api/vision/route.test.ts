@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { resetGeminiBudget, setLogSink } from "@/lib/gemini";
-import { POST } from "./route";
+
 import { must } from "../../../test-support/must";
+import { POST } from "./route";
 
 let callCount = 0;
 const imageOf = (tag: string) =>

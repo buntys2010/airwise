@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+
+import { must } from "../test-support/must";
 import {
   buildContext,
   buildPrompt,
@@ -8,9 +10,9 @@ import {
   parseChoices,
   parsePlan,
 } from "./chat";
-import { CITIES, estimateHourly } from "./data";
+import { CITIES } from "./cities";
+import { estimateHourly } from "./data";
 import { isGrounded } from "./guard";
-import { must } from "../test-support/must";
 
 const valid = {
   city: "delhi",

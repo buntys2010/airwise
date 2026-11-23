@@ -1,7 +1,7 @@
 import { buildContext, type ChatContext, type Choices, type Lang } from "./chat";
-import { buildSchedule, type ScheduleEntry } from "./schedule";
 import { bestHour, buildActions, categoryOf, pmAt, type Profile, type Tone } from "./engine";
 import { verify } from "./guard";
+import { buildSchedule, type ScheduleEntry } from "./schedule";
 
 export interface DayPlan {
   headline: string;
@@ -21,7 +21,10 @@ const clean = (v: unknown, max: number): string =>
         .slice(0, max)
     : "";
 
-/** Built on the SERVER from the user's choices: the schedule and every number in it come from the engine and the air data. */
+/**
+ * Built on the SERVER from the user's choices: the schedule and every number in it come from the
+ * engine and the air data.
+ */
 export function buildPlanRequest(
   c: Choices,
   hourly: number[],
@@ -76,7 +79,8 @@ export function buildPlanPrompt(req: PlanRequest, lang: Lang = "en"): string {
 }
 
 /**
- * Validates the model's JSON: right shape, bounded sizes, same step times as the schedule, and every number grounded in the facts.
+ * Validates the model's JSON: right shape, bounded sizes, same step times as the schedule, and
+ * every number grounded in the facts.
  * Returns null when anything is off, so the caller serves the deterministic plan instead.
  */
 export function validatePlan(text: string, req: PlanRequest): DayPlan | null {
@@ -113,8 +117,9 @@ export function schedulePlan(req: PlanRequest): DayPlan {
   };
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Community plan: one page for a building, school or workplace. Deterministic; every figure comes from the engine.
+// -------------------------------------------------------------------------------------------------
+// Community plan: one page for a building, school or workplace. Deterministic; every figure comes
+// from the engine.
 
 type CommunityRule =
   | "rule.noBurning"

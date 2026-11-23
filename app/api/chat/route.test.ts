@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { resetGeminiBudget } from "@/lib/gemini";
-import { POST } from "./route";
+
 import { must } from "../../../test-support/must";
+import { POST } from "./route";
 
 vi.mock("@/lib/data", async (orig) => {
   const real = await orig<typeof import("@/lib/data")>();

@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, estimateHourly } from "./data";
+
+import { must } from "../test-support/must";
+import { CITIES } from "./cities";
+import { estimateHourly } from "./data";
 import {
-  NO_PLAN,
   aqiFromPm,
   bestHour,
   buildActions,
   categoryOf,
   fmtHour,
   fullPlan,
+  NO_PLAN,
   planSummary,
-  simulate,
   type Profile,
+  simulate,
 } from "./engine";
-import { must } from "../test-support/must";
 
 const delhi = CITIES[0];
 const hourly = estimateHourly(must(delhi));

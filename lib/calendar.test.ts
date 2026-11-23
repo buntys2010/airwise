@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildReminderIcs, foldLine, icsEscape } from "./calendar";
 
 const now = new Date("2026-11-22T12:00:00Z");

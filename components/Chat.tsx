@@ -1,9 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import { runInBackground } from "@/lib/background";
 import type { Key } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 import { useVoice } from "./useVoice";
-import { runInBackground } from "@/lib/background";
 
 export type Choices = Record<string, unknown>;
 
@@ -16,7 +18,10 @@ interface Props {
 }
 
 const SUGGESTIONS: Key[] = ["chat.q1", "chat.q2", "chat.q3", "chat.q4"];
-/** The server answers within 12 s, either with Gemini's checked answer or with checked offline guidance. A little more here covers the network. */
+/**
+ * The server answers within 12 s, either with Gemini's checked answer or with checked offline
+ * guidance. A little more here covers the network.
+ */
 const CHAT_CLIENT_TIMEOUT_MS = 14_000;
 /** After this long, say that it is still working. */
 const SLOW_AFTER_MS = 3_000;
@@ -153,7 +158,8 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
   useEffect(() => {
     if (prefill) setQ(prefill);
   }, [prefill]);
-  // A visible progress state: after a few seconds the card says it is still working, so a slow answer never looks like a hang.
+  // A visible progress state: after a few seconds the card says it is still working, so a slow
+  // answer never looks like a hang.
   useEffect(() => {
     if (!busy) {
       setSlow(false);
@@ -167,7 +173,8 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
     const text = question.trim();
     if (!text || busy) return;
     const id = ++latest.current;
-    const isLatest = () => id === latest.current; // a newer question was asked meanwhile: drop this stale outcome
+    // a newer question was asked meanwhile: drop this stale outcome
+    const isLatest = () => id === latest.current;
     setBusy(true);
     setError("");
     voice.clearMessage();

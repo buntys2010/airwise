@@ -3,9 +3,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import axe from "axe-core";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { LangProvider } from "./LangProvider";
-import { CityPicker } from "./CityPicker";
+
 import { must } from "../test-support/must";
+import { CityPicker } from "./CityPicker";
+import { LangProvider } from "./LangProvider";
 
 function Harness({ onPick }: { onPick: (id: string) => void }) {
   const [v, setV] = useState("delhi");

@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import ErrorPage from "./error";
 import GlobalError from "./global-error";
 import NotFound from "./not-found";

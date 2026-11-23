@@ -11,15 +11,19 @@ import { getCityAir, istClock } from "@/lib/data";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { verify } from "@/lib/guard";
 import { json, readGuarded } from "@/lib/http";
-import { createLimiter } from "@/lib/ratelimit";
 import { withObservability } from "@/lib/observe";
+import { createLimiter } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
-// Gemini calls are budgeted at 12 s (chat), 15 s (plan) and 20 s (vision); the map batches air requests. 30 s leaves headroom.
+// Gemini calls are budgeted at 12 s (chat), 15 s (plan) and 20 s (vision); the map batches air
+// requests. 30 s leaves headroom.
 export const maxDuration = 30;
 
 const limited = createLimiter(12, 60_000);
-/** The whole request, air lookup included, answers within this. Each model gets half so a hanging first model still leaves time for the next. */
+/**
+ * The whole request, air lookup included, answers within this. Each model gets half so a hanging
+ * first model still leaves time for the next.
+ */
 const CHAT_BUDGET_MS = 12_000;
 const PER_CALL_MS = 6_000;
 /** Verified answers only, for 10 minutes: the same question about the same air costs no model call. */
@@ -64,7 +68,8 @@ export const POST = withObservability("chat", async (req: Request) => {
     budgetMs: Math.max(2_000, CHAT_BUDGET_MS - (Date.now() - started)),
   });
   if (generated.ok) {
-    // Grounding guard: a Gemini answer is shown only if every number and claim in it traces back to the engine's facts.
+    // Grounding guard: a Gemini answer is shown only if every number and claim in it traces back to
+    // the engine's facts.
     const verdict = verify(generated.text, ctx);
     if (verdict.ok) {
       const answer = generated.text.slice(0, 900);
