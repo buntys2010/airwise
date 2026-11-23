@@ -185,17 +185,17 @@ export function buildPrompt(question: string, c: ChatContext, lang: Lang = "en")
 export function offlineAnswerHi(q: string, c: ChatContext): string {
   const text = q.toLowerCase();
   const save = Math.max(0, c.baselineCigs - c.planCigs).toFixed(1);
-  if (/mask|n95|मास्क/.test(text))
+  if (/mask|n95|मास्क/u.test(text))
     return `${c.city} में बाहर हर बार N95 पहनें। कपड़े या सर्जिकल मास्क PM2.5 को बहुत कम रोकते हैं। नाक की क्लिप कसें और गालों के पास खाली जगह न रहने दें।`;
-  if (/window|ventilat|open|खिड़की|हवादार/.test(text))
+  if (/window|ventilat|open|खिड़की|हवादार/u.test(text))
     return `जब हवा सबसे खराब हो तब खिड़कियाँ बंद रखें। आज बाहर PM2.5 सबसे कम ${c.bestHour || "दोपहर के सबसे साफ़ घंटे"} के आसपास है, तभी थोड़ी देर के लिए खोलें।`;
-  if (/purif|filter|hepa|प्यूरीफायर|फ़िल्टर|फिल्टर/.test(text))
+  if (/purif|filter|hepa|प्यूरीफायर|फ़िल्टर|फिल्टर/u.test(text))
     return "जिस कमरे में सबसे ज़्यादा समय बिताते हैं वहाँ दरवाज़ा बंद करके HEPA प्यूरीफायर चलाएँ। कम खर्च में विकल्प: बॉक्स फैन पर MERV 13 फ़िल्टर टेप से लगाएँ।";
-  if (/child|kid|school|baby|asthma|elder|बच्च|बुज़ुर्ग|बुजुर्ग|दमा|अस्थमा/.test(text))
+  if (/child|kid|school|baby|asthma|elder|बच्च|बुज़ुर्ग|बुजुर्ग|दमा|अस्थमा/u.test(text))
     return `बच्चे, बुज़ुर्ग और दमा के मरीज़ अपने शरीर के हिसाब से ज़्यादा हवा साँस में लेते हैं। बाहर का समय कम रखें और सबसे साफ़ घंटे (${c.bestHour || "दोपहर"}) में ही निकलें, और राहत वाली दवाएँ पास रखें। यह सामान्य मार्गदर्शन है, चिकित्सा सलाह नहीं।`;
-  if (/cook|kitchen|chulha|gas|induction|खाना|रसोई|चूल्हा|गैस|इंडक्शन/.test(text))
+  if (/cook|kitchen|chulha|gas|induction|खाना|रसोई|चूल्हा|गैस|इंडक्शन/u.test(text))
     return "खाना पकाना घर के अंदर धुएँ का बड़ा स्रोत है। इंडक्शन से लगभग कोई धुआँ नहीं होता। गैस या लकड़ी पर पकाते समय चिमनी चलाएँ या चूल्हे के पास की खिड़की खोलें, फिर बंद कर दें।";
-  if (/car|commute|metro|bus|bike|travel|यात्रा|मेट्रो|बस|गाड़ी|बाइक/.test(text))
+  if (/car|commute|metro|bus|bike|travel|यात्रा|मेट्रो|बस|गाड़ी|बाइक/u.test(text))
     return "मेट्रो जैसा बंद साधन सबसे खराब धुएँ से बचाता है, और साझा सवारी से प्रति व्यक्ति उत्सर्जन घटता है। आपके रास्ते के लिए सटीक फ़र्क उपायों की सूची में दिखता है।";
   return `आज ${c.city} में हवा "${c.category}" है (PM2.5 लगभग ${Math.round(c.pm)} µg/m³)। आपकी योजना (${c.actions.join(", ") || "अभी कोई उपाय नहीं चुना"}) से आपकी साँस रोज़ लगभग ${c.baselineCigs.toFixed(1)} से ${c.planCigs.toFixed(1)} सिगरेट के बराबर हो जाती है, यानी ${save} की बचत। यह सामान्य मार्गदर्शन है, चिकित्सा सलाह नहीं।`;
 }

@@ -87,7 +87,7 @@ describe("the dial's text matches the engine", () => {
     );
     const note = screen.getByText(/Cigarettes equivalent is a rule of thumb/);
     expect(note.textContent).toMatch(
-      /about 22 µg\/m³ of PM2\.5 over a day counts as one cigarette/,
+      /about 22 µg\/m³ of PM2\.5 over a day counts as one cigarette/u,
     );
     expect(note.textContent).toMatch(/General guidance, not medical advice/);
     expect(note.textContent).not.toMatch(/danger|deadly|kill|warning|shame/i); // calm, no alarm copy
@@ -113,9 +113,9 @@ describe("the dial's text matches the engine", () => {
       </LangProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
-    const dial = screen.getByRole("group", { name: /सिगरेट/ });
-    expect(within(dial).getAllByText(/^आज अब तक/)[0]).toBeTruthy();
-    expect(within(dial).getByText(/सिगरेट के बराबर एक मोटा अंदाज़ा है/)).toBeTruthy();
+    const dial = screen.getByRole("group", { name: /सिगरेट/u });
+    expect(within(dial).getAllByText(/^आज अब तक/u)[0]).toBeTruthy();
+    expect(within(dial).getByText(/सिगरेट के बराबर एक मोटा अंदाज़ा है/u)).toBeTruthy();
   });
 
   it("has no automated accessibility violations", async () => {

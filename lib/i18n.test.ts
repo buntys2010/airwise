@@ -17,7 +17,7 @@ import {
 import { must } from "../test-support/must";
 
 const keys = Object.keys(EN) as Key[];
-const DEVANAGARI = /[ऀ-ॿ]/;
+const DEVANAGARI = /[ऀ-ॿ]/u;
 /** Hindi entries that are deliberately Latin: the language buttons' own codes and brand or unit terms. */
 const LATIN_OK = new Set<Key>([
   "lang.en",
@@ -49,7 +49,7 @@ describe("dictionary parity", () => {
       if (!LATIN_OK.has(k)) expect(DEVANAGARI.test(HI[k]), `${k}: ${HI[k]}`).toBe(true);
   });
   it("Hindi text uses ASCII digits, so screen readers, the guard and the numbers on screen agree", () => {
-    for (const k of keys) expect(/[०-९]/.test(HI[k]), k).toBe(false);
+    for (const k of keys) expect(/[०-९]/u.test(HI[k]), k).toBe(false);
   });
   it("our own text, in both languages, makes no unsupported attribution (studies, experts, population statistics)", () => {
     for (const k of keys) {
@@ -62,7 +62,7 @@ describe("dictionary parity", () => {
 describe("t()", () => {
   it("fills placeholders in either language", () => {
     expect(t("en", "room.found", { n: 2 })).toMatch(/^Found 2 in your photo\./);
-    expect(t("hi", "room.found", { n: 2 })).toMatch(/^आपकी फ़ोटो में 2 मिले।/);
+    expect(t("hi", "room.found", { n: 2 })).toMatch(/^आपकी फ़ोटो में 2 मिले।/u);
   });
   it("leaves an unknown placeholder visible instead of printing undefined", () => {
     expect(t("en", "room.found")).toContain("{n}");
@@ -93,7 +93,7 @@ describe("Hindi action text and speech", () => {
   it("the three room fixes have Hindi titles and costs", () => {
     for (const id of ["sealGaps", "induction", "purifier"]) {
       expect(DEVANAGARI.test(must(ACTION_HI[id]).title)).toBe(true);
-      expect(must(ACTION_HI[id]).cost).toMatch(/₹/);
+      expect(must(ACTION_HI[id]).cost).toMatch(/₹/u);
     }
   });
   it("maps languages to Indian-English and Hindi speech locales", () => {

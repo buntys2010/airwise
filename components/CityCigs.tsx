@@ -13,7 +13,7 @@ function useBurn(target: number) {
   useEffect(() => {
     if (prefersReduced()) {
       setP(1);
-      return;
+      return undefined;
     }
     let raf = 0;
     const start = performance.now();

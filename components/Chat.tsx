@@ -157,7 +157,7 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
   useEffect(() => {
     if (!busy) {
       setSlow(false);
-      return;
+      return undefined;
     }
     const timer = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
     return () => clearTimeout(timer);

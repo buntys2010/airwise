@@ -13,15 +13,15 @@ const base = (
 const pages = ["/", "/community", "/map", "/guide"];
 let failed = 0;
 const check = (ok, label, extra = "") => {
-  console.log(`${ok ? "PASS" : "FAIL"}  ${label}${extra ? "  " + extra : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${label}${extra ? `  ${extra}` : ""}`);
   if (!ok) failed++;
 };
 
 try {
-  const r = await fetch(base + "/api/health");
+  const r = await fetch(`${base}/api/health`);
   const j = await r.json();
   check(
-    r.status === 200 && j.status === "ok" && !!r.headers.get("x-request-id"),
+    r.status === 200 && j.status === "ok" && Boolean(r.headers.get("x-request-id")),
     "GET /api/health",
     `(${r.status})`,
   );
@@ -37,7 +37,7 @@ for (const p of pages) {
   }
 }
 try {
-  const r = await fetch(base + "/api/map");
+  const r = await fetch(`${base}/api/map`);
   const j = await r.json();
   check(
     r.status === 200 && Array.isArray(j.points) && j.points.length >= 100,
@@ -58,7 +58,7 @@ try {
     plan: {},
     lang: "en",
   };
-  const r = await fetch(base + "/api/chat", {
+  const r = await fetch(`${base}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question: "Do I need a mask?", choices }),
@@ -67,7 +67,7 @@ try {
   check(
     r.status === 200 && typeof j.answer === "string" && j.answer.length > 0,
     "POST /api/chat answers",
-    `(source: ${j.source}, verified: ${j.verified}${j.reason ? ", reason: " + j.reason : ""}${j.rejected ? ", guard rejected the model reply" : ""})`,
+    `(source: ${j.source}, verified: ${j.verified}${j.reason ? `, reason: ${j.reason}` : ""}${j.rejected ? ", guard rejected the model reply" : ""})`,
   );
 } catch (e) {
   check(false, "POST /api/chat", String(e));

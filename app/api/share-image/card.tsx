@@ -83,8 +83,8 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
 function Rows({ value, sofar, w }: Readonly<{ value: number; sofar: number; w: number }>) {
   return (
     <div style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      {sticksFor(value, sofar).map((s, i) => (
-        <Stick key={i} total={s.total} burned={s.burned} w={w} />
+      {sticksFor(value, sofar).map((s) => (
+        <Stick key={s.id} total={s.total} burned={s.burned} w={w} />
       ))}
     </div>
   );

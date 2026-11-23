@@ -83,7 +83,7 @@ const renderPage = () =>
     </LangProvider>,
   );
 /** Chat and voice live in the Co-pilot stage; the other stages stay mounted but hidden. */
-const copilot = () => fireEvent.click(screen.getByRole("button", { name: /Co-pilot|सहायक/ }));
+const copilot = () => fireEvent.click(screen.getByRole("button", { name: /Co-pilot|सहायक/u }));
 const chatCalls = (f: ReturnType<typeof vi.fn>) =>
   f.mock.calls.filter((c) => String(c[0]).startsWith("/api/chat"));
 
@@ -122,7 +122,7 @@ describe("language toggle", () => {
     expect(document.documentElement.lang).toBe("en");
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
     expect(document.documentElement.lang).toBe("hi");
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/^आज हवा .+ है।/);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/^आज हवा .+ है।/u);
     expect(screen.getByRole("link", { name: "योजना" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByText("नमूना कमरा")).toBeTruthy();
     expect(screen.getByRole("button", { name: "हिन्दी" }).getAttribute("aria-pressed")).toBe("true");
@@ -158,7 +158,7 @@ describe("language toggle", () => {
     fireEvent.click(screen.getByRole("button", { name: "भेजें" }));
     expect(await screen.findByText("N95 पहनें।")).toBeTruthy();
     expect(JSON.parse(must(chatCalls(f)[0])[1].body as string).choices.lang).toBe("hi");
-    expect(screen.getByText(/Gemini का जवाब, हर संख्या आपकी योजना से जाँची गई/)).toBeTruthy();
+    expect(screen.getByText(/Gemini का जवाब, हर संख्या आपकी योजना से जाँची गई/u)).toBeTruthy();
     expect(must(document.querySelector(".answer")).getAttribute("lang")).toBe("hi");
   });
 

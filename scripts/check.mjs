@@ -100,6 +100,6 @@ for (const [label, text] of rows) console.log(`  ${label.padEnd(width)}  ${text}
 console.log(failed ? "\nResult: FAIL\n" : "\nResult: all checks passed\n");
 writeFileSync(
   path.join(process.cwd(), ".last-check.txt"),
-  rows.map((r) => `${r[0].padEnd(width)}  ${r[1]}`).join("\n") + "\n",
+  `${rows.map((r) => `${r[0].padEnd(width)}  ${r[1]}`).join("\n")}\n`,
 );
 process.exit(failed ? 1 : 0);

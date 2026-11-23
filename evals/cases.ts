@@ -221,7 +221,7 @@ export const CASES: Case[] = [
     expect: "unknown plan ids are dropped",
     run: () => {
       const p = decodeChoices("plan=hack,seal,<script>").plan;
-      return !!p && p.sealGaps === true && p.induction === false;
+      return p?.sealGaps === true && p.induction === false;
     },
   },
   {
@@ -248,7 +248,7 @@ export const CASES: Case[] = [
     id: "off-03",
     category: "offline answers",
     expect: "Hindi mask answer is Devanagari",
-    run: () => /[ऀ-ॿ]/.test(offlineAnswerHi("क्या मुझे मास्क चाहिए?", ctx)),
+    run: () => /[ऀ-ॿ]/u.test(offlineAnswerHi("क्या मुझे मास्क चाहिए?", ctx)),
   },
   {
     id: "off-04",

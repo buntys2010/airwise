@@ -2,7 +2,7 @@
 import axe from "axe-core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import * as image from "@/lib/image";
+import { prepareImage } from "@/lib/image";
 import Page from "./page";
 import { must } from "../test-support/must";
 
@@ -12,7 +12,7 @@ vi.mock("@/lib/image", async (orig) => ({
   prepareImage: vi.fn(),
 }));
 
-const prepare = vi.mocked(image.prepareImage);
+const prepare = vi.mocked(prepareImage);
 const box = { x: 0.1, y: 0.2, w: 0.3, h: 0.3 };
 const hot = (kind: string, label: string, actionId: string) => ({
   id: kind,
@@ -205,7 +205,7 @@ describe("photo reader problems always lead to the questions", () => {
       await screen.findByText("That does not look like a room. Try another photo."),
     ).toBeTruthy();
     expect(screen.getByText("Sample room")).toBeTruthy();
-    expect(image.prepareImage).toHaveBeenCalledTimes(1);
+    expect(prepareImage).toHaveBeenCalledTimes(1);
   });
 
   it("names the reason when the photo reader is unavailable, then asks the questions", async () => {

@@ -13,7 +13,7 @@ const TOLERANCE = 0.051; // allows 3.74 to be written as 3.7
 
 /** Devanagari digits (०-९) written by a model in Hindi become ASCII so the same checks apply. */
 function normaliseDigits(text: string): string {
-  return text.replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
+  return text.replace(/[०-९]/gu, (d) => String(d.charCodeAt(0) - 0x0966));
 }
 
 /** Every number in a text as a value. Thousands separators and Devanagari digits are normalised first. */
@@ -55,9 +55,9 @@ export const isGrounded = (text: string, facts: unknown): boolean =>
  */
 const ATTRIBUTIONS: RegExp[] = [
   // Hindi: studies, research, experts, scientists, surveys, doctors claiming, AIIMS, ICMR
-  /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने|डॉक्टरों के अनुसार|चिकित्सकों ने|एम्स|आईसीएमआर)/,
-  /\d{1,9}(?:\.\d{1,9})?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/,
-  /(?:ज़्यादातर|ज्यादातर|अधिकतर|अधिकांश|करोड़ों)\s+(?:लोग|परिवार|उपयोगकर्ता)/,
+  /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने|डॉक्टरों के अनुसार|चिकित्सकों ने|एम्स|आईसीएमआर)/u,
+  /\d{1,9}(?:\.\d{1,9})?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/u,
+  /(?:ज़्यादातर|ज्यादातर|अधिकतर|अधिकांश|करोड़ों)\s+(?:लोग|परिवार|उपयोगकर्ता)/u,
   /\b(studies|research|surveys?|scientists?|experts?|clinical|peer-reviewed|trials?)\b/i,
   /\bdoctors?\s+(?:say|said|claim|claimed|recommend|recommended|suggest|suggested|advise|advised)\b/i,
   /\b(WHO|CPCB|EPA|CDC|ICMR|AIIMS|MoHFW|Lancet)\b/,

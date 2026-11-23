@@ -272,7 +272,7 @@ function HowSection() {
             induction +8 µg/m³.
           </li>
           <li>
-            <strong>CO₂:</strong> grams per passenger-kilometre by mode, using India's grid for
+            <strong>CO₂:</strong> grams per passenger-kilometre by mode, using India&apos;s grid for
             electric vehicles.
           </li>
         </ul>
@@ -298,8 +298,9 @@ export default function Guide() {
         <section aria-labelledby="g-title" className="g-hero">
           <h1 id="g-title">How to use AirWise</h1>
           <p>
-            AirWise turns today's live air quality into a plan for your family, and shows how much
-            each choice helps. This guide covers every feature and the best way to ask questions.
+            AirWise turns today&apos;s live air quality into a plan for your family, and shows how
+            much each choice helps. This guide covers every feature and the best way to ask
+            questions.
           </p>
           <nav aria-label="On this page" className="g-toc">
             <a href="#start">Start in a minute</a>

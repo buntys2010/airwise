@@ -211,7 +211,10 @@ test.describe("phone, 390 x 844", () => {
             const tick = () => {
               const y = window.scrollY;
               if (y === last) {
-                if (++same >= 4) return done();
+                if (++same >= 4) {
+                  done();
+                  return;
+                }
               } else {
                 same = 0;
                 last = y;

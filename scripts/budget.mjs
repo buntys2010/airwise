@@ -14,7 +14,7 @@ export function parseBuildLog(log) {
   const pages = {};
   let shared = null;
   for (const line of String(log).split(/\r?\n/)) {
-    const row = /^\W*[○ƒ●λ]\s+(\/\S*)\s+([\d.]+)\s*(kB|B)\s+([\d.]+)\s*(kB|B)\s*$/.exec(line);
+    const row = /^\W*[○ƒ●λ]\s+(\/\S*)\s+([\d.]+)\s*(kB|B)\s+([\d.]+)\s*(kB|B)\s*$/u.exec(line);
     if (row && !row[1].startsWith("/api/") && row[1] !== "/_not-found")
       pages[row[1]] = toKb(row[4], row[5]);
     const sh = /First Load JS shared by all\s+([\d.]+)\s*(kB|B)/.exec(line);
@@ -52,6 +52,6 @@ if (process.argv[1] && process.argv[1].endsWith("budget.mjs")) {
   console.log(
     `First-load JS: home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`,
   );
-  for (const v of result.violations) console.error("FAIL " + v);
+  for (const v of result.violations) console.error(`FAIL ${v}`);
   process.exit(result.ok ? 0 : 1);
 }

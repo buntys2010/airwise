@@ -12,6 +12,8 @@ export function cigsSoFar(sim: Pick<Sim, "perHour">, hour: number): number {
 }
 
 export interface Stick {
+  /** Which cigarette this is, counting from 1. Stable for a given day's figure, so it works as a list key. */
+  id: number;
   /** Share of a whole cigarette in this day's figure, 0..1. */
   total: number;
   /** Share already smoked by the chosen hour, 0..total. */
@@ -26,7 +28,7 @@ export function sticksFor(value: number, sofar: number): Stick[] {
   for (let i = 0; i < n; i++) {
     const total = Math.min(1, Math.max(0, v - i));
     const burned = Math.min(total, Math.max(0, Math.min(sofar, v) - i));
-    sticks.push({ total, burned });
+    sticks.push({ id: i + 1, total, burned });
   }
   return sticks;
 }

@@ -83,15 +83,15 @@ describe("first run", () => {
     renderPage();
     const brief = screen.getByRole("region", { name: "Your morning brief" });
     expect(within(brief).getByText(/^Lucknow at .+: AQI \d+, /)).toBeTruthy();
-    expect(brief.textContent).toMatch(/Best outdoor hour: .+, at \d+ µg\/m³\./);
+    expect(brief.textContent).toMatch(/Best outdoor hour: .+, at \d+ µg\/m³\./u);
     expect(brief.textContent).toMatch(/Do first: .+\./);
   });
   it("shows the morning brief in Hindi, with the English-only fix title marked lang=en", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
     const brief = screen.getByRole("region", { name: "आपकी सुबह की जानकारी" });
-    expect(brief.textContent).toMatch(/बाहर के लिए सबसे अच्छा घंटा/);
-    expect(brief.textContent).toMatch(/सबसे पहले करें:/);
+    expect(brief.textContent).toMatch(/बाहर के लिए सबसे अच्छा घंटा/u);
+    expect(brief.textContent).toMatch(/सबसे पहले करें:/u);
   });
 });
 
@@ -140,7 +140,7 @@ describe("shared links carry choices only", () => {
     await waitFor(() => expect(JSON.parse(must(saved())).city).toBe("mumbai"));
   });
   it("Copy a link puts only choices in the link and says so", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockImplementation(() => Promise.resolve());
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
     renderPage();
@@ -164,7 +164,7 @@ describe("shared links carry choices only", () => {
     ]);
   });
   it("uses the phone's share sheet when there is one", async () => {
-    const share = vi.fn().mockResolvedValue(undefined);
+    const share = vi.fn().mockImplementation(() => Promise.resolve());
     Object.defineProperty(navigator, "share", { value: share, configurable: true });
     renderPage();
     openTab("Share");
@@ -193,7 +193,7 @@ describe("shared links carry choices only", () => {
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
     const text = decodeURIComponent(must(new URL(link.href).searchParams.get("text")));
     expect(text).toMatch(/smog in Lucknow, with AirWise: http.*\?city=lucknow/);
-    expect(text).not.toMatch(/cigarette|µg|%/);
+    expect(text).not.toMatch(/cigarette|µg|%/u);
   });
 });
 

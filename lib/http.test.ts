@@ -23,7 +23,7 @@ describe("readGuarded", () => {
     }
   });
   it("413 over the size cap, 400 on invalid JSON", async () => {
-    const big = await readGuarded(post('{"a":"' + "x".repeat(200) + '"}'), {
+    const big = await readGuarded(post(`{"a":"${"x".repeat(200)}"}`), {
       limited: never,
       maxBytes: 100,
     });

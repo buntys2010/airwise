@@ -34,7 +34,7 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
           const tone = categoryOf(v).tone;
           return (
             <rect
-              key={h}
+              key={fmtHour(h)}
               x={x + 3}
               y={y(v)}
               width={bw - 6}
@@ -110,7 +110,7 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
         </thead>
         <tbody>
           {hourly.map((v, h) => (
-            <tr key={h}>
+            <tr key={fmtHour(h)}>
               <td>{fmtHour(h)}</td>
               <td>{v}</td>
               <td>{aqiFromPm(v)}</td>

@@ -62,7 +62,7 @@ function usePlanWriter(choices: Choices, active: boolean) {
   }, []);
 
   useEffect(() => {
-    if (!active || doneFor.current === key) return;
+    if (!active || doneFor.current === key) return undefined;
     const timer = setTimeout(() => {
       runInBackground(write(choices));
     }, ASK_DELAY_MS);
@@ -126,7 +126,7 @@ export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
       ) : null}
       <ol className="day" aria-busy={busy}>
         {items.map((e, i) => (
-          <li key={`${e.time}-${i}`}>
+          <li key={`${e.time}-${e.text}`}>
             <span className="when">{e.time}</span>
             <div className="panel">
               {e.title ? (

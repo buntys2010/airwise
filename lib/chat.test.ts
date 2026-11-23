@@ -163,8 +163,8 @@ describe("offlineAnswer in Hindi", () => {
       "मेट्रो या बाइक?",
     ]) {
       const a = offlineAnswer(q, ctx, "hi");
-      expect(a).toMatch(/[ऀ-ॿ]/);
-      expect(a).not.toMatch(/[०-९]/);
+      expect(a).toMatch(/[ऀ-ॿ]/u);
+      expect(a).not.toMatch(/[०-९]/u);
     }
   });
   it("the general answer states only engine numbers, and passes the guard", () => {

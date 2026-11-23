@@ -38,12 +38,13 @@ describe("cigarettes so far today", () => {
 describe("sticksFor", () => {
   it("draws a partial last stick", () => {
     const s = sticksFor(2.4, 0);
-    expect(s.map((x) => +x.total.toFixed(2))).toEqual([1, 1, 0.4]);
+    expect(s.map((x) => Number(x.total.toFixed(2)))).toEqual([1, 1, 0.4]);
   });
   it("burns from the first stick onward and never past the total", () => {
     const s = sticksFor(2.4, 1.5);
-    expect(s.map((x) => +x.burned.toFixed(2))).toEqual([1, 0.5, 0]);
-    expect(sticksFor(0.3, 9)[0]).toEqual({ total: 0.3, burned: 0.3 });
+    expect(s.map((x) => Number(x.burned.toFixed(2)))).toEqual([1, 0.5, 0]);
+    expect(s.map((x) => x.id)).toEqual([1, 2, 3]);
+    expect(sticksFor(0.3, 9)[0]).toEqual({ id: 1, total: 0.3, burned: 0.3 });
   });
   it("always draws at least one stick", () => {
     expect(sticksFor(0, 0)).toHaveLength(1);

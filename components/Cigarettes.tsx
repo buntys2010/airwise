@@ -42,7 +42,7 @@ export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base
         const left = Math.max(0, s.total - s.burned);
         const burning = s.burned > 0.005 && s.burned < s.total - 0.005;
         return (
-          <div className="stick" key={i}>
+          <div className="stick" key={s.id}>
             <span className="cfilter" />
             <span className="ctrack">
               <span className="cpaper" style={{ width: `${left * 100}%` }} />

@@ -113,7 +113,7 @@ describe("/map", () => {
     const levels = [...document.querySelectorAll(".maptable .cat")].map((e) =>
       must(e.textContent).trim(),
     );
-    expect(levels.every((l) => l.length > 3 && !/^[●◆▲■⬣✖]$/.test(l))).toBe(true);
+    expect(levels.every((l) => l.length > 3 && !/^[●◆▲■⬣✖]$/u.test(l))).toBe(true);
   });
 
   it("marks only the city that could not be reached as an estimate, in the dot label and the table", async () => {
@@ -158,7 +158,7 @@ describe("/map", () => {
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
     expect(await screen.findByRole("heading", { level: 1, name: "अभी शहरों की हवा" })).toBeTruthy();
     expect(document.documentElement.lang).toBe("hi");
-    expect(await screen.findByRole("img", { name: /भारत का योजनाबद्ध नक्शा/ })).toBeTruthy();
+    expect(await screen.findByRole("img", { name: /भारत का योजनाबद्ध नक्शा/u })).toBeTruthy();
   });
 
   it("has one h1, the nav with the current page marked, and no accessibility violations", async () => {
@@ -179,8 +179,8 @@ describe("/community", () => {
     expect(
       within(notice).getByRole("heading", { level: 2, name: "Smog plan for Lucknow" }),
     ).toBeTruthy();
-    expect(notice.textContent).toMatch(/Right now in Lucknow: .+, PM2\.5 \d+ µg\/m³\./);
-    expect(notice.textContent).toMatch(/Cleanest outdoor hour today: .+, at \d+ µg\/m³\./);
+    expect(notice.textContent).toMatch(/Right now in Lucknow: .+, PM2\.5 \d+ µg\/m³\./u);
+    expect(notice.textContent).toMatch(/Cleanest outdoor hour today: .+, at \d+ µg\/m³\./u);
     expect(within(notice).getByRole("heading", { name: "Every household can" })).toBeTruthy();
     expect(notice.querySelectorAll("ol > li")).toHaveLength(3);
     expect(notice.querySelectorAll("ul > li").length).toBeGreaterThanOrEqual(3);
@@ -218,7 +218,7 @@ describe("/community", () => {
   });
 
   it("shares a link with choices only, using the share sheet when there is one", async () => {
-    const share = vi.fn().mockResolvedValue(undefined);
+    const share = vi.fn().mockImplementation(() => Promise.resolve());
     Object.defineProperty(navigator, "share", { value: share, configurable: true });
     wrap(<CommunityPage />);
     fireEvent.change(screen.getByLabelText("Building, school or workplace name (optional)"), {
@@ -235,7 +235,7 @@ describe("/community", () => {
 
   it("falls back to copying the link, and to showing it when the clipboard is blocked", async () => {
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
-    const writeText = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockImplementation(() => Promise.resolve());
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     wrap(<CommunityPage />);
     fireEvent.click(screen.getByRole("button", { name: "Share this plan" }));
@@ -264,7 +264,7 @@ describe("/community", () => {
       screen.getByRole("heading", { level: 2, name: "Lucknow के लिए स्मॉग योजना" }),
     ).toBeTruthy();
     expect(must(document.getElementById("community-plan")).textContent).toMatch(
-      /हर परिवार कर सकता है/,
+      /हर परिवार कर सकता है/u,
     );
     expect(screen.getByRole("button", { name: "यह नोटिस छापें" })).toBeTruthy();
     expect(document.documentElement.lang).toBe("hi");
