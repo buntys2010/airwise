@@ -1,3 +1,4 @@
+import { isRecord } from "./json";
 /**
  * Numeric grounding guard.
  *
@@ -36,7 +37,7 @@ export function allowedNumbers(facts: unknown): number[] {
       out.add(Math.round(v * 10) / 10);
     } else if (typeof v === "string") extractNumbers(v).forEach((n) => out.add(n));
     else if (Array.isArray(v)) v.forEach(walk);
-    else if (v && typeof v === "object") Object.values(v as Record<string, unknown>).forEach(walk);
+    else if (isRecord(v)) Object.values(v).forEach(walk);
   };
   walk(facts);
   return [...out];

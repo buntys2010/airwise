@@ -289,6 +289,25 @@ export const EN = {
   "share.preparing": "Preparing your card…",
   "share.opened": "WhatsApp opened with your link.",
   "share.cardH": "Your card",
+
+  // Offline chat answers, used when the model is unavailable or its reply fails verification.
+  "offline.mask":
+    "Use a fitted N95 for any trip outside in {city}. Cloth and surgical masks filter very little PM2.5. Seal the nose clip and check for gaps at the cheeks.",
+  "offline.window":
+    "Keep windows shut while the air is worst. Open them briefly around {hour}, when outdoor PM2.5 is lowest today.",
+  "offline.purifier":
+    "Run a HEPA purifier in the room you spend the most time in, door closed. A box fan with a MERV 13 filter taped to it is a low-cost alternative.",
+  "offline.child":
+    "Children, older adults and anyone with asthma breathe more air for their size. Keep outdoor time short and in the cleanest hour ({hour}), and keep reliever medicines handy. This is general guidance, not medical advice.",
+  "offline.cook":
+    "Cooking is a big indoor source. Induction adds almost nothing. If you cook on gas or wood, run the chimney or open a window by the stove while you cook, then close it.",
+  "offline.commute":
+    "Enclosed transport such as the metro shields you from the worst exhaust, and shared rides cut emissions per person. The commute card shows the exact change for your route.",
+  "offline.general":
+    'Today in {city} the air is "{category}" (PM2.5 about {pm} µg/m³). Following your plan ({actions}) takes your breathing from about {base} to {plan} cigarettes\' worth a day, saving {save}. General guidance, not medical advice.',
+  "offline.hourWindow": "the cleanest afternoon hour",
+  "offline.hourChild": "afternoon",
+  "offline.noActions": "no actions chosen yet",
 } as const;
 
 export type Key = keyof typeof EN;

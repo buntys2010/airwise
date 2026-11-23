@@ -1,11 +1,8 @@
-/** AQI bands: PM2.5 to AQI, and the category, icon and advice for each band. */
-// ≈ one cigarette per 22 µg/m³ of daily PM2.5 (Berkeley Earth rule of thumb)
+/** AQI bands: PM2.5 to AQI, and the tone and icon of each band. The words live in lib/i18n. */
 
 export interface Category {
-  label: string;
   tone: "good" | "moderate" | "sensitive" | "unhealthy" | "severe" | "hazardous";
   icon: string;
-  advice: string;
 }
 
 const BREAKS: { pm: number; aqi: number }[] = [
@@ -41,51 +38,41 @@ export function aqiFromPm(pm: number): number {
 const CATEGORY_BANDS: { maxAqi: number; category: Category }[] = [
   {
     maxAqi: 50,
-    category: { label: "Good", tone: "good", icon: "●", advice: "Air is clean. Open windows." },
+    category: { tone: "good", icon: "●" },
   },
   {
     maxAqi: 100,
     category: {
-      label: "Moderate",
       tone: "moderate",
       icon: "◆",
-      advice: "The air is acceptable. Sensitive lungs may notice it.",
     },
   },
   {
     maxAqi: 150,
     category: {
-      label: "Poor for sensitive groups",
       tone: "sensitive",
       icon: "▲",
-      advice: "Children, older adults and asthma: keep outdoor time short.",
     },
   },
   {
     maxAqi: 200,
     category: {
-      label: "Unhealthy",
       tone: "unhealthy",
       icon: "■",
-      advice: "Cut outdoor time. Wear an N95 outside.",
     },
   },
   {
     maxAqi: 300,
     category: {
-      label: "Very unhealthy",
       tone: "severe",
       icon: "⬣",
-      advice: "Stay in. Run a purifier. N95 for any trip.",
     },
   },
 ];
 
 const HAZARDOUS: Category = {
-  label: "Hazardous",
   tone: "hazardous",
   icon: "✖",
-  advice: "Avoid going out. Treat indoor air as your priority.",
 };
 
 /** The AQI band for a PM2.5 reading (µg/m³). */

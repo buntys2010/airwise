@@ -6,6 +6,7 @@ import {
   type Profile,
   simulate,
 } from "./engine/model";
+import { asRecord, finiteNumber, isRecord, type JsonRecord } from "./json";
 
 /**
  * Room findings and the product catalog.
@@ -166,22 +167,19 @@ const isFrac = (v: unknown): v is number =>
  * rejected, and the result is
  * validated as in-image either way.
  */
-function normaliseBox(b: Record<string, unknown>): Record<string, unknown> {
-  const vals = [b.x, b.y, b.w, b.h];
-  if (!vals.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0)) return b;
-  const max = Math.max(...(vals as number[]));
-  if (max <= 1 || max > 1000) return b;
-  return {
-    x: (b.x as number) / 1000,
-    y: (b.y as number) / 1000,
-    w: (b.w as number) / 1000,
-    h: (b.h as number) / 1000,
-  };
+function normaliseBox(box: JsonRecord): JsonRecord {
+  const values = [box.x, box.y, box.w, box.h].map(finiteNumber);
+  const numbers = values.filter((value): value is number => value !== null && value >= 0);
+  if (numbers.length !== values.length) return box;
+  const max = Math.max(...numbers);
+  if (max <= 1 || max > 1000) return box;
+  const [x, y, w, h] = numbers.map((value) => value / 1000);
+  return { x, y, w, h };
 }
 
 function validBox(raw: unknown): BBox | null {
-  if (!raw || typeof raw !== "object") return null;
-  const { x, y, w, h } = normaliseBox(raw as Record<string, unknown>);
+  if (!isRecord(raw)) return null;
+  const { x, y, w, h } = normaliseBox(raw);
   if (!isFrac(x) || !isFrac(y) || !isFrac(w) || !isFrac(h) || w <= 0 || h <= 0) return null;
   if (x + w > 1.0001 || y + h > 1.0001) return null;
   return { x, y, w, h };
@@ -189,7 +187,7 @@ function validBox(raw: unknown): BBox | null {
 
 /** One raw finding from the model as a hotspot, or null if it breaks any rule. */
 function validFinding(raw: unknown): { kind: VisionKind; box: BBox; conf: number } | null {
-  const fields = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const fields = asRecord(raw);
   const kind = VISION_KINDS.find((k) => k === fields.kind);
   const box = validBox(fields.bbox);
   const conf =
@@ -211,8 +209,8 @@ export function validateVision(text: string): VisionOutcome {
   } catch {
     return { status: "unreadable" };
   }
-  const parsed = json as { is_room?: unknown; findings?: unknown };
-  if (typeof parsed?.is_room !== "boolean" || !Array.isArray(parsed.findings))
+  const parsed = asRecord(json);
+  if (typeof parsed.is_room !== "boolean" || !Array.isArray(parsed.findings))
     return { status: "unreadable" };
   if (!parsed.is_room) return { status: "not_room" };
   const seen = new Set<VisionKind>();
@@ -252,6 +250,12 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
   return out;
 }
 
+/** How a question was answered: by the user, by what the photo showed, or not at all. */
+interface QuestionState {
+  value: boolean | undefined;
+  source: "user" | "photo" | "none";
+}
+
 /**
  * For each question: was it answered by the photo, by the user, or not at all. Drives the labels
  * under the questions.
@@ -259,22 +263,18 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
 export function questionState(
   evidence: Hotspot[],
   answers: Answers,
-): Record<QuestionId, { value: boolean | undefined; source: "user" | "photo" | "none" }> {
+): Record<QuestionId, QuestionState> {
   const photoYes: Record<QuestionId, boolean> = {
     window: evidence.some((h) => h.kind === "window_gap"),
     stove: evidence.some((h) => h.kind === "gas_stove"),
     purifier: evidence.some((h) => h.kind === "purifier_seen"),
   };
-  const state = {} as Record<
-    QuestionId,
-    { value: boolean | undefined; source: "user" | "photo" | "none" }
-  >;
-  for (const q of QUESTIONS) {
-    if (answers[q] !== undefined) state[q] = { value: answers[q], source: "user" };
-    else if (photoYes[q]) state[q] = { value: true, source: "photo" };
-    else state[q] = { value: undefined, source: "none" };
-  }
-  return state;
+  const stateOf = (q: QuestionId): QuestionState => {
+    if (answers[q] !== undefined) return { value: answers[q], source: "user" };
+    if (photoYes[q]) return { value: true, source: "photo" };
+    return { value: undefined, source: "none" };
+  };
+  return { window: stateOf("window"), stove: stateOf("stove"), purifier: stateOf("purifier") };
 }
 
 // -------------------------------------------------------------------------------------------------

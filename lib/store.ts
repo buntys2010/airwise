@@ -1,6 +1,7 @@
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
 import { CITIES } from "./cities";
 import type { Profile } from "./engine/model";
+import { asRecord, isRecord } from "./json";
 
 /**
  * Device-only save. The profile and last city live in this browser's localStorage and nowhere else.
@@ -26,11 +27,9 @@ const defaultStorage = (): StorageLike | null => {
 
 /** Validates whatever was stored: a tampered or old entry is ignored rather than trusted. */
 export function sanitizeSaved(raw: unknown): Saved | null {
-  if (!raw || typeof raw !== "object") return null;
-  const fields = raw as Record<string, unknown>;
-  const storedProfile = (
-    fields.profile && typeof fields.profile === "object" ? fields.profile : {}
-  ) as Record<string, unknown>;
+  if (!isRecord(raw)) return null;
+  const fields = raw;
+  const storedProfile = asRecord(fields.profile);
   const city = CITIES.find((c) => c.id === fields.city);
   const home = HOMES.find((h) => h === storedProfile.home),
     commute = COMMUTES.find((c) => c === storedProfile.commute),

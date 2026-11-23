@@ -156,7 +156,7 @@ export function useRoom(a: Airwise) {
         setPhase(result.found.length ? "photo" : "checklist");
         setMessage(result.message);
       } catch (error) {
-        if ((error as Error).name === "AbortError") return;
+        if (error instanceof Error && error.name === "AbortError") return;
         setPhase(urlRef.current ? "checklist" : "sample");
         setMessage({ key: failureKey(error) });
       } finally {

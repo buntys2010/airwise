@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { must } from "../../test-support/must";
 import { estimateHourly } from "../air/live";
 import { CITIES } from "../cities";
+import { categoryLabel } from "../i18n";
 import { buildActions, fmtHour, fullPlan, planSummary } from "./actions";
 import { aqiFromPm, categoryOf } from "./aqi";
 import { bestHour, NO_PLAN, type Profile, simulate } from "./model";
@@ -38,7 +39,7 @@ describe("aqiFromPm", () => {
 
 describe("categoryOf", () => {
   it("labels severity with a non-colour icon", () => {
-    expect(categoryOf(8).label).toBe("Good");
+    expect(categoryLabel(categoryOf(8).tone)).toBe("Good");
     expect(categoryOf(300).tone).toBe("hazardous");
     expect(categoryOf(300).icon).toBeTruthy();
   });

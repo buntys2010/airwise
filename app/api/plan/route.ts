@@ -4,6 +4,7 @@ import { createCache } from "@/lib/cache";
 import { parseChoices } from "@/lib/chat";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { json, readGuarded } from "@/lib/http";
+import { asRecord } from "@/lib/json";
 import { withObservability } from "@/lib/observe";
 import {
   buildPlanPrompt,
@@ -27,7 +28,7 @@ export const POST = withObservability("plan", async (req: Request) => {
   const parsed = await readGuarded(req, { limited, maxBytes: 3_000 });
   if (!parsed.ok) return parsed.res;
 
-  const choices = parseChoices((parsed.body as { choices?: unknown } | null)?.choices);
+  const choices = parseChoices(asRecord(parsed.body).choices);
   if (!choices) return json({ error: "Missing or invalid household choices." }, 400);
 
   // The schedule and its numbers are built here from the engine and live air data, never taken from

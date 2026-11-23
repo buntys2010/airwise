@@ -3,6 +3,7 @@ import { buildActions } from "./engine/actions";
 import { categoryOf, type Tone } from "./engine/aqi";
 import { bestHour, pmAt, type Profile } from "./engine/model";
 import { verify } from "./guard";
+import { asRecord } from "./json";
 import { type Lang } from "./lang";
 import { buildSchedule, type ScheduleEntry } from "./schedule";
 
@@ -93,7 +94,7 @@ export function validatePlan(text: string, req: PlanRequest): DayPlan | null {
   } catch {
     return null;
   }
-  const parsed = json as { headline?: unknown; steps?: unknown };
+  const parsed = asRecord(json);
   if (
     typeof parsed.headline !== "string" ||
     !Array.isArray(parsed.steps) ||
@@ -101,8 +102,8 @@ export function validatePlan(text: string, req: PlanRequest): DayPlan | null {
   )
     return null;
   const steps = parsed.steps.map((s) => ({
-    time: clean((s as { time?: unknown })?.time, 10),
-    text: clean((s as { text?: unknown })?.text, 360),
+    time: clean(asRecord(s).time, 10),
+    text: clean(asRecord(s).text, 360),
   }));
   if (steps.some((s, i) => !s.text || s.time !== req.schedule[i]?.time)) return null;
   const plan: DayPlan = { headline: clean(parsed.headline, 120), steps };

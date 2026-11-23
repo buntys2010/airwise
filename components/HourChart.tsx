@@ -1,6 +1,7 @@
 import { fmtHour } from "@/lib/engine/actions";
 import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
 import { pmAt } from "@/lib/engine/model";
+import { categoryLabel } from "@/lib/i18n";
 
 const TONE_FILL: Record<string, string> = {
   good: "#45d1b7",
@@ -36,7 +37,7 @@ function HourTable({ hourly }: Readonly<{ hourly: number[] }>) {
             <td>{fmtHour(h)}</td>
             <td>{v}</td>
             <td>{aqiFromPm(v)}</td>
-            <td>{categoryOf(v).label}</td>
+            <td>{categoryLabel(categoryOf(v).tone)}</td>
           </tr>
         ))}
       </tbody>

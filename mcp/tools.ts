@@ -4,6 +4,8 @@ import { CITIES } from "../lib/cities";
 import { buildActions } from "../lib/engine/actions";
 import { aqiFromPm, categoryOf } from "../lib/engine/aqi";
 import { bestHour, NO_PLAN, pmAt, type Profile, round1, simulate } from "../lib/engine/model";
+import { categoryLabel } from "../lib/i18n";
+import { oneOf } from "../lib/json";
 import { idsToPlan, PLAN_IDS, sanitizePlan } from "../lib/share";
 
 /**
@@ -49,8 +51,8 @@ function pick<T extends string>(field: string, value: unknown, allowed: readonly
       next_step: `Call again with ${field} set to one of the allowed values.`,
     });
   }
-  if (typeof value === "string" && (allowed as readonly string[]).includes(value))
-    return { ok: true, data: value as T };
+  const match = oneOf(allowed, value);
+  if (match !== null) return { ok: true, data: match };
   return fail({
     code: "invalid_argument",
     field,
@@ -103,7 +105,7 @@ export async function getCityAir(
       now_hour_ist: nowHour,
       pm25_now_ugm3: pm,
       aqi_us_epa_style: aqiFromPm(pm),
-      level: categoryOf(pm).label,
+      level: categoryLabel(categoryOf(pm).tone),
       best_outdoor_hour_ist: best,
       best_outdoor_pm25_ugm3: pmAt(air.hourly, best),
       worst_hour_ist: worst,
@@ -163,9 +165,7 @@ export async function scoreActions(
         next_step: 'Pass a list such as ["seal", "purifier"], or leave it out for no actions.',
       });
     const list: unknown[] = args.actions;
-    const bad = list.find(
-      (a) => typeof a !== "string" || !(PLAN_IDS as readonly string[]).includes(a),
-    );
+    const bad = list.find((a) => oneOf(PLAN_IDS, a) === null);
     if (bad !== undefined)
       return fail({
         code: "invalid_argument",
@@ -174,7 +174,7 @@ export async function scoreActions(
         allowed: [...PLAN_IDS],
         next_step: "Call again with actions chosen from the allowed values.",
       });
-    ids = args.actions as string[];
+    ids = list.flatMap((a) => oneOf(PLAN_IDS, a) ?? []);
   }
   const air = await load(city.data).catch(() => null);
   if (!air)
@@ -211,7 +211,7 @@ export async function scoreActions(
         co2_kg_saved_per_day: round1(base.co2Kg - withPlan.co2Kg),
       },
       each_action_on_its_own: buildActions(air.hourly, profile).map((a) => ({
-        id: PLAN_OF[a.id as string] ?? a.id,
+        id: PLAN_OF[a.id] ?? a.id,
         title: a.title,
         applicable: a.applicable,
         percent_less_exposure: Math.round(a.savedPct * 100),

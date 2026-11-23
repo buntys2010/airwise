@@ -4,6 +4,7 @@ import { createCache } from "@/lib/cache";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { json, readGuarded } from "@/lib/http";
 import { parseDataUrl } from "@/lib/image";
+import { asRecord } from "@/lib/json";
 import { withObservability } from "@/lib/observe";
 import { createLimiter } from "@/lib/ratelimit";
 import { validateVision, VISION_PROMPT, VISION_SCHEMA, type VisionOutcome } from "@/lib/room";
@@ -26,7 +27,7 @@ export const POST = withObservability("vision", async (req: Request) => {
   });
   if (!parsed.ok) return parsed.res;
 
-  const img = parseDataUrl((parsed.body as { image?: unknown } | null)?.image);
+  const img = parseDataUrl(asRecord(parsed.body).image);
   if (img === "bad_type") return json({ error: "Send a JPEG, PNG or WebP photo." }, 415);
   if (img === "too_large")
     return json({ error: "That photo is too large. Try a smaller one." }, 413);
