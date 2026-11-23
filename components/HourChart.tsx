@@ -15,6 +15,33 @@ interface Props {
   usual: number;
 }
 
+/** The chart's data as a table, for screen readers. */
+function HourTable({ hourly }: Readonly<{ hourly: number[] }>) {
+  return (
+    <table className="sr-only">
+      <caption>Outdoor PM2.5 and AQI by hour</caption>
+      <thead>
+        <tr>
+          <th>Hour</th>
+          <th>PM2.5 µg/m³</th>
+          <th>AQI</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {hourly.map((v, h) => (
+          <tr key={fmtHour(h)}>
+            <td>{fmtHour(h)}</td>
+            <td>{v}</td>
+            <td>{aqiFromPm(v)}</td>
+            <td>{categoryOf(v).label}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 /** 24 bars, one per hour. Colour is never the only signal: the best hour is outlined and labelled, and a table is provided for screen readers. */
 export function HourChart({ hourly, best, usual }: Readonly<Props>) {
   const CHART_WIDTH = 960,
@@ -103,27 +130,7 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
           ),
         )}
       </div>
-      <table className="sr-only">
-        <caption>Outdoor PM2.5 and AQI by hour</caption>
-        <thead>
-          <tr>
-            <th>Hour</th>
-            <th>PM2.5 µg/m³</th>
-            <th>AQI</th>
-            <th>Level</th>
-          </tr>
-        </thead>
-        <tbody>
-          {hourly.map((v, h) => (
-            <tr key={fmtHour(h)}>
-              <td>{fmtHour(h)}</td>
-              <td>{v}</td>
-              <td>{aqiFromPm(v)}</td>
-              <td>{categoryOf(v).label}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <HourTable hourly={hourly} />
     </div>
   );
 }

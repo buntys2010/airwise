@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Post-deploy smoke test. Usage: node scripts/smoke.mjs [baseUrl]  or  SMOKE_URL=https://your.app node scripts/smoke.mjs  (default http://localhost:3100)
  * Checks that every main page answers 200, that the map API returns every city, and that the chat API answers
@@ -75,4 +74,4 @@ try {
   check(false, "POST /api/chat", String(error));
 }
 
-process.exit(failed ? 1 : 0);
+process.exitCode = failed ? 1 : 0;

@@ -42,16 +42,20 @@ export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED
   };
 }
 
-if (process.argv[1] && process.argv[1].endsWith("budget.mjs")) {
+/** Command-line entry: reads a `next build` log, prints the figures, and sets the exit code (0 ok, 1 over budget, 2 bad usage). */
+function main() {
   const file = process.argv[2];
   if (!file) {
     console.error("usage: node scripts/budget.mjs build.log");
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const result = checkBudget(parseBuildLog(readFileSync(file, "utf8")));
   console.log(
     `First-load JS: home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`,
   );
   for (const v of result.violations) console.error(`FAIL ${v}`);
-  process.exit(result.ok ? 0 : 1);
+  process.exitCode = result.ok ? 0 : 1;
 }
+
+if (process.argv[1]?.endsWith("budget.mjs")) main();

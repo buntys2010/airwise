@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { cigsSoFar, sticksFor, type Stick } from "@/lib/cigsHourly";
 import { fmtHour } from "@/lib/engine";
 import { useLang } from "./LangProvider";
@@ -65,6 +65,65 @@ export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base
   );
 }
 
+/** One column of the hero: a label with its figure, above that scenario's row of cigarettes. */
+function CigColumn({
+  tone,
+  sticks,
+  labelClass,
+  ariaLabel,
+  children,
+}: Readonly<{
+  tone: "base" | "plan";
+  sticks: Stick[];
+  labelClass: string;
+  ariaLabel: string;
+  children: ReactNode;
+}>) {
+  return (
+    <div className="cigcol">
+      <p className="cliglabel">
+        <span className={labelClass} aria-label={ariaLabel}>
+          <span>{children}</span>
+        </span>
+      </p>
+      <CigRow sticks={sticks} tone={tone} />
+    </div>
+  );
+}
+
+/** Both scenarios side by side: today with no changes, and today with the plan. */
+function CigRows({
+  a,
+  baseSticks,
+  planSticks,
+  changed,
+}: Readonly<{ a: Airwise; baseSticks: Stick[]; planSticks: Stick[]; changed: boolean }>) {
+  const { t } = useLang();
+  const f1 = (n: number) => n.toFixed(1);
+  return (
+    <div className="cigrows">
+      <CigColumn
+        tone="base"
+        sticks={baseSticks}
+        labelClass="dialbefore"
+        ariaLabel={`${f1(a.base.cigs)} ${t("dial.before")}`}
+      >
+        {t("cig.base")} <b>{f1(a.base.cigs)}</b>
+      </CigColumn>
+      <CigColumn
+        tone="plan"
+        sticks={planSticks}
+        labelClass={`dialafter${changed ? " changed" : ""}`}
+        ariaLabel={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}
+      >
+        {t("cig.plan")}{" "}
+        <b style={{ color: changed ? "var(--breath)" : "#fff" }}>{f1(a.withPlan.cigs)}</b>
+        {changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}
+      </CigColumn>
+    </div>
+  );
+}
+
 /** The hero: today's smoke as cigarettes that burn down hour by hour, and shrink when a fix is switched on. Figures come from the engine. */
 export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
   const { t } = useLang();
@@ -92,33 +151,7 @@ export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
         <p className="cigtext sr-only">
           {t("cig.sofar", { time: fmtHour(a.nowHour), n: a.soFar.toFixed(1) })}
         </p>
-        <div className="cigrows">
-          <div className="cigcol">
-            <p className="cliglabel">
-              <span className="dialbefore" aria-label={`${f1(a.base.cigs)} ${t("dial.before")}`}>
-                <span>
-                  {t("cig.base")} <b>{f1(a.base.cigs)}</b>
-                </span>
-              </span>
-            </p>
-            <CigRow sticks={baseSticks} tone="base" />
-          </div>
-          <div className="cigcol">
-            <p className="cliglabel">
-              <span
-                className={`dialafter${changed ? " changed" : ""}`}
-                aria-label={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}
-              >
-                <span>
-                  {t("cig.plan")}{" "}
-                  <b style={{ color: changed ? "var(--breath)" : "#fff" }}>{f1(a.withPlan.cigs)}</b>
-                  {changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}
-                </span>
-              </span>
-            </p>
-            <CigRow sticks={planSticks} tone="plan" />
-          </div>
-        </div>
+        <CigRows a={a} baseSticks={baseSticks} planSticks={planSticks} changed={changed} />
       </div>
       <div className="meter" role="img" aria-label={t("dial.expo", { pct: a.savedPct })}>
         <i style={{ width: a.savedPct > 0 ? `${Math.max(2, a.savedPct)}%` : "0%" }} />

@@ -8,7 +8,7 @@ await client.connect(
 );
 let failed = 0;
 const check = (ok, label, extra = "") => {
-  console.log(`${ok ? "PASS" : "FAIL"}  ${label}${extra ? "  " + extra : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${label}${extra ? `  ${extra}` : ""}`);
   if (!ok) failed++;
 };
 
@@ -27,11 +27,11 @@ check(
 );
 
 const air = await client.callTool({ name: "get_city_air", arguments: { city: "delhi" } });
-const a = JSON.parse(air.content[0].text);
+const airData = JSON.parse(air.content[0].text);
 check(
-  !air.isError && a.hourly_pm25_ugm3?.length === 24,
+  !air.isError && airData.hourly_pm25_ugm3?.length === 24,
   "get_city_air returns 24 hourly values",
-  `(source: ${a.source})`,
+  `(source: ${airData.source})`,
 );
 
 const score = await client.callTool({
@@ -44,27 +44,27 @@ const score = await client.callTool({
     actions: ["seal", "purifier"],
   },
 });
-const s = JSON.parse(score.content[0].text);
+const scoreData = JSON.parse(score.content[0].text);
 check(
-  !score.isError && s.exposure?.percent_less_exposure > 0,
+  !score.isError && scoreData.exposure?.percent_less_exposure > 0,
   "score_actions returns a reduction",
-  `(${s.exposure?.percent_less_exposure}% less)`,
+  `(${scoreData.exposure?.percent_less_exposure}% less)`,
 );
 
 const bad = await client.callTool({
   name: "score_actions",
   arguments: { city: "atlantis", home: "leaky", commute: "bike", cooking: "lpg" },
 });
-const e = JSON.parse(bad.content[0].text).error;
+const failure = JSON.parse(bad.content[0].text).error;
 check(
   bad.isError === true &&
-    e.code === "invalid_argument" &&
-    e.field === "city" &&
-    e.allowed.includes("delhi") &&
-    e.next_step,
+    failure.code === "invalid_argument" &&
+    failure.field === "city" &&
+    failure.allowed.includes("delhi") &&
+    failure.next_step,
   "a bad city returns a structured error with allowed values and a next step",
-  `(${e?.code}/${e?.field})`,
+  `(${failure?.code}/${failure?.field})`,
 );
 
 await client.close();
-process.exit(failed ? 1 : 0);
+process.exitCode = failed ? 1 : 0;

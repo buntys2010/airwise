@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { CityPicker } from "@/components/CityPicker";
 import { Header } from "@/components/Chrome";
 import { useLang } from "@/components/LangProvider";
-import { useAirwise } from "@/components/useAirwise";
+import { useAirwise, type Airwise } from "@/components/useAirwise";
 import { fmtHour, type Cooking, type Home } from "@/lib/engine";
 import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
 import { communityPlan } from "@/lib/plan";
@@ -19,6 +19,92 @@ const COOK_OPTIONS: { v: Cooking; en: string; hi: string }[] = [
   { v: "wood", en: "Wood or coal", hi: "लकड़ी या कोयला" },
   { v: "induction", en: "Induction", hi: "इंडक्शन" },
 ];
+
+interface OptionGroupProps<V extends string> {
+  legend: string;
+  fieldName: string;
+  options: { v: V; en: string; hi: string }[];
+  current: V;
+  onChange: (value: V) => void;
+}
+
+/** A radio group whose labels follow the page language. */
+function OptionGroup<V extends string>({
+  legend,
+  fieldName,
+  options,
+  current,
+  onChange,
+}: Readonly<OptionGroupProps<V>>) {
+  const { lang } = useLang();
+  return (
+    <fieldset>
+      <legend>{legend}</legend>
+      <div className="opts">
+        {options.map((option) => (
+          <label key={option.v} className="opt">
+            <input
+              type="radio"
+              name={fieldName}
+              value={option.v}
+              checked={current === option.v}
+              onChange={() => onChange(option.v)}
+            />
+            <span>{lang === "hi" ? option.hi : option.en}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** The inputs that shape the notice: a name, the city, the kind of home and how people cook. */
+function ProfileForm({
+  name,
+  setName,
+  airwise,
+}: Readonly<{ name: string; setName: (value: string) => void; airwise: Airwise }>) {
+  const { t } = useLang();
+  return (
+    <div className="panel profile">
+      <div>
+        <label htmlFor="cname" className="qhead">
+          {t("comm.name")}
+        </label>
+        <input
+          id="cname"
+          className="textfield"
+          type="text"
+          maxLength={60}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoComplete="off"
+        />
+        <p className="dim">{t("comm.nameHint")}</p>
+      </div>
+      <div>
+        <span className="qhead" aria-hidden="true">
+          {t("strip.city")}
+        </span>
+        <CityPicker value={airwise.cityId} onChange={airwise.setCityId} />
+      </div>
+      <OptionGroup
+        legend={t("comm.home")}
+        fieldName="chome"
+        options={HOME_OPTIONS}
+        current={airwise.profile.home}
+        onChange={(home) => airwise.setProfile({ ...airwise.profile, home })}
+      />
+      <OptionGroup
+        legend={t("comm.cook")}
+        fieldName="ccook"
+        options={COOK_OPTIONS}
+        current={airwise.profile.cooking}
+        onChange={(cooking) => airwise.setProfile({ ...airwise.profile, cooking })}
+      />
+    </div>
+  );
+}
 
 /** One printable page for a building, school or workplace. Every figure comes from the engine and live air; the link shares choices only. */
 export default function CommunityPage() {
@@ -68,63 +154,7 @@ export default function CommunityPage() {
         </section>
 
         <section className="noprint">
-          <div className="panel profile">
-            <div>
-              <label htmlFor="cname" className="qhead">
-                {t("comm.name")}
-              </label>
-              <input
-                id="cname"
-                className="textfield"
-                type="text"
-                maxLength={60}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="off"
-              />
-              <p className="dim">{t("comm.nameHint")}</p>
-            </div>
-            <div>
-              <span className="qhead" aria-hidden="true">
-                {t("strip.city")}
-              </span>
-              <CityPicker value={airwise.cityId} onChange={airwise.setCityId} />
-            </div>
-            <fieldset>
-              <legend>{t("comm.home")}</legend>
-              <div className="opts">
-                {HOME_OPTIONS.map((o) => (
-                  <label key={o.v} className="opt">
-                    <input
-                      type="radio"
-                      name="chome"
-                      value={o.v}
-                      checked={airwise.profile.home === o.v}
-                      onChange={() => airwise.setProfile({ ...airwise.profile, home: o.v })}
-                    />
-                    <span>{lang === "hi" ? o.hi : o.en}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>{t("comm.cook")}</legend>
-              <div className="opts">
-                {COOK_OPTIONS.map((o) => (
-                  <label key={o.v} className="opt">
-                    <input
-                      type="radio"
-                      name="ccook"
-                      value={o.v}
-                      checked={airwise.profile.cooking === o.v}
-                      onChange={() => airwise.setProfile({ ...airwise.profile, cooking: o.v })}
-                    />
-                    <span>{lang === "hi" ? o.hi : o.en}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
+          <ProfileForm name={name} setName={setName} airwise={airwise} />
         </section>
 
         <section id="notice-sec" aria-labelledby="h-notice">
