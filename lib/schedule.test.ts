@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
+import { estimateHourly } from "./air/live";
 import { CITIES } from "./cities";
-import { estimateHourly } from "./data";
-import { bestHour, type Profile } from "./engine";
+import { bestHour, type Profile } from "./engine/model";
 import { isGrounded } from "./guard";
 import { buildSchedule } from "./schedule";
 

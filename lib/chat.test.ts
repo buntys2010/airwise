@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
+import { estimateHourly } from "./air/live";
 import {
   buildContext,
   buildPrompt,
@@ -11,7 +12,6 @@ import {
   parsePlan,
 } from "./chat";
 import { CITIES } from "./cities";
-import { estimateHourly } from "./data";
 import { isGrounded } from "./guard";
 
 const valid = {

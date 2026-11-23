@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { cigsSoFar, sticksFor } from "./cigsHourly";
-import type { Profile } from "./engine";
-import { NO_PLAN, simulate } from "./engine";
+import type { Profile } from "./engine/model";
+import { NO_PLAN, simulate } from "./engine/model";
 
 const hourly = Array.from({ length: 24 }, (_, h) => 40 + (h % 6) * 5);
 const profile: Profile = {

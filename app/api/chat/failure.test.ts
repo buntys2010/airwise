@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 // The air lookup throws: an unexpected failure that no route handles itself.
-vi.mock("@/lib/data", async (orig) => ({
-  ...(await orig<typeof import("@/lib/data")>()),
+vi.mock("@/lib/air/server", async (orig) => ({
+  ...(await orig<typeof import("@/lib/air/server")>()),
   getCityAir: () => {
     return Promise.reject(new Error("air feed exploded"));
   },

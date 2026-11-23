@@ -1,10 +1,17 @@
-import { type Cooking, type Home, NO_PLAN, type Plan, type Profile, simulate } from "./engine";
+import {
+  type Cooking,
+  type Home,
+  NO_PLAN,
+  type Plan,
+  type Profile,
+  simulate,
+} from "./engine/model";
 
 /**
  * Room findings and the product catalog.
  * Gemini may LOOK at a photo and say what it can see. Code decides what that means for the
  * household and what it is worth:
- * the model never states a figure, and every number comes from lib/engine.ts.
+ * the model never states a figure, and every number comes from lib/engine/.
  *
  * A photo shows what is THERE. It cannot prove what is absent. So the photo step maps only visible
  * evidence to hotspots

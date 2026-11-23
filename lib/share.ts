@@ -1,6 +1,6 @@
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
 import { CITIES } from "./cities";
-import { NO_PLAN, type Plan, type Profile } from "./engine";
+import { NO_PLAN, type Plan, type Profile } from "./engine/model";
 
 /**
  * Shareable links carry CHOICES only: a city, four household answers and which fixes are switched

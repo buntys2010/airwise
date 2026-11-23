@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { must } from "../test-support/must";
-import { categoryOf } from "./engine";
-import { unsupportedClaims } from "./guard";
+import { must } from "../../test-support/must";
+import { categoryOf } from "../engine/aqi";
+import { unsupportedClaims } from "../guard";
+import { EN } from "./en";
+import { HI } from "./hi";
 import {
   ACTION_HI,
   ADVICE_KEY,
   CATEGORY_KEY,
   DICTS,
-  EN,
   englishIn,
-  HI,
   type Key,
   placeholders,
   SPEECH_LANG,
   t,
-} from "./i18n";
+} from "./index";
 
 const keys = Object.keys(EN) as Key[];
 const DEVANAGARI = /[ऀ-ॿ]/u;

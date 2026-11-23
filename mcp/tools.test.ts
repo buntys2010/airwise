@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { type AirResult, estimateHourly } from "../lib/air/live";
 import { CITIES } from "../lib/cities";
-import { type AirResult, estimateHourly } from "../lib/data";
 import { must } from "../test-support/must";
 import { getCityAir, type LoadAir, scoreActions } from "./tools";
 

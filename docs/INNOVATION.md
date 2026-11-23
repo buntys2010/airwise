@@ -18,7 +18,7 @@ Most smog apps do the same thing: show the city's AQI, then put a chatbot beside
 
 ## Our original work (where to find it)
 
-1. **Personal dose engine and counterfactual action ledger** (`lib/engine.ts`).
+1. **Personal dose engine and counterfactual action ledger** (`lib/engine/`).
    A pure, deterministic 24-hour model splits exposure into home, commute, outdoor and cooking parts. Each action is measured by re-running the model with only that action switched on, so every card shows its own solo effect. A combined plan is the same model with several switched on. Nothing here depends on an AI.
 
 2. **Two-layer grounding guard** (`lib/guard.ts`).
@@ -37,7 +37,7 @@ Most smog apps do the same thing: show the city's AQI, then put a chatbot beside
 5. **Data-driven atmosphere** (`app/page.tsx`, `app/globals.css`).
    One CSS variable, `--haze`, is derived from your remaining exposure and drives the sky, the sun and the grain. The background is not decoration. It is the readout, and it visibly clears as you add actions. A test measures text contrast against the worst-case stacked haze.
 
-6. **Honest data states** (`lib/data.ts`).
+6. **Honest data states** (`lib/air/`).
    The badge says "Live air data, updated HH:MM IST" only when a live fetch just succeeded. Otherwise it says "Offline estimate". Simulated numbers are never presented as live.
 
 7. **Community notice.** One printable page with today's level and the three highest-impact actions for a building or school gate.

@@ -1,6 +1,9 @@
-import { buildContext, type ChatContext, type Choices, type Lang } from "./chat";
-import { bestHour, buildActions, categoryOf, pmAt, type Profile, type Tone } from "./engine";
+import { buildContext, type ChatContext, type Choices } from "./chat";
+import { buildActions } from "./engine/actions";
+import { categoryOf, type Tone } from "./engine/aqi";
+import { bestHour, pmAt, type Profile } from "./engine/model";
 import { verify } from "./guard";
+import { type Lang } from "./lang";
 import { buildSchedule, type ScheduleEntry } from "./schedule";
 
 export interface DayPlan {

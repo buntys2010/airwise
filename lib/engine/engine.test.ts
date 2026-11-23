@@ -1,20 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { must } from "../test-support/must";
-import { CITIES } from "./cities";
-import { estimateHourly } from "./data";
-import {
-  aqiFromPm,
-  bestHour,
-  buildActions,
-  categoryOf,
-  fmtHour,
-  fullPlan,
-  NO_PLAN,
-  planSummary,
-  type Profile,
-  simulate,
-} from "./engine";
+import { must } from "../../test-support/must";
+import { estimateHourly } from "../air/live";
+import { CITIES } from "../cities";
+import { buildActions, fmtHour, fullPlan, planSummary } from "./actions";
+import { aqiFromPm, categoryOf } from "./aqi";
+import { bestHour, NO_PLAN, type Profile, simulate } from "./model";
 
 const delhi = CITIES[0];
 const hourly = estimateHourly(must(delhi));
@@ -157,7 +148,7 @@ describe("helpers", () => {
   });
 });
 
-import { cigsSoFar } from "./engine";
+import { cigsSoFar } from "./model";
 
 describe("simulate().perHour", () => {
   const profile: Profile = {
@@ -262,7 +253,7 @@ describe("shifting outdoor time", () => {
 
 describe("outdoor cigarettes (city air)", () => {
   it("is the day's mean PM2.5 over the rule-of-thumb constant", async () => {
-    const { outdoorCigs, outdoorCigsSoFar, CIGARETTE_PM } = await import("./engine");
+    const { outdoorCigs, outdoorCigsSoFar, CIGARETTE_PM } = await import("./model");
     const flat = Array.from({ length: 24 }, () => 44);
     expect(outdoorCigs(flat)).toBeCloseTo(44 / CIGARETTE_PM, 10);
     expect(outdoorCigs([])).toBe(0);

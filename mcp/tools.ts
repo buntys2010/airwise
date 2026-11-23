@@ -1,17 +1,9 @@
+import { type AirResult, loadAir } from "../lib/air/live";
 import { COMMUTES, COOKINGS, HOMES } from "../lib/chat";
 import { CITIES } from "../lib/cities";
-import { type AirResult, loadAir } from "../lib/data";
-import {
-  aqiFromPm,
-  bestHour,
-  buildActions,
-  categoryOf,
-  NO_PLAN,
-  pmAt,
-  type Profile,
-  round1,
-  simulate,
-} from "../lib/engine";
+import { buildActions } from "../lib/engine/actions";
+import { aqiFromPm, categoryOf } from "../lib/engine/aqi";
+import { bestHour, NO_PLAN, pmAt, type Profile, round1, simulate } from "../lib/engine/model";
 import { idsToPlan, PLAN_IDS, sanitizePlan } from "../lib/share";
 
 /**

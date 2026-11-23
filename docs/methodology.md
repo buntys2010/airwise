@@ -1,6 +1,6 @@
 # Methodology and assumptions
 
-AirWise estimates a household member's **time-weighted PM2.5 exposure** over 24 hours. These are planning assumptions for comparing choices, not clinical measurements. Values are deliberately round and every one lives in `lib/engine.ts`.
+AirWise estimates a household member's **time-weighted PM2.5 exposure** over 24 hours. These are planning assumptions for comparing choices, not clinical measurements. Values are deliberately round and every one lives in `lib/engine/model.ts`.
 
 ## Daily model
 For each hour `h`, outdoor PM2.5 `C(h)` (µg/m³) comes from the city's hourly data. Exposure while:
@@ -66,4 +66,4 @@ The cigarette row is a drawing of three engine figures: the do-nothing day (the 
 **Cooking smoke and the outdoor half-hour.** The model previously scaled cooking smoke by the share of the hour spent indoors. Moving the family's outdoor half-hour away from 7 am (a cooking hour) therefore added kitchen smoke and, for gas and wood households, cancelled or even reversed the benefit of the cleaner hour. This was found by the "every action lowers it" test for `cigsSoFar`. Cooking smoke is now counted for the whole cooking hour, because the person cooking is at home for it, so shifting outdoor time can no longer raise exposure (regression test in `lib/engine.test.ts`). Baseline figures moved slightly as a result.
 
 ## Outdoors-all-day cigarettes (top strip)
-The strip next to the city name shows what a person breathes standing outdoors all day at today's levels: the mean of the 24 hourly PM2.5 values divided by the same constant as everywhere else (`CIGARETTE_PM`, 22 µg/m³ per cigarette a day, a rule of thumb). `outdoorCigs` and `outdoorCigsSoFar` in `lib/engine.ts` compute it; the "so far today" part sums the hours elapsed in India time. It describes the city's air, not the household, so it is always higher than the personal dial, which counts hours indoors, mask and fixes. Both figures are in the server chat facts, so the grounding guard accepts them and rejects any other number.
+The strip next to the city name shows what a person breathes standing outdoors all day at today's levels: the mean of the 24 hourly PM2.5 values divided by the same constant as everywhere else (`CIGARETTE_PM`, 22 µg/m³ per cigarette a day, a rule of thumb). `outdoorCigs` and `outdoorCigsSoFar` in `lib/engine/model.ts` compute it; the "so far today" part sums the hours elapsed in India time. It describes the city's air, not the household, so it is always higher than the personal dial, which counts hours indoors, mask and fixes. Both figures are in the server chat facts, so the grounding guard accepts them and rejects any other number.

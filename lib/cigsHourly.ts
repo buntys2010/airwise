@@ -1,4 +1,4 @@
-import { CIGARETTE_PM, type Sim } from "./engine";
+import { CIGARETTE_PM, type Sim } from "./engine/model";
 
 /**
  * Cigarettes equivalent so far today: the first `hour + 1` hours of the day's exposure, on the

@@ -1,4 +1,5 @@
-import { bestHour, fmtHour, modeLabel, OPEN_MODES, OUTDOOR_HOUR, type Profile } from "./engine";
+import { fmtHour, modeLabel } from "./engine/actions";
+import { bestHour, OPEN_MODES, OUTDOOR_HOUR, type Profile } from "./engine/model";
 
 export interface ScheduleEntry {
   hour: number;

@@ -1,4 +1,4 @@
-import type { Sim } from "@/lib/engine";
+import type { Sim } from "@/lib/engine/model";
 
 const PARTS: { key: keyof Sim["parts"]; label: string; color: string }[] = [
   { key: "indoor", label: "Breathed at home", color: "#45d1b7" },

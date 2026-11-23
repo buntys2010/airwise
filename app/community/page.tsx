@@ -6,7 +6,8 @@ import { CityPicker } from "@/components/CityPicker";
 import { useLang } from "@/components/LangProvider";
 import { type Airwise, useAirwise } from "@/components/useAirwise";
 import { runInBackground } from "@/lib/background";
-import { type Cooking, fmtHour, type Home } from "@/lib/engine";
+import { fmtHour } from "@/lib/engine/actions";
+import { type Cooking, type Home } from "@/lib/engine/model";
 import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
 import { type CommunityPlan, communityPlan } from "@/lib/plan";
 

@@ -1,8 +1,8 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import type { Lang } from "@/lib/chat";
 import { type Key, t as translate } from "@/lib/i18n";
+import type { Lang } from "@/lib/lang";
 
 interface Ctx {
   lang: Lang;

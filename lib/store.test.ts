@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
-import type { Profile } from "./engine";
+import type { Profile } from "./engine/model";
 import { clearSaved, readSaved, sanitizeSaved, STORE_KEY, writeSaved } from "./store";
 
 const profile: Profile = {

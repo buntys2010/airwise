@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
+import { estimateHourly } from "./air/live";
 import { CITIES } from "./cities";
-import { estimateHourly } from "./data";
-import { NO_PLAN, type Profile, simulate } from "./engine";
+import { NO_PLAN, type Profile, simulate } from "./engine/model";
 import {
   CATALOG,
   FINDING_KINDS,
