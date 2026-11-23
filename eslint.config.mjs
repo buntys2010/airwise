@@ -35,6 +35,8 @@ export default tseslint.config(
     plugins: { "react-hooks": reactHooks, "@next/next": next },
     rules: {
       ...next.configs["core-web-vitals"].rules,
+      // Photos here are blob: or generated image URLs, so each use is justified where it is disabled.
+      "@next/next/no-img-element": "error",
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "error",
       "@typescript-eslint/no-explicit-any": "error",
