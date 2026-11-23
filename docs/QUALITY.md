@@ -5,7 +5,7 @@ Measured, not estimated. Every figure below is from `npm run check` (and `npm ru
 ```
 AirWise proof card
   Type-check     pass
-  Tests          518 passed, 0 failed, in 52 files
+  Tests          520 passed, 0 failed, in 52 files
   Accessibility  10 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
   First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB
@@ -36,7 +36,7 @@ Plus `npm run e2e`: 39 browser tests passed (3 skipped by design) in desktop and
 - Verified model answers are cached for 10 minutes, and Gemini calls have per-call and overall time budgets.
 
 ## Testing
-- 518 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
+- 520 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
 - 52 eval cases for grounding, injection, Hindi and photo findings ([`evals/`](../evals)).
 - Browser tests ([`e2e/`](../e2e)) for the core journey, layout at 360 and 390 px, focus never hidden behind the bottom bar.
 - `npm run smoke` checks a running deployment.

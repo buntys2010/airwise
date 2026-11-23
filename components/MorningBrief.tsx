@@ -1,7 +1,7 @@
 "use client";
 import { fmtHour } from "@/lib/engine/actions";
 import { pmAt } from "@/lib/engine/model";
-import { ACTION_HI, CATEGORY_KEY, englishIn } from "@/lib/i18n";
+import { CATEGORY_KEY } from "@/lib/i18n";
 
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
@@ -11,9 +11,8 @@ import type { Airwise } from "./useAirwise";
  * is no server memory behind it.
  */
 export function MorningBrief({ a }: Readonly<{ a: Airwise }>) {
-  const { lang, t } = useLang();
+  const { t } = useLang();
   const first = [...a.actions].filter((x) => x.applicable).sort((x, y) => y.savedPm - x.savedPm)[0];
-  const hi = first && lang === "hi" ? ACTION_HI[first.id] : undefined;
   return (
     <section className="brief" aria-labelledby="h-brief">
       <h2 id="h-brief">{t("brief.h")}</h2>
@@ -27,11 +26,7 @@ export function MorningBrief({ a }: Readonly<{ a: Airwise }>) {
           })}
         </strong>{" "}
         {t("brief.best", { hour: a.bestLabel, pm: pmAt(a.hourly, a.best) })}{" "}
-        {first && (
-          <span {...(hi ? { lang: "hi" } : englishIn(lang))}>
-            {t("brief.first", { fix: hi ? hi.title : first.title })}
-          </span>
-        )}
+        {first && t("brief.first", { fix: first.title })}
       </p>
     </section>
   );
