@@ -1,13 +1,14 @@
 "use client";
 import { useMemo, useState } from "react";
-import { CityPicker } from "@/components/CityPicker";
+
 import { Header } from "@/components/Chrome";
+import { CityPicker } from "@/components/CityPicker";
 import { useLang } from "@/components/LangProvider";
-import { useAirwise, type Airwise } from "@/components/useAirwise";
-import { fmtHour, type Cooking, type Home } from "@/lib/engine";
-import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
-import { communityPlan, type CommunityPlan } from "@/lib/plan";
+import { type Airwise, useAirwise } from "@/components/useAirwise";
 import { runInBackground } from "@/lib/background";
+import { type Cooking, fmtHour, type Home } from "@/lib/engine";
+import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
+import { type CommunityPlan, communityPlan } from "@/lib/plan";
 
 const HOME_OPTIONS: { v: Home; en: string; hi: string }[] = [
   { v: "leaky", en: "Older, gappy windows", hi: "पुराने, दरार वाली खिड़कियाँ" },
@@ -167,7 +168,10 @@ function NoticeSection({
   );
 }
 
-/** One printable page for a building, school or workplace. Every figure comes from the engine and live air; the link shares choices only. */
+/**
+ * One printable page for a building, school or workplace. Every figure comes from the engine and
+ * live air; the link shares choices only.
+ */
 export default function CommunityPage() {
   const { lang, t } = useLang();
   const airwise = useAirwise(lang);

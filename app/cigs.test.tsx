@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { LangProvider } from "@/components/LangProvider";
-import { CITIES, estimateHourly } from "@/lib/data";
-import { NO_PLAN, cigsSoFar, simulate, toggleAction, buildActions } from "@/lib/engine";
-import { DEFAULT_PROFILE } from "@/components/useAirwise";
+
 import { CityCigs } from "@/components/CityCigs";
-import Page from "./page";
+import { LangProvider } from "@/components/LangProvider";
+import { DEFAULT_PROFILE } from "@/components/useAirwise";
+import { CITIES } from "@/lib/cities";
+import { estimateHourly } from "@/lib/data";
+import { buildActions, cigsSoFar, NO_PLAN, simulate, toggleAction } from "@/lib/engine";
+
 import { must } from "../test-support/must";
+import Page from "./page";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 

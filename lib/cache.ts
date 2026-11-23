@@ -1,4 +1,7 @@
-/** Tiny in-memory TTL cache with a size cap (oldest entries evicted first). Saves repeat model calls and quota. */
+/**
+ * Tiny in-memory TTL cache with a size cap (oldest entries evicted first). Saves repeat model calls
+ * and quota.
+ */
 export function createCache<T>(ttlMs: number, max = 200) {
   const store = new Map<string, { value: T; at: number }>();
   return {

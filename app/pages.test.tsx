@@ -1,16 +1,19 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { existsSync } from "node:fs";
 import path from "node:path";
+
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { NAV } from "@/components/Chrome";
 import { LangProvider } from "@/components/LangProvider";
-import { CITIES } from "@/lib/data";
-import CommunityPage from "./community/page";
-import { pickCity } from "./test-city";
-import MapPage from "./map/page";
+import { CITIES } from "@/lib/cities";
+
 import { must } from "../test-support/must";
+import CommunityPage from "./community/page";
+import MapPage from "./map/page";
+import { pickCity } from "./test-city";
 
 let currentPath = "/";
 vi.mock("next/navigation", () => ({ usePathname: () => currentPath }));

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { verify } from "../lib/guard";
 import { ungroundedNumbers } from "../lib/guard";
 import { runCases, summarise, type Verifier } from "./cases";

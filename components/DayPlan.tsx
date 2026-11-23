@@ -1,10 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Choices } from "./Chat";
-import { useLang } from "./LangProvider";
+
+import { runInBackground } from "@/lib/background";
 import type { DayPlan as Plan } from "@/lib/plan";
 import type { ScheduleEntry } from "@/lib/schedule";
-import { runInBackground } from "@/lib/background";
+
+import type { Choices } from "./Chat";
+import { useLang } from "./LangProvider";
 
 interface Result extends Plan {
   source: "gemini" | "offline";
@@ -16,13 +18,19 @@ interface Result extends Plan {
 interface Props {
   schedule: ScheduleEntry[];
   choices: Choices;
-  /** True while the Day plan tab is on screen. Gemini is only asked then, so a quiet tab never spends quota. */
+  /**
+   * True while the Day plan tab is on screen. Gemini is only asked then, so a quiet tab never
+   * spends quota.
+   */
   active?: boolean;
 }
 
 const ASK_DELAY_MS = 700;
 
-/** Fetches the written plan: once the tab is open, and again (after a short pause, so toggling several fixes is one request) whenever the choices change. */
+/**
+ * Fetches the written plan: once the tab is open, and again (after a short pause, so toggling
+ * several fixes is one request) whenever the choices change.
+ */
 function usePlanWriter(choices: Choices, active: boolean) {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
@@ -86,15 +94,18 @@ function statusText(result: Result | null, error: string): string {
 }
 
 /**
- * The household's clear-air day. The calculated schedule shows at once; Gemini rewrites it in friendly words as soon as the tab opens
- * (and again when the household or city changes). The server checks every number, and falls back to the calculated plan if one is off.
+ * The household's clear-air day. The calculated schedule shows at once; Gemini rewrites it in
+ * friendly words as soon as the tab opens
+ * (and again when the household or city changes). The server checks every number, and falls back
+ * to the calculated plan if one is off.
  */
 export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
   const { lang } = useLang();
   const { result, busy, error, write } = usePlanWriter(choices, active);
 
   const gemini = result?.source === "gemini";
-  // Once the server has answered, show its steps (built from the same engine and air data); until then, the calculated schedule.
+  // Once the server has answered, show its steps (built from the same engine and air data); until
+  // then, the calculated schedule.
   const items: { time: string; title?: string; text: string }[] = result
     ? result.steps.map((s) => ({ time: s.time, text: s.text }))
     : schedule.map((e) => ({ time: e.time, title: e.title, text: e.detail }));

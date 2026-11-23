@@ -11,7 +11,10 @@ const PARTS: { key: keyof Sim["parts"]; label: string; color: string }[] = [
 const breakdownLabel = (sim: Sim): string =>
   PARTS.map((part) => `${part.label} ${Math.round(sim.parts[part.key] * 100)} percent`).join(", ");
 
-/** Both bars use the same scale (share of the do-nothing dose) so shrinkage is visible, not just re-proportioned. */
+/**
+ * Both bars use the same scale (share of the do-nothing dose) so shrinkage is visible, not just
+ * re-proportioned.
+ */
 export function DoseBars({ base, plan }: Readonly<{ base: Sim; plan: Sim }>) {
   const scale = base.meanPm > 0 ? plan.meanPm / base.meanPm : 1;
   const row = (title: string, sim: Sim, factor: number) => (

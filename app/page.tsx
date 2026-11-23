@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+
 import { Home } from "@/components/Home";
 
 type Params = Promise<Record<string, string | string[] | undefined>>;
 const KEYS = ["city", "home", "commute", "km", "cooking", "vulnerable", "plan"];
 
-/** A shared link previews as the share card: the same choices-only query goes to the image route, which recomputes every number. */
+/**
+ * A shared link previews as the share card: the same choices-only query goes to the image route,
+ * which recomputes every number.
+ */
 export async function generateMetadata({
   searchParams,
 }: {

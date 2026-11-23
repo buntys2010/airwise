@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+
+import { must } from "../test-support/must";
 import { categoryOf } from "./engine";
 import { unsupportedClaims } from "./guard";
 import {
@@ -7,14 +9,13 @@ import {
   CATEGORY_KEY,
   DICTS,
   EN,
-  HI,
-  SPEECH_LANG,
   englishIn,
-  placeholders,
-  t,
+  HI,
   type Key,
+  placeholders,
+  SPEECH_LANG,
+  t,
 } from "./i18n";
-import { must } from "../test-support/must";
 
 const keys = Object.keys(EN) as Key[];
 const DEVANAGARI = /[ऀ-ॿ]/u;

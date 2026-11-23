@@ -1,17 +1,19 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import type { Key } from "@/lib/i18n";
-import { MAX_PICK_BYTES, checkPick, prepareImage } from "@/lib/image";
+import { checkPick, MAX_PICK_BYTES, prepareImage } from "@/lib/image";
 import {
-  SAMPLE_HOTSPOTS,
-  SAMPLE_PROFILE_PATCH,
-  mergeFindings,
-  profilePatch,
-  questionState,
   type Answers,
   type Hotspot,
+  mergeFindings,
+  profilePatch,
   type QuestionId,
+  questionState,
+  SAMPLE_HOTSPOTS,
+  SAMPLE_PROFILE_PATCH,
 } from "@/lib/room";
+
 import type { Airwise } from "./useAirwise";
 
 export type Phase = "sample" | "reading" | "photo" | "checklist";
@@ -60,7 +62,8 @@ async function analysePhoto(dataUrl: string, signal: AbortSignal): Promise<Analy
 
 /**
  * Room state: the sample room by default, or the user's own photo once it has been read.
- * A photo contributes only VISIBLE evidence; the questions cover everything else; an explicit answer beats the photo.
+ * A photo contributes only VISIBLE evidence; the questions cover everything else; an explicit
+ * answer beats the photo.
  * Every outcome has a plain path forward, and the questions drive the same engine without any photo.
  */
 const invalidPickKey = (file: File) =>
@@ -70,7 +73,10 @@ const failureKey = (e: unknown) =>
     ? ("room.badFormat" as const)
     : ("room.failed" as const);
 
-/** Room-photo state: the picked photo, the model's findings, the user's answers and the resulting profile changes. */
+/**
+ * Room-photo state: the picked photo, the model's findings, the user's answers and the resulting
+ * profile changes.
+ */
 export function useRoom(a: Airwise) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [evidence, setEvidence] = useState<Hotspot[]>([]);

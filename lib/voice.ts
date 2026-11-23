@@ -1,6 +1,8 @@
 /**
- * Browser voice helpers (Web Speech API). Everything is feature-detected: where a browser has no speech support the
- * controls are simply not shown and typing keeps working. Speech recognition in Chrome sends audio to the browser vendor's
+ * Browser voice helpers (Web Speech API). Everything is feature-detected: where a browser has no
+ * speech support the
+ * controls are simply not shown and typing keeps working. Speech recognition in Chrome sends audio
+ * to the browser vendor's
  * service; AirWise itself never receives or stores audio, only the text the user chooses to send.
  */
 

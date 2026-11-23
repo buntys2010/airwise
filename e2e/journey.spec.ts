@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
 import { must } from "../test-support/must";
 
 /**
@@ -202,7 +203,8 @@ test.describe("phone, 390 x 844", () => {
     const obscured: string[] = [];
     for (let i = 0; i < 90; i++) {
       await page.keyboard.press("Tab");
-      // Wait for any smooth scrolling to finish: what matters is where the control ends up, not where it is mid-scroll.
+      // Wait for any smooth scrolling to finish: what matters is where the control ends up, not
+      // where it is mid-scroll.
       await page.evaluate(
         () =>
           new Promise<void>((done) => {
@@ -273,7 +275,8 @@ test.describe("phone, 390 x 844", () => {
     for (const name of ["Send", "Add a photo of your room"]) {
       const box = await page.getByRole("button", { name }).first().boundingBox();
       expect(must(box).height, name).toBeGreaterThanOrEqual(43.5);
-      expect(must(box).y, name).toBeGreaterThan(must(ib).y + must(ib).height - 1); // the buttons are on the row below the input
+      // the buttons are on the row below the input
+      expect(must(box).y, name).toBeGreaterThan(must(ib).y + must(ib).height - 1);
     }
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,

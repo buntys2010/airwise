@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Profile } from "./engine";
-import { STORE_KEY, clearSaved, readSaved, sanitizeSaved, writeSaved } from "./store";
+
 import { must } from "../test-support/must";
+import type { Profile } from "./engine";
+import { clearSaved, readSaved, sanitizeSaved, STORE_KEY, writeSaved } from "./store";
 
 const profile: Profile = {
   home: "leaky",

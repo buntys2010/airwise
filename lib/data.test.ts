@@ -1,14 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  CITIES,
-  estimateHourly,
-  istClock,
-  loadAir,
-  parseHourly,
-  parseWeather,
-  weatherNote,
-} from "./data";
+
 import { must } from "../test-support/must";
+import { CITIES } from "./cities";
+import { estimateHourly, istClock, loadAir, parseHourly, parseWeather, weatherNote } from "./data";
 
 const delhi = CITIES[0];
 const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);

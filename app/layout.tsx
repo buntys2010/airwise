@@ -1,9 +1,11 @@
+import "./globals.css";
+
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
+
 import { Sky } from "@/components/Chrome";
 import { FocusGuard } from "@/components/FocusGuard";
 import { LangProvider } from "@/components/LangProvider";
-import "./globals.css";
 
 const display = Bricolage_Grotesque({
   subsets: ["latin"],

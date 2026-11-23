@@ -1,10 +1,12 @@
 "use client";
 import { useId, useRef } from "react";
+
+import { runInBackground } from "@/lib/background";
 import type { Key } from "@/lib/i18n";
-import { QUESTIONS, type QuestionId } from "@/lib/room";
+import { type QuestionId, QUESTIONS } from "@/lib/room";
+
 import { useLang } from "./LangProvider";
 import type { Room } from "./useRoom";
-import { runInBackground } from "@/lib/background";
 
 /** The id of the file input, so other controls (the chat camera button) can open the same picker. */
 export const PHOTO_INPUT_ID = "room-photo-input";
@@ -17,7 +19,8 @@ const QUESTION_KEY: Record<QuestionId, Key> = {
 
 /**
  * Photo input, the plain-language disclosure, and the questions.
- * A photo cannot show what is not there, so anything the photo did not show is asked, one tap each. Unanswered adds nothing to the plan.
+ * A photo cannot show what is not there, so anything the photo did not show is asked, one tap
+ * each. Unanswered adds nothing to the plan.
  */
 export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
   const { t } = useLang();

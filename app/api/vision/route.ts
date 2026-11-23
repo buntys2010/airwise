@@ -1,14 +1,16 @@
 import { createHash } from "node:crypto";
+
 import { createCache } from "@/lib/cache";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { json, readGuarded } from "@/lib/http";
 import { parseDataUrl } from "@/lib/image";
-import { createLimiter } from "@/lib/ratelimit";
-import { VISION_PROMPT, VISION_SCHEMA, validateVision, type VisionOutcome } from "@/lib/room";
 import { withObservability } from "@/lib/observe";
+import { createLimiter } from "@/lib/ratelimit";
+import { validateVision, VISION_PROMPT, VISION_SCHEMA, type VisionOutcome } from "@/lib/room";
 
 export const runtime = "nodejs";
-// Gemini calls are budgeted at 12 s (chat), 15 s (plan) and 20 s (vision); the map batches air requests. 30 s leaves headroom.
+// Gemini calls are budgeted at 12 s (chat), 15 s (plan) and 20 s (vision); the map batches air
+// requests. 30 s leaves headroom.
 export const maxDuration = 30;
 
 const limited = createLimiter(4, 60_000);

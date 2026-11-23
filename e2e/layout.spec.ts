@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
 import { CITIES as ALL } from "../lib/cities";
 import { must } from "../test-support/must";
 
@@ -68,7 +69,8 @@ test.describe("map layout", () => {
         for (let j = i + 1; j < boxes.length; j++) {
           const first = boxes[i],
             second = boxes[j];
-          if (must(first).city === must(second).city) continue; // a city's own name and value lines are stacked on purpose
+          // a city's own name and value lines are stacked on purpose
+          if (must(first).city === must(second).city) continue;
           if (
             must(first).l < must(second).r - 1 &&
             must(second).l < must(first).r - 1 &&
@@ -80,7 +82,8 @@ test.describe("map layout", () => {
             );
         }
       expect(clash).toEqual([]);
-      for (const b of boxes) expect(b.h, b.text).toBeGreaterThanOrEqual(width < 500 ? 10 : 12); // value text is the smaller line
+      // value text is the smaller line
+      for (const b of boxes) expect(b.h, b.text).toBeGreaterThanOrEqual(width < 500 ? 10 : 12);
     });
   }
 
@@ -118,7 +121,8 @@ test.describe("map layout", () => {
       page,
     }) => {
       await page.setViewportSize({ width, height: 800 });
-      await stub(page, [74, 130, 17, 220, 27, 40]); // include long level names like "Poor for sensitive groups"
+      // include long level names like "Poor for sensitive groups"
+      await stub(page, [74, 130, 17, 220, 27, 40]);
       await page.goto("/map");
       await expect(page.getByRole("table")).toBeVisible();
       const metrics = await page.evaluate(() => {
@@ -253,7 +257,8 @@ test.describe("city strip", () => {
       expect(fit.overflowX).toBeLessThanOrEqual(1);
       expect(fit.rowRight).toBeLessThanOrEqual(fit.vw);
       expect(fit.textRight).toBeLessThanOrEqual(fit.vw);
-      expect(fit.rowH).toBeLessThan(80); // a short wrapped row of sticks, never a tall block above the headline
+      // a short wrapped row of sticks, never a tall block above the headline
+      expect(fit.rowH).toBeLessThan(80);
       const box = page.getByRole("combobox", { name: "City" });
       await box.click();
       await box.fill("varan");

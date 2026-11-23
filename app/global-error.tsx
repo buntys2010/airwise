@@ -1,6 +1,9 @@
 "use client";
 
-/** Last resort when the root layout itself fails. It replaces the layout, so it cannot rely on the app's styles. */
+/**
+ * Last resort when the root layout itself fails. It replaces the layout, so it cannot rely on the
+ * app's styles.
+ */
 export default function GlobalError({
   reset,
 }: Readonly<{

@@ -1,4 +1,7 @@
-/** Photo handling helpers. The browser work (decode, resize, re-encode) strips EXIF location data before anything leaves the device. */
+/**
+ * Photo handling helpers. The browser work (decode, resize, re-encode) strips EXIF location data
+ * before anything leaves the device.
+ */
 
 export const MAX_EDGE = 1024;
 const JPEG_QUALITY = 0.8;
@@ -18,7 +21,10 @@ export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: n
 
 export type PickCheck = { ok: true } | { ok: false; message: string };
 
-/** Whether a picked file is a supported type and small enough to try, with a message a person can act on if not. */
+/**
+ * Whether a picked file is a supported type and small enough to try, with a message a person can
+ * act on if not.
+ */
 export function checkPick(file: { type: string; size: number }): PickCheck {
   if (!ACCEPTED_TYPES.includes(file.type))
     return {
@@ -39,7 +45,10 @@ export interface Prepared {
   objectUrl: string;
 }
 
-/** Decodes, shrinks to MAX_EDGE and re-encodes as JPEG. Throws if the browser cannot decode the file (for example HEIC). */
+/**
+ * Decodes, shrinks to MAX_EDGE and re-encodes as JPEG. Throws if the browser cannot decode the file
+ * (for example HEIC).
+ */
 export async function prepareImage(file: Blob): Promise<Prepared> {
   const url = URL.createObjectURL(file);
   try {

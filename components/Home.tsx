@@ -1,29 +1,30 @@
 "use client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BottomDock, type ActiveTab } from "@/components/BottomDock";
+
+import { type ActiveTab, BottomDock } from "@/components/BottomDock";
 import { Chat } from "@/components/Chat";
-import { Cigarettes } from "@/components/Cigarettes";
 import { Header } from "@/components/Chrome";
+import { Cigarettes } from "@/components/Cigarettes";
 import { DayPlan } from "@/components/DayPlan";
 import { DoseBars } from "@/components/DoseBars";
 import { FixRows } from "@/components/FixRows";
 import { HourChart } from "@/components/HourChart";
-import { MorningBrief } from "@/components/MorningBrief";
-import { PlanTools } from "@/components/PlanTools";
 import { useLang } from "@/components/LangProvider";
+import { MorningBrief } from "@/components/MorningBrief";
 import { PHOTO_INPUT_ID, PhotoPicker } from "@/components/PhotoPicker";
+import { PlanTools } from "@/components/PlanTools";
 import { ProfilePills } from "@/components/ProfilePills";
 import { RoomPanel } from "@/components/RoomPanel";
 import { SeverityStrip } from "@/components/SeverityStrip";
 import { ShareCard } from "@/components/ShareCard";
-import { useAirwise, type Airwise } from "@/components/useAirwise";
-import { useRoom, type Room } from "@/components/useRoom";
+import { type Airwise, useAirwise } from "@/components/useAirwise";
+import { type Room, useRoom } from "@/components/useRoom";
 import { ValueList } from "@/components/ValueList";
-import { OUTDOOR_HOUR, fmtHour } from "@/lib/engine";
-import { englishIn } from "@/lib/i18n";
 import type { Lang } from "@/lib/chat";
-import { rankProducts, type Hotspot, type RankedProduct } from "@/lib/room";
+import { fmtHour, OUTDOOR_HOUR } from "@/lib/engine";
+import { englishIn } from "@/lib/i18n";
+import { type Hotspot, type RankedProduct, rankProducts } from "@/lib/room";
 
 /** The "your home" stage: the room photo, the fixes it points to, and the household. */
 function RoomStage({
@@ -68,7 +69,10 @@ function RoomStage({
   );
 }
 
-/** The "plan" stage: the cleanest hour, the day's schedule, what is worth buying, and where the dose comes from. */
+/**
+ * The "plan" stage: the cleanest hour, the day's schedule, what is worth buying, and where the dose
+ * comes from.
+ */
 function PlanStage({
   airwise,
   lang,
@@ -129,7 +133,10 @@ export function Home() {
     [airwise.hourly, airwise.profile],
   );
   const [tab, setTabRaw] = useState<ActiveTab>("room");
-  /** Switching a tab also brings its content into view; the hero above is tall, so without this a tap seems to do nothing. */
+  /**
+   * Switching a tab also brings its content into view; the hero above is tall, so without this a
+   * tap seems to do nothing.
+   */
   const setTab = (next: ActiveTab) => {
     setTabRaw(next);
     requestAnimationFrame(() => {
@@ -162,7 +169,10 @@ export function Home() {
       ? badges[airwise.status]
       : badges.estimate;
 
-  /* Every stage stays mounted and is only hidden, so a typed question, an answer or a photo survives a tab change. */
+  /*
+   * Every stage stays mounted and is only hidden, so a typed question, an answer or a photo
+   * survives a tab change.
+   */
   return (
     <div className="wrap hasdock">
       <Header>

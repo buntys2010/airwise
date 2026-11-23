@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+
 import {
+  checkPick,
+  fitSize,
   MAX_EDGE,
   MAX_PICK_BYTES,
   MAX_UPLOAD_BYTES,
-  checkPick,
-  fitSize,
   parseDataUrl,
 } from "./image";
 

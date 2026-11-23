@@ -13,7 +13,10 @@ export function generateStaticParams() {
   return Object.keys(SIZES).map((name) => ({ name }));
 }
 
-/** The AirWise mark (two smog waves in a dark disc) drawn at the requested size. Generated at build time, so no image files are stored. */
+/**
+ * The AirWise mark (two smog waves in a dark disc) drawn at the requested size. Generated at build
+ * time, so no image files are stored.
+ */
 export async function GET(
   _req: Request,
   { params }: Readonly<{ params: Promise<{ name: string }> }>,

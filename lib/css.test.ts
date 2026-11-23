@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(path.resolve(__dirname, "../app/globals.css"), "utf8");
 
-/** All bodies of rules whose selector is exactly `selector`. Plain string scanning, so there is no regex to get wrong. */
+/**
+ * All bodies of rules whose selector is exactly `selector`. Plain string scanning, so there is no
+ * regex to get wrong.
+ */
 function rules(selector: string): string {
   const out: string[] = [];
   let from = 0;

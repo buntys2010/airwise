@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+
 import {
-  VOICE_PROBLEM_KEY,
   canSpeak,
   getRecognitionCtor,
   mapVoiceError,
   speak,
   stopSpeaking,
   transcriptOf,
+  VOICE_PROBLEM_KEY,
 } from "./voice";
 
 /** What a server render sees: there is no window. */

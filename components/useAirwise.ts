@@ -1,33 +1,35 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { runInBackground } from "@/lib/background";
 import type { Lang } from "@/lib/chat";
-import { CITIES, estimateHourly, istClock, loadAir, type AirResult, type City } from "@/lib/data";
+import { CITIES, type City } from "@/lib/cities";
 import { FALLBACK_CITY } from "@/lib/cities";
+import { type AirResult, estimateHourly, istClock, loadAir } from "@/lib/data";
 import {
-  NO_PLAN,
-  OUTDOOR_HOUR,
+  type ActionResult,
   aqiFromPm,
   bestHour,
   buildActions,
   categoryOf,
   cigsSoFar,
   fmtHour,
+  NO_PLAN,
+  OUTDOOR_HOUR,
   outdoorCigs,
   outdoorCigsSoFar,
+  type Plan,
   planSummary,
   pmAt,
+  type Profile,
   simulate,
   toggleAction,
-  type ActionResult,
-  type Plan,
-  type Profile,
 } from "@/lib/engine";
 import { hazeLevel } from "@/lib/haze";
 import { SAMPLE_PROFILE_PATCH } from "@/lib/room";
 import { buildSchedule } from "@/lib/schedule";
 import { decodeChoices, sanitizePlan } from "@/lib/share";
-import { clearSaved, readSaved, writeSaved, type StoreState } from "@/lib/store";
-import { runInBackground } from "@/lib/background";
+import { clearSaved, readSaved, type StoreState, writeSaved } from "@/lib/store";
 
 const REFRESH_MS = 15 * 60 * 1000;
 const LOAD_TIMEOUT_MS = 10_000;
@@ -37,7 +39,10 @@ const sameProfile = (a: Profile, b: Profile) =>
   a.km === b.km &&
   a.cooking === b.cooking &&
   a.vulnerable === b.vulnerable;
-/** The sample-room family: an older flat in Lucknow, gas cooking, a two-wheeler commute, an asthmatic child. */
+/**
+ * The sample-room family: an older flat in Lucknow, gas cooking, a two-wheeler commute, an
+ * asthmatic child.
+ */
 export const DEFAULT_PROFILE: Profile = {
   home: SAMPLE_PROFILE_PATCH.home,
   commute: "bike",
@@ -49,7 +54,10 @@ const DEFAULT_CITY = "lucknow";
 
 type Status = "loading" | "live" | "estimate";
 
-/** Live air for a city, refreshed on a timer. Falls back to this city's own estimate and says so in `status`. */
+/**
+ * Live air for a city, refreshed on a timer. Falls back to this city's own estimate and says so in
+ * `status`.
+ */
 function useLiveAir(city: City) {
   const [air, setAir] = useState<AirResult>(() => ({
     hourly: estimateHourly(city),
@@ -66,7 +74,8 @@ function useLiveAir(city: City) {
   useEffect(() => {
     const ctrl = new AbortController();
     setStatus("loading");
-    // Never show the previous city's curve under this city's name while the fetch is out: start from this city's own estimate.
+    // Never show the previous city's curve under this city's name while the fetch is out: start
+    // from this city's own estimate.
     setAir({
       hourly: estimateHourly(city),
       source: "estimate",
@@ -75,7 +84,9 @@ function useLiveAir(city: City) {
       updated: null,
     });
     const run = () => {
-      const req = new AbortController(); // one request: cancelled with the effect, or after a timeout so a hung fetch falls back to the estimate
+      // one request: cancelled with the effect, or after a timeout so a hung fetch falls back to
+      // the estimate
+      const req = new AbortController();
       const onAbort = () => req.abort();
       ctrl.signal.addEventListener("abort", onAbort);
       const timeout = setTimeout(onAbort, LOAD_TIMEOUT_MS);
@@ -103,7 +114,10 @@ function useLiveAir(city: City) {
   return { air, status, nowHour, elapsed };
 }
 
-/** All home-screen state and everything derived from it, in one place. The engine does the arithmetic; this only holds choices. */
+/**
+ * All home-screen state and everything derived from it, in one place. The engine does the
+ * arithmetic; this only holds choices.
+ */
 export function useAirwise(lang: Lang = "en") {
   const [cityId, setCityIdRaw] = useState(DEFAULT_CITY);
   const city = CITIES.find((c) => c.id === cityId) ?? FALLBACK_CITY;
@@ -113,11 +127,14 @@ export function useAirwise(lang: Lang = "en") {
   const [prefill, setPrefill] = useState("");
   const [storeState, setStoreState] = useState<StoreState>("empty");
   const [hydrated, setHydrated] = useState(false);
-  const profileRef = useRef<Profile>(DEFAULT_PROFILE); // always the latest profile, so async callers never write over newer edits
+  // always the latest profile, so async callers never write over newer edits
+  const profileRef = useRef<Profile>(DEFAULT_PROFILE);
   profileRef.current = profile;
-  const touched = useRef(false); // only the user's own changes are saved; opening someone's shared link never overwrites your save
+  // only the user's own changes are saved; opening someone's shared link never overwrites your save
+  const touched = useRef(false);
 
-  // First run: sample room first. City and household come from a shared link if there is one, else from this device's save, else the defaults.
+  // First run: sample room first. City and household come from a shared link if there is one, else
+  // from this device's save, else the defaults.
   useEffect(() => {
     const shared = decodeChoices(window.location.search);
     const { data, state } = readSaved();
@@ -158,7 +175,8 @@ export function useAirwise(lang: Lang = "en") {
   const saved = base.cigs - withPlan.cigs;
   const savedPct = base.meanPm > 0 ? Math.round((saved / base.cigs) * 100) : 0;
 
-  // The page itself clears as your exposure drops: --haze drives the sky, the sun, the grain and the room's smog layer.
+  // The page itself clears as your exposure drops: --haze drives the sky, the sun, the grain and
+  // the room's smog layer.
   // It is relative to your own before and after, so the change is visible on moderate days too (lib/haze.ts).
   const nowPm = pmAt(hourly, nowHour);
   useEffect(() => {
@@ -173,7 +191,10 @@ export function useAirwise(lang: Lang = "en") {
     setCityIdRaw(id);
     setPlan(NO_PLAN);
   }, []);
-  /** Changing the household resets the plan, but only when something actually changed: an unchanged profile keeps the fixes already ticked. */
+  /**
+   * Changing the household resets the plan, but only when something actually changed: an unchanged
+   * profile keeps the fixes already ticked.
+   */
   const updateProfile = useCallback((next: Profile | ((cur: Profile) => Profile)) => {
     const nextProfile = typeof next === "function" ? next(profileRef.current) : next;
     if (sameProfile(nextProfile, profileRef.current)) return;

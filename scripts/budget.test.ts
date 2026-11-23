@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+
 // @ts-expect-error plain JavaScript module shared with the command-line script
-import { PAGE_BUDGET_KB, checkBudget, parseBuildLog } from "./budget.mjs";
+import { checkBudget, PAGE_BUDGET_KB, parseBuildLog } from "./budget.mjs";
 
 const LOG = `
    Creating an optimized production build ...

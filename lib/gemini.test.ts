@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { must } from "../test-support/must";
 import {
   generate,
   generateDetailed,
@@ -7,7 +9,6 @@ import {
   resetGeminiBudget,
   setLogSink,
 } from "./gemini";
-import { must } from "../test-support/must";
 
 beforeEach(() => resetGeminiBudget());
 afterEach(() => {
@@ -188,7 +189,8 @@ describe("generateDetailed: chain, images, budget", () => {
     const result = generateDetailed({ ...opts, timeoutMs: 8000, budgetMs: 12_000 });
     await vi.advanceTimersByTimeAsync(30_000);
     expect(await result).toEqual({ ok: false, reason: "timeout" });
-    expect((fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeLessThanOrEqual(2); // 8 s + 4 s, not 3 x 8 s
+    // 8 s + 4 s, not 3 x 8 s
+    expect((fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeLessThanOrEqual(2);
   });
 });
 

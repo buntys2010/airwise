@@ -1,22 +1,25 @@
 import { ImageResponse } from "next/og";
+
 import { cigsSoFar } from "@/lib/cigsHourly";
-import { CITIES, getCityAir, istClock } from "@/lib/data";
+import { CITIES } from "@/lib/cities";
 import { FALLBACK_CITY } from "@/lib/cities";
+import { getCityAir, istClock } from "@/lib/data";
 import {
-  NO_PLAN,
   aqiFromPm,
   categoryOf,
-  planSummary,
-  simulate,
+  NO_PLAN,
   type Plan,
-  type Profile,
+  planSummary,
   pmAt,
+  type Profile,
+  simulate,
 } from "@/lib/engine";
 import { json } from "@/lib/http";
+import { withObservability } from "@/lib/observe";
 import { clientIp, createLimiter } from "@/lib/ratelimit";
 import { decodeChoices } from "@/lib/share";
-import { withObservability } from "@/lib/observe";
-import { ShareCardImage, cardSize, type CardData } from "./card";
+
+import { type CardData, cardSize, ShareCardImage } from "./card";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -33,7 +36,8 @@ const DEFAULT_PROFILE: Profile = {
 
 /**
  * GET /api/share-image?city=…&home=…&plan=seal,purifier&size=card|og
- * The query carries CHOICES only (same format as a share link). Every number is recomputed here from live air data, so a link cannot forge a figure.
+ * The query carries CHOICES only (same format as a share link). Every number is recomputed here
+ * from live air data, so a link cannot forge a figure.
  */
 export const GET = withObservability("share-image", async (req: Request) => {
   if (limited(clientIp(req)))

@@ -1,10 +1,11 @@
 import js from "@eslint/js";
 import next from "@next/eslint-plugin-next";
-import globals from "globals";
+import prettier from "eslint-config-prettier";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sonarjs from "eslint-plugin-sonarjs";
-import prettier from "eslint-config-prettier";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -99,6 +100,12 @@ export default tseslint.config(
     },
   },
   {
+    // One import order everywhere: packages first, then the project's own modules, then relative paths.
+    files: ["**/*.{ts,tsx,mjs}"],
+    plugins: { "simple-import-sort": simpleImportSort },
+    rules: { "simple-import-sort/imports": "error", "simple-import-sort/exports": "error" },
+  },
+  {
     // Plain JS/config files are not part of the TypeScript project.
     files: ["**/*.{mjs,js}", "*.config.*"],
     ...tseslint.configs.disableTypeChecked,
@@ -109,4 +116,22 @@ export default tseslint.config(
     rules: { "max-lines": "off" },
   },
   prettier,
+  {
+    // Last on purpose: eslint-config-prettier switches max-len off. Long lines hide code: wrap
+    // comments. URLs, strings, templates and regexes are exempt because Prettier cannot wrap them.
+    files: ["**/*.{ts,tsx,mjs}"],
+    rules: {
+      "max-len": [
+        "error",
+        {
+          code: 110,
+          comments: 110,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreRegExpLiterals: true,
+        },
+      ],
+    },
+  },
 );

@@ -11,7 +11,10 @@ export function setRequestLogSink(fn: (line: string) => void) {
   sink = fn;
 }
 
-/** A caller-supplied id is kept only if it is short and harmless; anything else is replaced, so logs cannot be forged or flooded. */
+/**
+ * A caller-supplied id is kept only if it is short and harmless; anything else is replaced, so logs
+ * cannot be forged or flooded.
+ */
 const SAFE_ID = /^[A-Za-z0-9_-]{8,64}$/;
 /** The caller's x-request-id if it is safe, otherwise a fresh random id. */
 export function requestIdFor(req: Request): string {
@@ -21,9 +24,11 @@ export function requestIdFor(req: Request): string {
 
 /**
  * Wraps an API route so every request is observable and no throw escapes as a bare 500:
- *  - one structured JSON line per request: route, method, status, duration, request id (never the body, question or image);
+ *  - one structured JSON line per request: route, method, status, duration, request id (never the
+ * body, question or image);
  *  - an `x-request-id` response header, so a user report can be matched to a log line;
- *  - an unexpected error is logged (name and message only) and answered with a JSON 500 that carries the same id.
+ *  - an unexpected error is logged (name and message only) and answered with a JSON 500 that
+ * carries the same id.
  */
 export function withObservability(
   route: string,

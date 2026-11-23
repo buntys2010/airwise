@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { NO_PLAN, fullPlan, type Profile } from "./engine";
+
+import { must } from "../test-support/must";
+import { fullPlan, NO_PLAN, type Profile } from "./engine";
 import {
   decodeChoices,
   encodeChoices,
@@ -8,7 +10,6 @@ import {
   sanitizePlan,
   shareUrl,
 } from "./share";
-import { must } from "../test-support/must";
 
 const profile: Profile = {
   home: "leaky",

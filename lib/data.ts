@@ -3,8 +3,6 @@
 import { createCache } from "./cache";
 import { CITIES, type City } from "./cities";
 import { pmAt } from "./engine";
-export { CITIES };
-export type { City };
 
 /** Deterministic 24-hour PM2.5 curve: high before dawn, evening bump, afternoon dip. */
 export function estimateHourly(city: City): number[] {
@@ -32,7 +30,10 @@ export interface AirResult {
 const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
-/** The time in India (IST): hour, an HH:MM label, and hours elapsed since midnight with minutes as a fraction. */
+/**
+ * The time in India (IST): hour, an HH:MM label, and hours elapsed since midnight with minutes as a
+ * fraction.
+ */
 export function istClock(d = new Date()): { hour: number; label: string; elapsed: number } {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
@@ -58,7 +59,10 @@ export function parseHourly(json: unknown): number[] | null {
   return (day as number[]).map((v) => Math.round(v));
 }
 
-/** Current temperature (°C) and wind (km/h) from the weather payload, each null when missing or not a number. */
+/**
+ * Current temperature (°C) and wind (km/h) from the weather payload, each null when missing or not
+ * a number.
+ */
 export function parseWeather(json: unknown): { temp: number | null; wind: number | null } {
   const cur = (json as { current?: { temperature_2m?: unknown; wind_speed_10m?: unknown } } | null)
     ?.current;
@@ -109,16 +113,23 @@ export function weatherNote(temp: number | null, wind: number | null): string {
   return "A moderate breeze is thinning the air a little.";
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Server-side helpers (used by API routes). The browser has its own live fetch above; these add caching and batching.
+// -------------------------------------------------------------------------------------------------
+// Server-side helpers (used by API routes). The browser has its own live fetch above; these add
+// caching and batching.
 
 /** Server air fetches give up quickly: a slow feed must not eat the chat's overall time budget. */
 const AIR_TIMEOUT_MS = 3_500;
-/** Room for every supported city: a smaller cap would evict entries under mixed traffic and re-hit the air feed. */
+/**
+ * Room for every supported city: a smaller cap would evict entries under mixed traffic and re-hit
+ * the air feed.
+ */
 const airCache = createCache<AirResult>(10 * 60_000, Math.max(200, CITIES.length));
 const inflight = new Map<string, Promise<AirResult>>();
 
-/** Live air for one city, cached for 10 minutes with a single in-flight request per city. Estimates are never cached. */
+/**
+ * Live air for one city, cached for 10 minutes with a single in-flight request per city. Estimates
+ * are never cached.
+ */
 export function getCityAir(city: City): Promise<AirResult> {
   const hit = airCache.get(city.id);
   if (hit) return Promise.resolve(hit);
@@ -146,7 +157,10 @@ export interface MapPoint {
   source: "live" | "estimate";
 }
 
-/** Open-Meteo returns one object for one location and an array for several. Each entry is validated on its own. */
+/**
+ * Open-Meteo returns one object for one location and an array for several. Each entry is validated
+ * on its own.
+ */
 export function parseMapBatch(json: unknown, count: number): (number[] | null)[] {
   const items = Array.isArray(json) ? json : [json];
   return Array.from({ length: count }, (_, i) => parseHourly(items[i]));
@@ -202,7 +216,10 @@ export async function loadMap(hour: number, signal?: AbortSignal): Promise<MapPo
 /** Test hook: forget the cached map so each test starts clean. */
 export const resetMapCache = () => mapCache.clear();
 
-/** Which weather sentence applies, as a translation key. `weatherNote` is the English text for the same rule. */
+/**
+ * Which weather sentence applies, as a translation key. `weatherNote` is the English text for the
+ * same rule.
+ */
 export function weatherKey(
   temp: number | null,
   wind: number | null,

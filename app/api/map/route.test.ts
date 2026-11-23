@@ -1,13 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CITIES, MAP_CHUNK, resetMapCache } from "@/lib/data";
-import { GET } from "./route";
+
+import { CITIES } from "@/lib/cities";
+import { MAP_CHUNK, resetMapCache } from "@/lib/data";
+
 import { must } from "../../../test-support/must";
+import { GET } from "./route";
 
 let callCount = 0;
 const get = (ip = `10.9.0.${++callCount}`) =>
   GET(new Request("http://x/api/map", { headers: { "x-forwarded-for": ip } }));
 const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);
-/** A fake feed that answers each batched request with the right number of cities, by parsing the latitude list. */
+/**
+ * A fake feed that answers each batched request with the right number of cities, by parsing the
+ * latitude list.
+ */
 const feed = (make: (globalIndex: number) => unknown) => {
   return vi.fn().mockImplementation((url: string) => {
     const cityCount = must(new URL(url).searchParams.get("latitude")).split(",").length;

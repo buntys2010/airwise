@@ -42,7 +42,10 @@ function HourTable({ hourly }: Readonly<{ hourly: number[] }>) {
   );
 }
 
-/** 24 bars, one per hour. Colour is never the only signal: the best hour is outlined and labelled, and a table is provided for screen readers. */
+/**
+ * 24 bars, one per hour. Colour is never the only signal: the best hour is outlined and labelled,
+ * and a table is provided for screen readers.
+ */
 export function HourChart({ hourly, best, usual }: Readonly<Props>) {
   const CHART_WIDTH = 960,
     CHART_HEIGHT = 260,

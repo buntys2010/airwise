@@ -1,8 +1,9 @@
 import { buildContext, offlineAnswer, offlineAnswerHi, parseChoices } from "../lib/chat";
-import { CITIES, estimateHourly } from "../lib/data";
+import { CITIES } from "../lib/cities";
+import { estimateHourly } from "../lib/data";
 import { isGrounded, unsupportedClaims, verify } from "../lib/guard";
-import { decodeChoices } from "../lib/share";
 import { validateVision } from "../lib/room";
+import { decodeChoices } from "../lib/share";
 import { must } from "../test-support/must";
 
 /**
@@ -27,7 +28,10 @@ export interface Case {
   run: (verifier?: Verifier) => boolean;
 }
 
-/** The thing under test for the guard categories. Swappable so the regression check can substitute a broken one. */
+/**
+ * The thing under test for the guard categories. Swappable so the regression check can substitute a
+ * broken one.
+ */
 export type Verifier = (text: string, facts: unknown) => { ok: boolean };
 const real: Verifier = (text, facts) => verify(text, facts);
 

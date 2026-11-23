@@ -73,7 +73,8 @@ export function modelChain(env: NodeJS.ProcessEnv = process.env): string[] {
 }
 
 /**
- * Gemini 2.5 models "think" with hidden tokens that otherwise consume the output budget and return empty text,
+ * Gemini 2.5 models "think" with hidden tokens that otherwise consume the output budget and return
+ * empty text,
  * so thinking is switched off for them. Newer models reject that setting, so it is only sent to 2.5.
  */
 export function generationConfig(
@@ -92,12 +93,18 @@ export function generationConfig(
   };
 }
 
-/** A whole number of at least 1, or the fallback: `0`, a negative or text must not silently disable every model call. */
+/**
+ * A whole number of at least 1, or the fallback: `0`, a negative or text must not silently disable
+ * every model call.
+ */
 export function positiveInt(raw: string | undefined, fallback: number): number {
   const parsed = Number(raw);
   return Number.isInteger(parsed) && parsed >= 1 ? parsed : fallback;
 }
-/** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
+/**
+ * A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and
+ * money, on a paid key).
+ */
 const budget = createBudget(
   () => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, DEFAULT_CALLS_PER_MIN),
   BUDGET_WINDOW_MS,
@@ -192,8 +199,10 @@ const PRIORITY: FailureReason[] = [
 ];
 
 /**
- * Calls the Gemini API from the server, walking the model chain until one answers or the overall budget runs out.
- * Always resolves: a typed failure reason on any problem, so callers can show it and fall back to deterministic output.
+ * Calls the Gemini API from the server, walking the model chain until one answers or the overall
+ * budget runs out.
+ * Always resolves: a typed failure reason on any problem, so callers can show it and fall back to
+ * deterministic output.
  * The key travels in a header, never in the URL, and is read only from the environment.
  */
 export async function generateDetailed(opts: GenerateOptions): Promise<GenResult> {

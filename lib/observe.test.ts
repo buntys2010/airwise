@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { requestIdFor, setRequestLogSink, withObservability } from "./observe";
+
 import { must } from "../test-support/must";
+import { requestIdFor, setRequestLogSink, withObservability } from "./observe";
 
 const lines: string[] = [];
 setRequestLogSink((l) => lines.push(l));

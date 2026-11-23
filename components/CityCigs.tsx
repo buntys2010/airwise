@@ -1,15 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
+
 import { sticksFor } from "@/lib/cigsHourly";
+
 import { CigRow } from "./Cigarettes";
 import { useLang } from "./LangProvider";
 
 const prefersReduced = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Burns from nothing up to `target` over 1.4 s (ease-out); remounting on a city change replays it. Static under reduced motion. */
+/**
+ * Burns from nothing up to `target` over 1.4 s (ease-out); remounting on a city change replays it.
+ * Static under reduced motion.
+ */
 function useBurn(target: number) {
-  const [p, setP] = useState(0); // the same on server and client, so hydration never disagrees; the effect plays it
+  // the same on server and client, so hydration never disagrees; the effect plays it
+  const [p, setP] = useState(0);
   useEffect(() => {
     if (prefersReduced()) {
       setP(1);
@@ -18,7 +24,8 @@ function useBurn(target: number) {
     let raf = 0;
     const start = performance.now();
     const tick = () => {
-      const progress = Math.min(1, (performance.now() - start) / 1400); // one clock for start and now, whatever the frame callback reports
+      // one clock for start and now, whatever the frame callback reports
+      const progress = Math.min(1, (performance.now() - start) / 1400);
       setP(1 - Math.pow(1 - progress, 3));
       if (progress < 1) raf = requestAnimationFrame(tick);
     };

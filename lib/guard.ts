@@ -1,9 +1,12 @@
 /**
  * Numeric grounding guard.
  *
- * Language models can state fluent, confident numbers that are simply wrong. AirWise's rule is that the model may
- * only restate numbers that our deterministic engine computed for this user. This module extracts every number in a
- * model's reply and checks that each one appears in the facts we supplied. Any stray number rejects the reply, and the
+ * Language models can state fluent, confident numbers that are simply wrong. AirWise's rule is
+ * that the model may
+ * only restate numbers that our deterministic engine computed for this user. This module extracts
+ * every number in a
+ * model's reply and checks that each one appears in the facts we supplied. Any stray number
+ * rejects the reply, and the
  * caller falls back to the deterministic answer.
  */
 
@@ -51,7 +54,8 @@ export const isGrounded = (text: string, facts: unknown): boolean =>
 
 /**
  * Second layer: unsupported attributions. A supplied number can still be misused ("53% of people choose it").
- * AirWise supplies no studies, experts or population statistics, so any text that cites one is making an ungrounded claim.
+ * AirWise supplies no studies, experts or population statistics, so any text that cites one is
+ * making an ungrounded claim.
  */
 const ATTRIBUTIONS: RegExp[] = [
   // Hindi: studies, research, experts, scientists, surveys, doctors claiming, AIIMS, ICMR

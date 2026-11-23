@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+
+import { generateStaticParams, GET } from "./icons/[name]/route";
 import manifest from "./manifest";
-import { GET, generateStaticParams } from "./icons/[name]/route";
 
 describe("web app manifest (Add to Home Screen)", () => {
   const appManifest = manifest();

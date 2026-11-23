@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { clientIp } from "./ratelimit";
 
 /** A JSON response with a status and optional headers. */

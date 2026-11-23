@@ -1,9 +1,11 @@
 "use client";
 import { useMemo, useState } from "react";
+
 import { searchCities } from "@/lib/cities";
 import type { MapPoint } from "@/lib/data";
 import { aqiFromPm, categoryOf } from "@/lib/engine";
 import { CATEGORY_KEY } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 
 type SortKey = "name" | "state" | "pm";
@@ -131,7 +133,10 @@ function MapTable({
   );
 }
 
-/** Every city as text: searchable, sortable, and each row can be shown on the map. Fits a phone without clipping. */
+/**
+ * Every city as text: searchable, sortable, and each row can be shown on the map. Fits a phone
+ * without clipping.
+ */
 export default function CityTable({
   points,
   selected,
@@ -172,8 +177,14 @@ export default function CityTable({
             : t("map.count", { n: rows.length, total: points.length })}
         </p>
       </div>
-      {/* A labelled, keyboard-scrollable region: the table wraps to fit a phone and only scrolls sideways on a narrower screen still. */}
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region must be focusable (axe: scrollable-region-focusable) */}
+      {/*
+         A labelled, keyboard-scrollable region: the table wraps to fit a phone and only
+         scrolls sideways on a narrower screen still.
+      */}
+      {/*
+         eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrollable region
+         must be focusable (axe: scrollable-region-focusable)
+      */}
       <div className="tablewrap" role="region" aria-labelledby="map-table-h" tabIndex={0}>
         <MapTable
           rows={rows}

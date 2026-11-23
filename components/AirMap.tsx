@@ -1,9 +1,11 @@
 "use client";
-import { Suspense, lazy, useState } from "react";
+import { lazy, Suspense, useState } from "react";
+
+import { CITIES } from "@/lib/cities";
+import type { MapPoint } from "@/lib/data";
 import { aqiFromPm, categoryOf, type Tone } from "@/lib/engine";
 import { CATEGORY_KEY } from "@/lib/i18n";
-import type { MapPoint } from "@/lib/data";
-import { CITIES } from "@/lib/cities";
+
 import { useLang } from "./LangProvider";
 
 /** The long table is only needed on this page, and only below the map, so it is loaded separately. */
@@ -87,7 +89,10 @@ const FILL: Record<Tone, string> = {
   hazardous: "#a56bff",
 };
 
-/** Where the twelve named cities' labels sit, relative to their dots. Hand-placed so none overlap (checked in a real browser). */
+/**
+ * Where the twelve named cities' labels sit, relative to their dots. Hand-placed so none overlap
+ * (checked in a real browser).
+ */
 const LABEL: Record<string, { dx: number; dy: number; anchor: "start" | "end" }> = {
   delhi: { dx: -20, dy: -4, anchor: "end" },
   jaipur: { dx: -18, dy: 8, anchor: "end" },
@@ -138,8 +143,10 @@ function Shape({ tone, r }: Readonly<{ tone: Tone; r: number }>) {
 }
 
 /**
- * Every city is a marker with a shape and a value in the table; the twelve biggest also carry a name and value on the map.
- * Tap a marker, or use "Show" in the table (keyboard), to read any city. The air feed is gridded, so near neighbours can share a value.
+ * Every city is a marker with a shape and a value in the table; the twelve biggest also carry a
+ * name and value on the map.
+ * Tap a marker, or use "Show" in the table (keyboard), to read any city. The air feed is gridded,
+ * so near neighbours can share a value.
  */
 export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: string }>) {
   const { t } = useLang();

@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
 import { describe, expect, it } from "vitest";
+
 import { must } from "../test-support/must";
 
 /** Reads the real design tokens from globals.css so the test cannot drift from the stylesheet. */

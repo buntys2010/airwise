@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, estimateHourly } from "./data";
-import { HAZE_MIN, hazeLevel } from "./haze";
-import { NO_PLAN, fullPlan, simulate, type Profile } from "./engine";
+
 import { must } from "../test-support/must";
+import { CITIES } from "./cities";
+import { estimateHourly } from "./data";
+import { fullPlan, NO_PLAN, type Profile, simulate } from "./engine";
+import { HAZE_MIN, hazeLevel } from "./haze";
 
 describe("hazeLevel", () => {
   it("starts visibly hazy even on a moderate day", () => {

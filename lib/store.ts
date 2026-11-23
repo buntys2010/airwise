@@ -1,10 +1,11 @@
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
-import { CITIES } from "./data";
+import { CITIES } from "./cities";
 import type { Profile } from "./engine";
 
 /**
  * Device-only save. The profile and last city live in this browser's localStorage and nowhere else.
- * Every access is wrapped: if storage is blocked (private mode, policy) the app works and says "Not saved on this phone".
+ * Every access is wrapped: if storage is blocked (private mode, policy) the app works and says
+ * "Not saved on this phone".
  */
 export interface Saved {
   city: string;

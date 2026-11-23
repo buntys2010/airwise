@@ -1,14 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
+
+import { runInBackground } from "@/lib/background";
 import { buildReminderIcs } from "@/lib/calendar";
 import { NO_PLAN } from "@/lib/engine";
 import { shareUrl, whatsappLink } from "@/lib/share";
+
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
-import { runInBackground } from "@/lib/background";
 
 /**
- * Keep this plan: a link that carries choices only, a calendar reminder built on this device, and the device-only save with a Clear control.
+ * Keep this plan: a link that carries choices only, a calendar reminder built on this device, and
+ * the device-only save with a Clear control.
  * Nothing here sends anything anywhere.
  */
 export function PlanTools({ a }: Readonly<{ a: Airwise }>) {
@@ -66,7 +69,8 @@ export function PlanTools({ a }: Readonly<{ a: Airwise }>) {
   }
 
   // One-tap WhatsApp share. The message is words plus the choices-only link: never a number.
-  // The origin is read after mount so the server HTML and the first client render match; the link then becomes absolute.
+  // The origin is read after mount so the server HTML and the first client render match; the link
+  // then becomes absolute.
   const whatsapp = whatsappLink(
     t("tools.shareText", { city: a.city.name }),
     shareUrl(origin, { city: a.cityId, profile: a.profile, plan: a.plan }),

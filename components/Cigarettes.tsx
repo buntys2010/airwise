@@ -1,14 +1,19 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { cigsSoFar, sticksFor, type Stick } from "@/lib/cigsHourly";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+
+import { cigsSoFar, type Stick, sticksFor } from "@/lib/cigsHourly";
 import { fmtHour } from "@/lib/engine";
+
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
 
 const prefersReduced = () =>
   typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Walks the clock from midnight to `target` so the day visibly builds up hour by hour. Jumps straight there for reduced motion. */
+/**
+ * Walks the clock from midnight to `target` so the day visibly builds up hour by hour. Jumps
+ * straight there for reduced motion.
+ */
 function useHourReplay(target: number) {
   const [hour, setHour] = useState(target);
   const raf = useRef(0);
@@ -124,7 +129,10 @@ function CigRows({
   );
 }
 
-/** The hero: today's smoke as cigarettes that burn down hour by hour, and shrink when a fix is switched on. Figures come from the engine. */
+/**
+ * The hero: today's smoke as cigarettes that burn down hour by hour, and shrink when a fix is
+ * switched on. Figures come from the engine.
+ */
 export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
   const { t } = useLang();
   const { hour, play } = useHourReplay(a.nowHour);
