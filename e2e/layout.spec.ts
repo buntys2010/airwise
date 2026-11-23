@@ -182,26 +182,6 @@ test.describe("cigarette hero", () => {
     await expect(hero.getByText(/less exposure/).first()).toBeVisible();
   });
 
-  test("burns with an ease-out transition, and shows the end state with no motion under reduced motion", async ({
-    page,
-  }) => {
-    await stub(page);
-    await page.goto("/?city=delhi");
-    const dur = () =>
-      page.evaluate(() => {
-        const needed = <T>(value: T | null | undefined): T => {
-          if (value === null || value === undefined) throw new Error("Expected a value");
-          return value;
-        };
-        return getComputedStyle(needed(document.querySelector("section.cigs .cpaper")))
-          .transitionDuration;
-      });
-    expect(parseFloat(await dur())).toBeGreaterThan(0);
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.reload();
-    expect(await dur()).toMatch(/^0s(, 0s)*$/);
-  });
-
   test("applying a fix shortens the day with the plan and lowers the so-far figure", async ({
     page,
   }) => {

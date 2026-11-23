@@ -1,3 +1,4 @@
+import { logLine } from "./log";
 import { createBudget } from "./ratelimit";
 
 export type FailureReason =
@@ -112,15 +113,8 @@ const budget = createBudget(
 /** Test hook: refill the per-minute Gemini call budget. */
 export const resetGeminiBudget = () => budget.reset();
 
-let sink: (line: string) => void = (line) => {
-  if (process.env.NODE_ENV !== "test") console.info(line);
-};
-/** Test hook. */
-export function setLogSink(fn: (line: string) => void) {
-  sink = fn;
-}
 /** One structured line per attempt. Never contains the prompt, the question or any image. */
-const log = (o: Record<string, unknown>) => sink(JSON.stringify({ evt: "gemini", ...o }));
+const log = (o: Record<string, unknown>) => logLine(JSON.stringify({ evt: "gemini", ...o }));
 
 type CallResult = { ok: true; text: string } | { ok: false; reason: FailureReason };
 

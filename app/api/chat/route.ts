@@ -49,9 +49,9 @@ export const POST = withObservability("chat", async (req: Request) => {
   // Facts are recomputed here from the engine. Nothing numeric from the client is ever shown as "verified".
   const air = await getCityAir(choices.city);
   const clock = istClock();
-  const ctx = buildContext(choices, air.hourly, clock.hour, clock.elapsed);
+  const facts = buildContext(choices, air.hourly, clock.hour, clock.elapsed);
 
-  const cacheKey = JSON.stringify([question.toLowerCase(), choices.lang, ctx]);
+  const cacheKey = JSON.stringify([question.toLowerCase(), choices.lang, facts]);
   const cached = verifiedAnswers.get(cacheKey);
   if (cached)
     return json({
@@ -63,7 +63,7 @@ export const POST = withObservability("chat", async (req: Request) => {
     });
 
   const generated = await generateDetailed({
-    prompt: buildPrompt(question, ctx, choices.lang),
+    prompt: buildPrompt(question, facts, choices.lang),
     maxTokens: 260,
     kind: "chat",
     timeoutMs: PER_CALL_MS,
@@ -72,14 +72,14 @@ export const POST = withObservability("chat", async (req: Request) => {
   if (generated.ok) {
     // Grounding guard: a Gemini answer is shown only if every number and claim in it traces back to
     // the engine's facts.
-    const verdict = verify(generated.text, ctx);
+    const verdict = verify(generated.text, facts);
     if (verdict.ok) {
       const answer = generated.text.slice(0, 900);
       verifiedAnswers.set(cacheKey, answer);
       return json({ answer, source: "gemini", verified: true, air: air.source });
     }
     return json({
-      answer: offlineAnswer(question, ctx, choices.lang),
+      answer: offlineAnswer(question, facts, choices.lang),
       source: "offline",
       verified: false,
       rejected: true,
@@ -87,7 +87,7 @@ export const POST = withObservability("chat", async (req: Request) => {
     });
   }
   return json({
-    answer: offlineAnswer(question, ctx, choices.lang),
+    answer: offlineAnswer(question, facts, choices.lang),
     source: "offline",
     verified: false,
     rejected: false,

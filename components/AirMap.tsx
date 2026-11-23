@@ -199,7 +199,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
           {points
             .filter((p) => NAMED.has(p.id))
             .map((p) => {
-              const cat = categoryOf(p.pm);
+              const category = categoryOf(p.pm);
               const labelOffset = LABEL[p.id] ?? { dx: 18, dy: 0, anchor: "start" as const };
               return (
                 <g
@@ -213,7 +213,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                     cx={xFor(p.lon)}
                     cy={yFor(p.lat)}
                     r={13}
-                    fill={FILL[cat.tone]}
+                    fill={FILL[category.tone]}
                     className="map-dot"
                     strokeDasharray={p.source === "estimate" ? "5 4" : undefined}
                   />
@@ -223,7 +223,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                     textAnchor="middle"
                     className="map-icon"
                   >
-                    {cat.icon}
+                    {category.icon}
                   </text>
                   <text
                     x={xFor(p.lon) + labelOffset.dx}

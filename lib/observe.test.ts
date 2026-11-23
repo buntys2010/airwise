@@ -1,10 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { captureLog } from "../test-support/log";
 import { must } from "../test-support/must";
-import { requestIdFor, setRequestLogSink, withObservability } from "./observe";
+import { requestIdFor, withObservability } from "./observe";
 
 const lines: string[] = [];
-setRequestLogSink((l) => lines.push(l));
+beforeEach(() => {
+  captureLog(lines);
+});
 afterEach(() => {
   lines.length = 0;
 });

@@ -148,55 +148,14 @@ describe("the city strip at the very top", () => {
     expect(container.textContent).toMatch(/4\.8 so far today/);
   });
 
-  it("starts from nothing and burns up to the so-far figure when the city changes", async () => {
-    window.matchMedia = ((q: string) => ({
-      matches: false,
-      media: q,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      onchange: null,
-      dispatchEvent: () => false,
-    })) as typeof window.matchMedia;
-    const { container, rerender } = render(
-      <LangProvider>
-        <CityCigs key="lucknow" city="lucknow" day={2.3} soFar={1.6} />
-      </LangProvider>,
-    );
-    const burned = () =>
-      [...container.querySelectorAll<HTMLElement>(".cash")].reduce(
-        (a, el) => a + parseFloat(el.style.width || "0"),
-        0,
-      );
-    await waitFor(() => expect(burned()).toBeGreaterThan(100));
-    rerender(
-      <LangProvider>
-        <CityCigs key="delhi" city="delhi" day={5.6} soFar={4.8} />
-      </LangProvider>,
-    ); // a new key replays the burn
-    expect(burned()).toBeLessThan(100);
-    await waitFor(() => expect(burned()).toBeGreaterThan(400), { timeout: 3000 });
-  });
-
-  it("shows the end state at once for people who prefer reduced motion", () => {
-    window.matchMedia = ((q: string) => ({
-      matches: true,
-      media: q,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      onchange: null,
-      dispatchEvent: () => false,
-    })) as typeof window.matchMedia;
+  it("burns the sticks up to the so-far figure straight away, with no animation", () => {
     const { container } = render(
       <LangProvider>
         <CityCigs city="delhi" day={5.6} soFar={4.8} />
       </LangProvider>,
     );
     const burned = [...container.querySelectorAll<HTMLElement>(".cash")].reduce(
-      (a, el) => a + parseFloat(el.style.width || "0"),
+      (total, el) => total + parseFloat(el.style.width || "0"),
       0,
     );
     expect(burned).toBeGreaterThan(400); // 4.8 of 5.6 cigarettes, as percent widths

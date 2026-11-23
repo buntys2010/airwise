@@ -81,7 +81,7 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
   return (
     <div className="sharecard">
       <h2 className="chat-h u-mt-0">{t("share.cardH")}</h2>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {}
       <img
         className="sharepic"
         src={imageUrl}

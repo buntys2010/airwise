@@ -61,17 +61,6 @@ describe("stylesheet guarantees", () => {
 });
 
 describe("the cigarette row", () => {
-  it("burns and shortens with an ease-out transition", () => {
-    expect(rules(".cpaper")).toMatch(/transition:[^;]*width [0-9.]+s cubic-bezier/);
-    expect(rules(".cash")).toMatch(/transition:[^;]*left [0-9.]+s cubic-bezier/);
-  });
-  it("shows the end state with no motion when the user prefers reduced motion", () => {
-    const start = css.indexOf("@media (prefers-reduced-motion: reduce) { .cember, .cember i");
-    expect(start).toBeGreaterThan(-1);
-    const block = css.slice(start, start + 260);
-    expect(block).toMatch(/\.cember, \.cember i \{ animation: none; \}/);
-    expect(block).toMatch(/\.cpaper, \.cash, \.cember \{ transition: none; \}/);
-  });
   it("the strip at the very top keeps its sticks short enough to fit a phone", () => {
     expect(rules(".citycigs .stick")).toMatch(/width:\s*52px/);
     expect(rules(".citycigs .cigrow")).toMatch(/flex-wrap:\s*wrap/);

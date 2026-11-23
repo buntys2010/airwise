@@ -14,7 +14,7 @@ Most entries show a city's AQI and add a chatbot. AirWise measures **you**, and 
 - **Room-first**: a photo of your room becomes tappable hotspots, but only for things the model can plainly see. Everything else is a yes/no question to you, and your answer beats the photo.
 - **Two-layer grounding guard** for Gemini: rejects any number the engine did not compute and any citation of studies or population statistics (English and Hindi, including Devanagari digits).
 - **Verified-or-fallback AI**: the deterministic answer always exists; Gemini's rewrite is shown only if it passes the guard.
-- **Cigarettes on screen**: the dial draws your day as cigarettes that burn down and shorten as you apply fixes; the top strip shows the city's outdoors-all-day figure.
+- **Cigarettes on screen**: the dial draws your day as cigarettes that shorten as you apply fixes; the top strip shows the city's outdoors-all-day figure.
 - **The page is the air**: the haze clears as exposure drops.
 - **Honest data labels**: live with a timestamp, or plainly an estimate, per city on the map.
 - **English and Hindi**, voice input (feature-detected), device-only save, share links that carry choices never numbers, WhatsApp share, calendar reminder, community notice, an MCP server.

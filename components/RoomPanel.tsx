@@ -28,7 +28,6 @@ export function RoomPanel({ a, hotspots, photoUrl, onPick, footer }: Readonly<Pr
     <div className="roompanel">
       <div className="room" data-sample={photoUrl ? "false" : "true"}>
         {photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img className="roomphoto" src={photoUrl} alt={t("room.photoAlt", { n: drawn })} />
         ) : (
           <SampleRoom label={t("room.sampleAlt")} />
