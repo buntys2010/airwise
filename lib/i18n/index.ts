@@ -30,14 +30,6 @@ export const placeholders = (s: string): string[] =>
  * Engine-written action text for the three room fixes, in Hindi. Other action text stays English
  * and is marked lang="en".
  */
-export const ACTION_HI: Record<string, { title: string; cost: string }> = {
-  sealGaps: { title: "दरवाज़ों और खिड़कियों की दरारें बंद करें", cost: "₹300 से ₹800 की वेदर-स्ट्रिप" },
-  induction: { title: "इंडक्शन पर पकाएँ, या पकाते समय हुड चलाएँ", cost: "सिंगल-प्लेट इंडक्शन ₹2,500 का" },
-  purifier: {
-    title: "जिस कमरे में सबसे ज़्यादा रहते हैं वहाँ एयर प्यूरीफायर चलाएँ",
-    cost: "₹8,000 से ₹15,000, या ₹2,000 का बॉक्स-फैन फ़िल्टर",
-  },
-};
 
 /** Props for text that is still English inside a Hindi page, so screen readers switch voice correctly. */
 export const englishIn = (lang: Lang): { lang?: string } => (lang === "hi" ? { lang: "en" } : {});

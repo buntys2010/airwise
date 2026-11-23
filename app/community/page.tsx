@@ -8,7 +8,7 @@ import { type Airwise, useAirwise } from "@/components/useAirwise";
 import { runInBackground } from "@/lib/background";
 import { fmtHour } from "@/lib/engine/actions";
 import { type Cooking, type Home } from "@/lib/engine/model";
-import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
+import { CATEGORY_KEY, type Key } from "@/lib/i18n";
 import { type CommunityPlan, communityPlan } from "@/lib/plan";
 
 const HOME_OPTIONS: { v: Home; en: string; hi: string }[] = [
@@ -124,7 +124,7 @@ function NoticeSection({
   message: string;
   onShare: () => void;
 }>) {
-  const { lang, t } = useLang();
+  const { t } = useLang();
   return (
     <section id="notice-sec" aria-labelledby="h-notice">
       <article id="community-plan" className="notice">
@@ -136,14 +136,9 @@ function NoticeSection({
 
         <h3>{t("comm.homes")}</h3>
         <ol>
-          {plan.fixes.map((f) => {
-            const hi = lang === "hi" ? ACTION_HI[f.id] : undefined;
-            return (
-              <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>
-                {t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}
-              </li>
-            );
-          })}
+          {plan.fixes.map((f) => (
+            <li key={f.id}>{t("comm.fix", { title: f.title, pct: f.pct })}</li>
+          ))}
         </ol>
 
         <h3>{t("comm.together")}</h3>
@@ -179,8 +174,8 @@ export default function CommunityPage() {
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
   const plan = useMemo(
-    () => communityPlan(airwise.hourly, airwise.profile, airwise.nowHour),
-    [airwise.hourly, airwise.profile, airwise.nowHour],
+    () => communityPlan(airwise.hourly, airwise.profile, airwise.nowHour, lang),
+    [airwise.hourly, airwise.profile, airwise.nowHour, lang],
   );
   const level = t(CATEGORY_KEY[plan.tone]);
   const title = name.trim()

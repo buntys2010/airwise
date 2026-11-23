@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { must } from "../../test-support/must";
 import { categoryOf } from "../engine/aqi";
 import { unsupportedClaims } from "../guard";
 import { EN } from "./en";
 import { HI } from "./hi";
 import {
-  ACTION_HI,
   ADVICE_KEY,
   CATEGORY_KEY,
   DICTS,
@@ -90,13 +88,7 @@ describe("severity and advice tables", () => {
   });
 });
 
-describe("Hindi action text and speech", () => {
-  it("the three room fixes have Hindi titles and costs", () => {
-    for (const id of ["sealGaps", "induction", "purifier"]) {
-      expect(DEVANAGARI.test(must(ACTION_HI[id]).title)).toBe(true);
-      expect(must(ACTION_HI[id]).cost).toMatch(/₹/u);
-    }
-  });
+describe("speech locales", () => {
   it("maps languages to Indian-English and Hindi speech locales", () => {
     expect(SPEECH_LANG).toEqual({ en: "en-IN", hi: "hi-IN" });
   });

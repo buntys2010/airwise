@@ -307,6 +307,61 @@ export const EN = {
   "offline.hourWindow": "the cleanest afternoon hour",
   "offline.hourChild": "afternoon",
   "offline.noActions": "no actions chosen yet",
+
+  // Action cards: what each fix says, with the engine's numbers filled in.
+  "act.sealGaps.title": "Seal door and window gaps",
+  "act.sealGaps.cost": "₹300–800 of weather-strip",
+  "act.sealGaps.detail":
+    "Tape and strip the gaps, keep windows shut through the smog hours. Open them only around {hour}.",
+  "act.sealGaps.math1": "Indoor share of outdoor PM2.5: {from} → {to}",
+  "act.sealGaps.math2": "About {pct}% of today's dose is breathed indoors",
+  "act.purifier.title": "Run an air purifier in the room you use most",
+  "act.purifier.cost": "₹8,000–15,000, or a ₹2,000 box-fan DIY filter",
+  "act.purifier.detail":
+    "HEPA unit sized to the room, door closed, on while you are home. Bedroom first.",
+  "act.purifier.math1": "Indoor level keeps {keep}% of what gets in",
+  "act.purifier.math2": "Indoor exposure {pct}% of today's dose, cut by {cut}%",
+  "act.mask.title": "N95 mask for every trip outside",
+  "act.mask.cost": "₹60–120 per mask",
+  "act.mask.detail":
+    "Seal it around the nose and chin. Cloth and surgical masks barely stop PM2.5.",
+  "act.mask.math1": "Fit-adjusted filtering: {n95}% (cloth {cloth}%)",
+  "act.mask.math2": "Applies to walking, cycling, two-wheeler and bus legs, and outdoor play",
+  "act.shift.title": "Move the family's outdoor time to {hour}",
+  "act.shift.cost": "Free",
+  "act.shift.detail":
+    "Today the air is cleanest around {best} ({bestPm} µg/m³), not {usual} ({usualPm} µg/m³).",
+  "act.shift.math1": "Outdoor PM2.5 at {usual}: {usualPm} → at {best}: {bestPm} µg/m³",
+  "act.shift.math2": "Half an hour outside, same activity",
+  "act.swap.titleSwitch": "Switch your commute from {from} to {to}",
+  "act.swap.titleKeep": "Keep your {from} commute",
+  "act.swap.costSwitch": "Cheaper than a car",
+  "act.swap.costKeep": "Already a low-emission choice",
+  "act.swap.detailSwitch":
+    "Enclosed, shared transport puts fewer exhaust particles in your lungs and {co2} g less CO₂ per km.",
+  "act.swap.detailKeep": "This is already one of the cleanest ways to travel.",
+  "act.swap.math1": "In-transit exposure vs outside air: {from} → {to}",
+  "act.swap.math2": "CO₂: {from} → {to} g per passenger-km, {km} km each way",
+  "act.induction.title": "Cook on induction, or run the hood while cooking",
+  "act.induction.cost": "₹2,500 for a single-plate induction",
+  "act.induction.detail":
+    "Wood and gas flames leave smoke in the kitchen long after the meal. Induction leaves almost none.",
+  "act.induction.math1": "Indoor PM2.5 added while cooking: +{from} → +{to} µg/m³",
+  "act.induction.math2": "Two cooking hours a day",
+  "mode.walk": "walking",
+  "mode.cycle": "cycling",
+  "mode.bike": "two-wheeler",
+  "mode.car": "car",
+  "mode.ev": "electric car",
+  "mode.bus": "bus",
+  "mode.metro": "metro",
+  "planitem.sealGaps": "seal gaps",
+  "planitem.purifier": "run a purifier",
+  "planitem.n95": "wear N95 outside",
+  "planitem.cloth": "wear a cloth mask",
+  "planitem.shift": "move outdoor time to the cleanest hour",
+  "planitem.swap": "switch commute to {mode}",
+  "planitem.induction": "cook on induction",
 } as const;
 
 export type Key = keyof typeof EN;

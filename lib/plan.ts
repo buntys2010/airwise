@@ -146,10 +146,15 @@ export interface CommunityPlan {
 }
 
 /** The community notice for today's air: the three most useful fixes and the rules for this air level. */
-export function communityPlan(hourly: number[], profile: Profile, nowHour: number): CommunityPlan {
+export function communityPlan(
+  hourly: number[],
+  profile: Profile,
+  nowHour: number,
+  lang: Lang = "en",
+): CommunityPlan {
   const tone = categoryOf(pmAt(hourly, nowHour)).tone;
   const best = bestHour(hourly);
-  const fixes = buildActions(hourly, profile)
+  const fixes = buildActions(hourly, profile, lang)
     .filter((a) => a.applicable)
     .sort((a, b) => b.savedPm - a.savedPm)
     .slice(0, 3)

@@ -1,6 +1,6 @@
 "use client";
 import type { ActionResult } from "@/lib/engine/actions";
-import { ACTION_HI, englishIn, type Key } from "@/lib/i18n";
+import type { Key } from "@/lib/i18n";
 import type { Hotspot } from "@/lib/room";
 
 import { useLang } from "./LangProvider";
@@ -11,7 +11,7 @@ import type { Airwise } from "./useAirwise";
  * equivalent of the room markers.
  */
 export function FixRows({ a, hotspots }: Readonly<{ a: Airwise; hotspots: Hotspot[] }>) {
-  const { lang, t } = useLang();
+  const { t } = useLang();
   const rows = hotspots
     .map((h) => ({ h, act: a.actions.find((x) => x.id === h.actionId) }))
     .filter((r): r is { h: Hotspot; act: ActionResult } => Boolean(r.act));
@@ -21,7 +21,6 @@ export function FixRows({ a, hotspots }: Readonly<{ a: Airwise; hotspots: Hotspo
       {rows.map(({ h, act }, i) => {
         const on = act.isOn(a.plan);
         const pct = Math.round(act.savedPct * 100);
-        const hi = lang === "hi" ? ACTION_HI[act.id] : undefined;
         return (
           <li key={h.id} className={on ? "on" : ""}>
             <span className="fixnum" aria-hidden="true">
@@ -29,7 +28,7 @@ export function FixRows({ a, hotspots }: Readonly<{ a: Airwise; hotspots: Hotspo
             </span>
             <div className="fixbody">
               <p className="fixseen">{t(`kind.${h.kind}` as Key)}</p>
-              <h3 lang={hi ? "hi" : undefined}>{hi ? hi.title : act.title}</h3>
+              <h3>{act.title}</h3>
               <p className="fiximpact">
                 {act.applicable ? (
                   <>
@@ -40,11 +39,11 @@ export function FixRows({ a, hotspots }: Readonly<{ a: Airwise; hotspots: Hotspo
                     .{" "}
                   </>
                 ) : null}
-                <span lang={hi ? "hi" : undefined}>{hi ? hi.cost : act.cost}</span>.
+                {act.cost}.
               </p>
               <details>
                 <summary>{t("fix.math")}</summary>
-                <ul {...englishIn(lang)}>
+                <ul>
                   {act.math.map((m) => (
                     <li key={m}>{m}</li>
                   ))}

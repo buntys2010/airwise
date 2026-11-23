@@ -4,7 +4,7 @@ import { must } from "../../test-support/must";
 import { estimateHourly } from "../air/live";
 import { CITIES } from "../cities";
 import { categoryLabel } from "../i18n";
-import { buildActions, fmtHour, fullPlan, planSummary } from "./actions";
+import { buildActions, fmtHour, fullPlan, modeLabel, planSummary } from "./actions";
 import { aqiFromPm, categoryOf } from "./aqi";
 import { bestHour, NO_PLAN, type Profile, simulate } from "./model";
 
@@ -111,6 +111,30 @@ describe("simulate", () => {
     const sim = simulate(hourly, { ...family, km: 0 }, NO_PLAN);
     expect(Number.isFinite(sim.meanPm)).toBe(true);
     expect(sim.co2Kg).toBe(0);
+  });
+});
+
+describe("action cards in Hindi", () => {
+  const DEVANAGARI = /[ऀ-ॿ]/u;
+  it("every card is fully in Hindi, with the same numbers as the English card", () => {
+    const english = buildActions(hourly, family, "en");
+    const hindi = buildActions(hourly, family, "hi");
+    expect(hindi.map((a) => a.id)).toEqual(english.map((a) => a.id));
+    hindi.forEach((card, i) => {
+      for (const text of [card.title, card.detail, card.cost, ...card.math])
+        expect(text).toMatch(DEVANAGARI);
+      expect(card.savedPm).toBe(must(english[i]).savedPm);
+      expect(card.applicable).toBe(must(english[i]).applicable);
+      expect(card.math).toHaveLength(must(english[i]).math.length);
+    });
+  });
+  it("keeps the rupee amounts and digits in the cost lines", () => {
+    const costs = buildActions(hourly, family, "hi").map((a) => a.cost);
+    expect(costs.filter((c) => c.includes("₹")).length).toBeGreaterThanOrEqual(4);
+  });
+  it("names the commute modes and plan items in Hindi too", () => {
+    expect(modeLabel("metro", "hi")).toMatch(DEVANAGARI);
+    for (const phrase of planSummary(fullPlan(family), "hi")) expect(phrase).toMatch(DEVANAGARI);
   });
 });
 
