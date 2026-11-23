@@ -70,6 +70,7 @@ const failureKey = (e: unknown) =>
     ? ("room.badFormat" as const)
     : ("room.failed" as const);
 
+/** Room-photo state: the picked photo, the model's findings, the user's answers and the resulting profile changes. */
 export function useRoom(a: Airwise) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [evidence, setEvidence] = useState<Hotspot[]>([]);

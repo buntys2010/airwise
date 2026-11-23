@@ -6,10 +6,12 @@ import {
   buildActions,
   categoryOf,
   cigsSoFar,
+  fmtHour,
   outdoorCigs,
   outdoorCigsSoFar,
-  fmtHour,
   planSummary,
+  pmAt,
+  round1,
   simulate,
   type Commute,
   type Cooking,
@@ -18,7 +20,6 @@ import {
   type Plan,
   type Profile,
   type PurifierKind,
-  pmAt,
 } from "./engine";
 
 export const MAX_QUESTION = 400;
@@ -80,6 +81,7 @@ export function parsePlan(raw: unknown): Plan {
   };
 }
 
+/** Validates the household choices a client sends. Anything off-list returns null, so no unchecked value reaches the engine. */
 export function parseChoices(raw: unknown): Choices | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
@@ -124,16 +126,17 @@ export function buildContext(
       .map((a) => ({
         title: a.title,
         pct: Math.round(a.savedPct * 100),
-        cigs: Math.round(a.savedCigs * 10) / 10,
+        cigs: round1(a.savedCigs),
       })),
     bestPm: pmAt(hourly, best),
     usualPm: pmAt(hourly, OUTDOOR_HOUR),
-    soFar: Math.round(cigsSoFar(hourly, c.profile, c.plan, elapsed) * 10) / 10, // one decimal, as shown
-    outdoorDay: Math.round(outdoorCigs(hourly) * 10) / 10,
-    outdoorSoFar: Math.round(outdoorCigsSoFar(hourly, elapsed) * 10) / 10,
+    soFar: round1(cigsSoFar(hourly, c.profile, c.plan, elapsed)),
+    outdoorDay: round1(outdoorCigs(hourly)),
+    outdoorSoFar: round1(outdoorCigsSoFar(hourly, elapsed)),
   };
 }
 
+/** A trimmed question without angle brackets, or null if it is empty or longer than MAX_QUESTION. */
 export function cleanQuestion(q: unknown): string | null {
   if (typeof q !== "string") return null;
   const t = q.trim().replace(/[<>]/g, "");
@@ -160,6 +163,7 @@ export function offlineAnswer(q: string, c: ChatContext, lang: Lang = "en"): str
   return `Today in ${c.city} the air is "${c.category}" (PM2.5 about ${Math.round(c.pm)} µg/m³). Following your plan (${c.actions.join(", ") || "no actions chosen yet"}) takes your breathing from about ${c.baselineCigs.toFixed(1)} to ${c.planCigs.toFixed(1)} cigarettes' worth a day, saving ${save}. General guidance, not medical advice.`;
 }
 
+/** The model prompt: rules, the engine's facts as data, and the question fenced as untrusted text. */
 export function buildPrompt(question: string, c: ChatContext, lang: Lang = "en"): string {
   return [
     "You are AirWise, a calm, practical assistant that helps families cope with smog.",

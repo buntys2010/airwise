@@ -24,6 +24,7 @@ export const PLAN_IDS = [
 ] as const;
 type PlanId = (typeof PLAN_IDS)[number];
 
+/** The plan as short ids for a share link. Only choices from fixed lists are encoded. */
 export function planToIds(plan: Plan): PlanId[] {
   const ids: PlanId[] = [];
   if (plan.sealGaps) ids.push("seal");
@@ -40,6 +41,7 @@ function purifierKindOf(set: Set<string>): Plan["purifierKind"] {
   return set.has("purifier") ? "hepa" : undefined;
 }
 
+/** A plan from share-link ids. Unknown ids are ignored. */
 export function idsToPlan(ids: string[]): Plan {
   const set = new Set(ids);
   return {
@@ -61,6 +63,7 @@ export function sanitizePlan(plan: Plan, commute: Profile["commute"]): Plan {
     : plan;
 }
 
+/** The query string for a share link: city, household and plan choices, never a figure. */
 export function encodeChoices(c: { city: string; profile: Profile; plan: Plan }): string {
   const q = new URLSearchParams({
     city: c.city,
@@ -110,6 +113,7 @@ export function decodeChoices(search: string): SharedChoices {
   return out;
 }
 
+/** A full share link for an origin and the user's choices. */
 export function shareUrl(
   origin: string,
   c: { city: string; profile: Profile; plan: Plan },

@@ -102,6 +102,9 @@ const BREAKS: { pm: number; aqi: number }[] = [
   { pm: 500.4, aqi: 500 },
 ];
 
+/** A number rounded to one decimal, as shown to people and passed to the model. */
+export const round1 = (n: number): number => Math.round(n * 10) / 10;
+
 /** One hour of a 24-value series. Series are always 24 long; a missing hour reads as 0 rather than crashing a render. */
 export const pmAt = (hourly: readonly number[], hour: number): number => hourly[hour] ?? 0;
 
@@ -109,8 +112,8 @@ export const pmAt = (hourly: readonly number[], hour: number): number => hourly[
 export function aqiFromPm(pm: number): number {
   const x = Math.max(0, pm);
   for (let i = 1; i < BREAKS.length; i++) {
-    const a = BREAKS[i - 1],
-      b = BREAKS[i];
+    const a = BREAKS[i - 1];
+    const b = BREAKS[i];
     if (a && b && x <= b.pm) {
       return Math.round(a.aqi + ((x - a.pm) * (b.aqi - a.aqi)) / (b.pm - a.pm));
     }
@@ -118,44 +121,61 @@ export function aqiFromPm(pm: number): number {
   return 500;
 }
 
-export function categoryOf(pm: number): Category {
-  const aqi = aqiFromPm(pm);
-  if (aqi <= 50)
-    return { label: "Good", tone: "good", icon: "●", advice: "Air is clean. Open windows." };
-  if (aqi <= 100)
-    return {
+/** Upper AQI bound of each band, with what the band is called and what to do in it. The last band has no upper bound. */
+const CATEGORY_BANDS: { maxAqi: number; category: Category }[] = [
+  {
+    maxAqi: 50,
+    category: { label: "Good", tone: "good", icon: "●", advice: "Air is clean. Open windows." },
+  },
+  {
+    maxAqi: 100,
+    category: {
       label: "Moderate",
       tone: "moderate",
       icon: "◆",
       advice: "The air is acceptable. Sensitive lungs may notice it.",
-    };
-  if (aqi <= 150)
-    return {
+    },
+  },
+  {
+    maxAqi: 150,
+    category: {
       label: "Poor for sensitive groups",
       tone: "sensitive",
       icon: "▲",
       advice: "Children, older adults and asthma: keep outdoor time short.",
-    };
-  if (aqi <= 200)
-    return {
+    },
+  },
+  {
+    maxAqi: 200,
+    category: {
       label: "Unhealthy",
       tone: "unhealthy",
       icon: "■",
       advice: "Cut outdoor time. Wear an N95 outside.",
-    };
-  if (aqi <= 300)
-    return {
+    },
+  },
+  {
+    maxAqi: 300,
+    category: {
       label: "Very unhealthy",
       tone: "severe",
       icon: "⬣",
       advice: "Stay in. Run a purifier. N95 for any trip.",
-    };
-  return {
-    label: "Hazardous",
-    tone: "hazardous",
-    icon: "✖",
-    advice: "Avoid going out. Treat indoor air as your priority.",
-  };
+    },
+  },
+];
+
+const HAZARDOUS: Category = {
+  label: "Hazardous",
+  tone: "hazardous",
+  icon: "✖",
+  advice: "Avoid going out. Treat indoor air as your priority.",
+};
+
+/** The AQI band for a PM2.5 reading (µg/m³). */
+export function categoryOf(pm: number): Category {
+  const aqi = aqiFromPm(pm);
+  return CATEGORY_BANDS.find((band) => aqi <= band.maxAqi)?.category ?? HAZARDOUS;
 }
 
 export interface Sim {
@@ -176,58 +196,58 @@ export function bestHour(hourly: number[]): number {
   return best;
 }
 
+/** One day of exposure for a household with a given plan, hour by hour. Pure and deterministic. */
 export function simulate(hourly: number[], p: Profile, plan: Plan): Sim {
   const commute = plan.swapCommute ?? p.commute;
   const home: Home = plan.sealGaps ? "sealed" : p.home;
   const cooking: Cooking = plan.induction ? "induction" : p.cooking;
   const outdoorHour = plan.shiftOutdoor ? bestHour(hourly) : OUTDOOR_HOUR;
-  const infil =
+  const infiltration =
     INFILTRATION[home] * (plan.purifier ? PURIFIER_FACTORS[plan.purifierKind ?? "hepa"] : 1);
   const maskCut = 1 - MASK_EFFECT[plan.mask];
   const legHours = Math.min(1, p.km / SPEED_KMH[commute]);
   const open = OPEN_MODES.includes(commute);
 
-  let indoor = 0,
-    comm = 0,
-    outd = 0,
-    cook = 0;
+  let indoorDose = 0;
+  let commuteDose = 0;
+  let outdoorDose = 0;
+  let cookingDose = 0;
   const perHour: number[] = [];
   for (let h = 0; h < 24; h++) {
     const out = pmAt(hourly, h);
-    let spentIndoors = 1,
-      hourDose = 0;
+    let hoursIndoors = 1;
+    let hourDose = 0;
     if (COMMUTE_HOURS.includes(h)) {
-      const c = legHours * out * COMMUTE_EXPOSURE[commute] * (open ? maskCut : 1);
-      comm += c;
-      hourDose += c;
-      spentIndoors -= legHours;
+      const dose = legHours * out * COMMUTE_EXPOSURE[commute] * (open ? maskCut : 1);
+      commuteDose += dose;
+      hourDose += dose;
+      hoursIndoors -= legHours;
     }
     if (h === outdoorHour) {
-      const o = OUTDOOR_TIME_H * out * maskCut;
-      outd += o;
-      hourDose += o;
-      spentIndoors -= OUTDOOR_TIME_H;
+      const dose = OUTDOOR_TIME_H * out * maskCut;
+      outdoorDose += dose;
+      hourDose += dose;
+      hoursIndoors -= OUTDOOR_TIME_H;
     }
-    const add = COOKING_HOURS.includes(h) ? COOKING_ADD[cooking] : 0;
-    const base = Math.max(0, spentIndoors);
-    const inBase = base * out * infil;
-    const inCook = add; // the person cooking is home for the whole cooking hour, whatever else they do in it
-    indoor += inBase;
-    cook += inCook;
-    hourDose += inBase + inCook;
+    const cookingAdd = COOKING_HOURS.includes(h) ? COOKING_ADD[cooking] : 0;
+    const indoorHourDose = Math.max(0, hoursIndoors) * out * infiltration;
+    // The person cooking is home for the whole cooking hour, whatever else they do in it.
+    indoorDose += indoorHourDose;
+    cookingDose += cookingAdd;
+    hourDose += indoorHourDose + cookingAdd;
     perHour.push(hourDose);
   }
-  const total = indoor + comm + outd + cook;
+  const total = indoorDose + commuteDose + outdoorDose + cookingDose;
   const mean = total / 24;
-  const share = (x: number) => (total > 0 ? x / total : 0);
+  const share = (dose: number) => (total > 0 ? dose / total : 0);
   return {
     meanPm: mean,
     cigs: mean / CIGARETTE_PM,
     parts: {
-      indoor: share(indoor),
-      commute: share(comm),
-      outdoor: share(outd),
-      cooking: share(cook),
+      indoor: share(indoorDose),
+      commute: share(commuteDose),
+      outdoor: share(outdoorDose),
+      cooking: share(cookingDose),
     },
     co2Kg: (2 * p.km * CO2_G_PER_KM[commute]) / 1000,
     outdoorHour,
@@ -291,6 +311,7 @@ const MODE_LABEL: Record<Commute, string> = {
   bus: "bus",
   metro: "metro",
 };
+/** Plain-language name of a commute mode. */
 export const modeLabel = (c: Commute) => MODE_LABEL[c];
 
 /** The commute an "easier on the lungs" swap would move to, or null when the current one is already low-exposure. */
@@ -440,6 +461,7 @@ export function buildActions(hourly: number[], p: Profile): ActionResult[] {
   return ACTION_BUILDERS.map((build) => build(ctx));
 }
 
+/** A 24-hour clock hour as a 12-hour label, e.g. 15 becomes "3 pm". */
 export function fmtHour(h: number): string {
   const suffix = h >= 12 ? "pm" : "am";
   const hh = h % 12 === 0 ? 12 : h % 12;
@@ -458,6 +480,7 @@ export function fullPlan(p: Profile): Plan {
   };
 }
 
+/** The plan as short phrases, for the chat context and the plain-language summary. */
 export function planSummary(plan: Plan): string[] {
   const out: string[] = [];
   if (plan.sealGaps) out.push("seal gaps");

@@ -9,6 +9,7 @@ export const MAX_PICK_BYTES = 15 * 1024 * 1024;
 /** Largest decoded image the server accepts, after the client has downscaled. */
 export const MAX_UPLOAD_BYTES = 1_500_000;
 
+/** Dimensions scaled down to fit within `max` on the longer edge, never enlarged and never below 1 px. */
 export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: number } {
   if (w <= 0 || h <= 0) return { w: 0, h: 0 };
   const scale = Math.min(1, max / Math.max(w, h));
@@ -17,6 +18,7 @@ export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: n
 
 export type PickCheck = { ok: true } | { ok: false; message: string };
 
+/** Whether a picked file is a supported type and small enough to try, with a message a person can act on if not. */
 export function checkPick(file: { type: string; size: number }): PickCheck {
   if (!ACCEPTED_TYPES.includes(file.type))
     return {

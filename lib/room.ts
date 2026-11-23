@@ -52,6 +52,7 @@ const KIND_META: Record<FindingKind, { label: string; actionId: RoomActionId }> 
   no_purifier: { label: "No air purifier", actionId: "purifier" },
 };
 
+/** A hotspot for a finding kind, with its label and the fix it points to taken from KIND_META. */
 export function hotspotFor(kind: FindingKind, bbox: BBox | undefined, confidence: number): Hotspot {
   const { label, actionId } = KIND_META[kind];
   return { id: kind, kind, label, actionId, bbox, confidence };
@@ -218,8 +219,9 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
   if (window) out.push(seen("window_gap") ?? hotspotFor("window_gap", undefined, 1));
   const stove = answers.stove ?? (seen("gas_stove") ? true : undefined);
   if (stove) out.push(seen("gas_stove") ?? hotspotFor("gas_stove", undefined, 1));
-  const purifier = answers.purifier ?? (seen("purifier_seen") ? true : undefined);
-  if (purifier === true && seen("purifier_seen")) out.push(seen("purifier_seen")!);
+  const seenPurifier = seen("purifier_seen");
+  const purifier = answers.purifier ?? (seenPurifier ? true : undefined);
+  if (purifier === true && seenPurifier) out.push(seenPurifier);
   if (purifier === false) out.push(seen("no_purifier") ?? hotspotFor("no_purifier", undefined, 1));
   return out;
 }
@@ -330,5 +332,6 @@ export function rankProducts(hourly: number[], profile: Profile): RankedProduct[
 }
 
 const formatRupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+/** A product's indicative price as text, for example '₹8,000 to ₹15,000'. */
 export const priceRange = (p: Pick<Product, "price">) =>
   `${formatRupees(p.price[0])} to ${formatRupees(p.price[1])}`;

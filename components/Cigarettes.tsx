@@ -34,6 +34,7 @@ function useHourReplay(target: number) {
   return { hour, play };
 }
 
+/** One row of cigarette sticks, each drawn partly burned according to its share of the day's exposure. */
 export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base" | "plan" }>) {
   return (
     <div className={`cigrow ${tone}`} aria-hidden="true">

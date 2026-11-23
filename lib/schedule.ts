@@ -17,6 +17,7 @@ const COOKING_ADVICE: Record<Profile["cooking"], string> = {
   lpg: "Gas leaves smoke in the kitchen. Run the chimney or crack a window by the stove while you cook, then close it.",
 };
 
+/** The household's clear-air day: what to do at each key hour, with the outdoor PM2.5 at that hour. */
 export function buildSchedule(hourly: number[], p: Profile): ScheduleEntry[] {
   const best = bestHour(hourly);
   const at = (h: number) => `${hourly[h]} µg/m³`;

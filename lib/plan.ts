@@ -54,6 +54,7 @@ export const PLAN_SCHEMA = {
   required: ["headline", "steps"],
 };
 
+/** The model prompt for rewording the day's schedule, with the schedule fenced as data. */
 export function buildPlanPrompt(req: PlanRequest, lang: Lang = "en"): string {
   return [
     "You are AirWise. Rewrite the household's clear-air day as a warm, plain-language plan.",
@@ -135,6 +136,7 @@ export interface CommunityPlan {
   rules: CommunityRule[];
 }
 
+/** The community notice for today's air: the three most useful fixes and the rules for this air level. */
 export function communityPlan(hourly: number[], profile: Profile, nowHour: number): CommunityPlan {
   const tone = categoryOf(pmAt(hourly, nowHour)).tone;
   const best = bestHour(hourly);

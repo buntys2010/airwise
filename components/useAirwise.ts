@@ -11,16 +11,16 @@ import {
   buildActions,
   categoryOf,
   cigsSoFar,
+  fmtHour,
   outdoorCigs,
   outdoorCigsSoFar,
-  fmtHour,
   planSummary,
+  pmAt,
   simulate,
   toggleAction,
   type ActionResult,
   type Plan,
   type Profile,
-  pmAt,
 } from "@/lib/engine";
 import { hazeLevel } from "@/lib/haze";
 import { SAMPLE_PROFILE_PATCH } from "@/lib/room";

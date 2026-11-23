@@ -1,7 +1,6 @@
-import { createCache } from "./cache";
-
 /** City list, live-air loader, and an offline estimate curve used only if the live feed is unreachable. */
 
+import { createCache } from "./cache";
 import { CITIES, type City } from "./cities";
 import { pmAt } from "./engine";
 export { CITIES };
@@ -33,6 +32,7 @@ export interface AirResult {
 const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
+/** The time in India (IST): hour, an HH:MM label, and hours elapsed since midnight with minutes as a fraction. */
 export function istClock(d = new Date()): { hour: number; label: string; elapsed: number } {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
@@ -58,6 +58,7 @@ export function parseHourly(json: unknown): number[] | null {
   return (day as number[]).map((v) => Math.round(v));
 }
 
+/** Current temperature (°C) and wind (km/h) from the weather payload, each null when missing or not a number. */
 export function parseWeather(json: unknown): { temp: number | null; wind: number | null } {
   const cur = (json as { current?: { temperature_2m?: unknown; wind_speed_10m?: unknown } } | null)
     ?.current;
@@ -132,6 +133,7 @@ export function getCityAir(city: City): Promise<AirResult> {
   inflight.set(city.id, p);
   return p;
 }
+/** Test hook: forget cached city air so each test starts clean. */
 export const resetAirCache = () => airCache.clear();
 
 export interface MapPoint {

@@ -52,13 +52,13 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
           height={H - padT - padB + 6}
           rx={7}
           fill="none"
-          stroke="#0f1f27"
+          className="hc-ink"
           strokeWidth={3}
         />
         <text
           x={Math.min(W - 150, Math.max(padL, padL + best * bw - 52))}
           y={padT - 14}
-          style={{ fill: "#0f1f27", fontWeight: 700, fontSize: 14 }}
+          className="hc-label hc-label-lg"
         >
           Best: {fmtHour(best)}
         </text>
@@ -67,14 +67,10 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
           x2={padL + usual * bw + bw / 2}
           y1={y(pmAt(hourly, usual)) - 4}
           y2={y(pmAt(hourly, usual)) - 20}
-          stroke="#0f1f27"
+          className="hc-ink"
           strokeWidth={2}
         />
-        <text
-          x={padL + usual * bw - 4}
-          y={y(pmAt(hourly, usual)) - 26}
-          style={{ fill: "#0f1f27", fontWeight: 700, fontSize: 13 }}
-        >
+        <text x={padL + usual * bw - 4} y={y(pmAt(hourly, usual)) - 26} className="hc-label">
           Your usual outing
         </text>
         {[0, 6, 12, 18, 23].map((h) => (

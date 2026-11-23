@@ -16,6 +16,7 @@ function normaliseDigits(text: string): string {
   return text.replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
 }
 
+/** Every number in a text as a value. Thousands separators and Devanagari digits are normalised first. */
 export function extractNumbers(text: string): number[] {
   const flat = normaliseDigits(text).replace(/(\d),(?=\d{3}\b)/g, "$1");
   return (flat.match(/\d+(?:\.\d+)?/g) ?? []).map(Number).filter(Number.isFinite);
@@ -44,6 +45,7 @@ export function ungroundedNumbers(text: string, facts: unknown): number[] {
   return extractNumbers(text).filter((n) => !allowed.some((a) => Math.abs(a - n) <= TOLERANCE));
 }
 
+/** True when every number in `text` can be traced to `facts`. */
 export const isGrounded = (text: string, facts: unknown): boolean =>
   ungroundedNumbers(text, facts).length === 0;
 
@@ -63,6 +65,7 @@ const ATTRIBUTIONS: RegExp[] = [
   /\b(?:most|many|majority of|millions of)\s+(?:people|families|users|households)\b/i,
 ];
 
+/** Phrases in `text` that cite studies, experts or population statistics the app never supplied. */
 export function unsupportedClaims(text: string): string[] {
   const t = normaliseDigits(text);
   return ATTRIBUTIONS.map((re) => re.exec(t)?.[0]).filter((m): m is string => Boolean(m));

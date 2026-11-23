@@ -117,7 +117,7 @@ export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
       <div className="dayhead">{tag}</div>
       {gemini && result && <p className="dayheadline">{result.headline}</p>}
       {busy && !result ? (
-        <div aria-hidden="true" style={{ display: "grid", gap: 10, marginBottom: 12 }}>
+        <div aria-hidden="true" className="u-skeleton-stack">
           <div className="skeleton" />
           <div className="skeleton" />
           <div className="skeleton" />

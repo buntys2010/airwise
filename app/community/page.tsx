@@ -129,7 +129,7 @@ export default function CommunityPage() {
         <section id="notice-sec" aria-labelledby="h-notice">
           <article id="community-plan" className="notice">
             <h2 id="h-notice">{title}</h2>
-            <p style={{ margin: "10px 0 4px" }}>
+            <p className="u-notice-line">
               <strong>{t("comm.now", { city: a.city.name, level, pm: plan.nowPm })}</strong>
             </p>
             <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
@@ -154,7 +154,7 @@ export default function CommunityPage() {
             </ul>
             <p className="fine">{t("comm.foot")}</p>
           </article>
-          <div className="toolrow noprint" style={{ marginTop: 16 }}>
+          <div className="toolrow noprint u-mt-16">
             <button type="button" className="btn" onClick={() => window.print()}>
               {t("comm.print")}
             </button>

@@ -45,4 +45,5 @@ export function LangProvider({ children }: Readonly<{ children: React.ReactNode 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
+/** The current language and its `t` translator. Must be used under LangProvider. */
 export const useLang = () => useContext(LangContext);

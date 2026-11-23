@@ -47,6 +47,7 @@ export interface ReminderOptions {
   description?: string;
 }
 
+/** A daily-reminder .ics file that links back to AirWise. Floating local time, first fired tomorrow. */
 export function buildReminderIcs({
   url,
   hour = 7,

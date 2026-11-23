@@ -46,6 +46,7 @@ export function sanitizeSaved(raw: unknown): Saved | null {
   };
 }
 
+/** The choices saved on this device, with a state that says whether storage was empty, saved or blocked. */
 export function readSaved(storage: StorageLike | null = defaultStorage()): {
   data: Saved | null;
   state: StoreState;
@@ -61,6 +62,7 @@ export function readSaved(storage: StorageLike | null = defaultStorage()): {
   }
 }
 
+/** Saves the user's choices on this device only. Returns 'blocked' if storage is unavailable. */
 export function writeSaved(
   data: Saved,
   storage: StorageLike | null = defaultStorage(),
@@ -74,6 +76,7 @@ export function writeSaved(
   }
 }
 
+/** Forgets what is saved on this device. */
 export function clearSaved(storage: StorageLike | null = defaultStorage()): StoreState {
   if (!storage) return "blocked";
   try {

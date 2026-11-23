@@ -24,6 +24,7 @@ import { OUTDOOR_HOUR, fmtHour } from "@/lib/engine";
 import { englishIn } from "@/lib/i18n";
 import { rankProducts } from "@/lib/room";
 
+/** The home screen: air strip, actions, plan, cigarettes, chat and room panel, wired to useAirwise. */
 export function Home() {
   const { lang, t } = useLang();
   const a = useAirwise(lang);
@@ -159,7 +160,7 @@ export function Home() {
           </Link>{" "}
           and in docs/methodology.md.
         </p>
-        <p style={{ marginTop: 10 }}>{t("foot.disclaimer")}</p>
+        <p className="u-mt-10">{t("foot.disclaimer")}</p>
       </footer>
 
       <BottomDock activeTab={tab} onTabChange={setTab} />

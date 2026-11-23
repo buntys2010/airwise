@@ -588,6 +588,7 @@ export const HI: Record<Key, string> = {
 
 export const DICTS: Record<Lang, Record<Key, string>> = { en: EN, hi: HI };
 
+/** The text for `key` in `lang`, with {placeholders} filled from `vars`. */
 export function t(lang: Lang, key: Key, vars?: Record<string, string | number>): string {
   const text = DICTS[lang][key] ?? EN[key];
   return vars ? text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`)) : text;

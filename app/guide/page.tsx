@@ -276,7 +276,7 @@ function HowSection() {
             electric vehicles.
           </li>
         </ul>
-        <p className="dim" style={{ marginTop: 12 }}>
+        <p className="dim u-mt-12">
           These are planning assumptions for comparing choices, not clinical measurements. Full list
           and sources: docs/methodology.md in the project repository.
         </p>
@@ -289,7 +289,7 @@ export default function Guide() {
   return (
     <div className="wrap guide">
       <Header>
-        <Link href="/" className="chip" style={{ textDecoration: "none" }}>
+        <Link href="/" className="chip u-no-underline">
           Open AirWise
         </Link>
       </Header>
@@ -363,11 +363,7 @@ export default function Guide() {
           <div className="panel g-cta">
             <h2 id="g-go">Ready to clear your air?</h2>
             <p className="dim">Your plan takes about a minute to build.</p>
-            <Link
-              href="/"
-              className="btn"
-              style={{ textDecoration: "none", display: "inline-block", marginTop: 14 }}
-            >
+            <Link href="/" className="btn u-no-underline u-inline-block u-mt-14">
               Open AirWise
             </Link>
           </div>

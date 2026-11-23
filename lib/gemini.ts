@@ -48,6 +48,15 @@ export const REASON_TEXT: Record<FailureReason, string> = {
   empty: "Gemini returned nothing",
 };
 
+/** Overall time budget for a model chain when the caller gives none. */
+const DEFAULT_BUDGET_MS = 12_000;
+/** Longest one model call may take when the caller gives no limit. */
+const DEFAULT_CALL_TIMEOUT_MS = 12_000;
+/** Not worth starting another model call with less than this left. */
+const MIN_REMAINING_MS = 250;
+const BUDGET_WINDOW_MS = 60_000;
+const DEFAULT_CALLS_PER_MIN = 40;
+
 const DEFAULT_MODEL = "gemini-2.5-flash";
 /** Lite models have their own quotas, so a rate-limited primary does not take the feature down. */
 const DEFAULT_FALLBACKS = "gemini-flash-lite-latest,gemini-3.5-flash-lite";
@@ -89,7 +98,11 @@ export function positiveInt(raw: string | undefined, fallback: number): number {
   return Number.isInteger(n) && n >= 1 ? n : fallback;
 }
 /** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
-const budget = createBudget(() => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, 40), 60_000);
+const budget = createBudget(
+  () => positiveInt(process.env.GEMINI_BUDGET_PER_MIN, DEFAULT_CALLS_PER_MIN),
+  BUDGET_WINDOW_MS,
+);
+/** Test hook: refill the per-minute Gemini call budget. */
 export const resetGeminiBudget = () => budget.reset();
 
 let sink: (line: string) => void = (line) => {
@@ -187,11 +200,11 @@ export async function generateDetailed(opts: GenerateOptions): Promise<GenResult
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, reason: "no_key" };
   const started = Date.now();
-  const overall = opts.budgetMs ?? 12_000;
+  const overall = opts.budgetMs ?? DEFAULT_BUDGET_MS;
   const seen: FailureReason[] = [];
   for (const model of modelChain()) {
     const remaining = overall - (Date.now() - started);
-    if (remaining <= 250) {
+    if (remaining <= MIN_REMAINING_MS) {
       seen.push("timeout");
       break;
     }
@@ -200,7 +213,12 @@ export async function generateDetailed(opts: GenerateOptions): Promise<GenResult
       return { ok: false, reason: "budget" };
     }
     const t0 = Date.now();
-    const r = await callModel(model, key, opts, Math.min(opts.timeoutMs ?? 12_000, remaining));
+    const r = await callModel(
+      model,
+      key,
+      opts,
+      Math.min(opts.timeoutMs ?? DEFAULT_CALL_TIMEOUT_MS, remaining),
+    );
     log({
       kind: opts.kind,
       model,

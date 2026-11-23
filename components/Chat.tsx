@@ -126,7 +126,7 @@ function AnswerBody({ busy, slow, error, answer, noteText }: Readonly<AnswerBody
     return (
       <>
         <p>{answer}</p>
-        <p className="dim" style={{ marginTop: 8, fontSize: "0.9rem" }}>
+        <p className="dim u-answer-note">
           {noteText}. {t("chat.disclaimer")}
         </p>
       </>
@@ -134,6 +134,7 @@ function AnswerBody({ busy, slow, error, answer, noteText }: Readonly<AnswerBody
   return <p className="dim">{t("chat.empty")}</p>;
 }
 
+/** The question box: suggested questions, text or voice input, and the answer with its grounding note. */
 export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
   const { lang, t } = useLang();
   const [q, setQ] = useState("");
