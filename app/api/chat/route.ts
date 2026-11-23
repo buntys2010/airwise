@@ -12,6 +12,7 @@ import {
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { verify } from "@/lib/guard";
 import { json, readGuarded } from "@/lib/http";
+import { asRecord } from "@/lib/json";
 import { withObservability } from "@/lib/observe";
 import { createLimiter } from "@/lib/ratelimit";
 
@@ -39,9 +40,9 @@ export const POST = withObservability("chat", async (req: Request) => {
   });
   if (!parsed.ok) return parsed.res;
 
-  const body = parsed.body as { question?: unknown; choices?: unknown } | null;
-  const question = cleanQuestion(body?.question);
-  const choices = parseChoices(body?.choices);
+  const body = asRecord(parsed.body);
+  const question = cleanQuestion(body.question);
+  const choices = parseChoices(body.choices);
   if (!question) return json({ error: `Ask a question of up to ${MAX_QUESTION} characters.` }, 400);
   if (!choices) return json({ error: "Missing or invalid household choices." }, 400);
 

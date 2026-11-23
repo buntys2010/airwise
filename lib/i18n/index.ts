@@ -1,3 +1,4 @@
+import type { Tone } from "../engine/aqi";
 import type { Lang } from "../lang";
 import { EN, type Key } from "./en";
 import { HI } from "./hi";
@@ -59,3 +60,6 @@ export const ADVICE_KEY = {
   severe: "advice.severe",
   hazardous: "advice.hazardous",
 } as const;
+
+/** The name of an air-quality band in a language, for text built outside React (chat, share card, MCP). */
+export const categoryLabel = (tone: Tone, lang: Lang = "en"): string => t(lang, CATEGORY_KEY[tone]);

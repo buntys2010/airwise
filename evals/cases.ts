@@ -1,5 +1,5 @@
 import { estimateHourly } from "../lib/air/live";
-import { buildContext, offlineAnswer, offlineAnswerHi, parseChoices } from "../lib/chat";
+import { buildContext, offlineAnswer, parseChoices } from "../lib/chat";
 import { CITIES } from "../lib/cities";
 import { isGrounded, unsupportedClaims, verify } from "../lib/guard";
 import { validateVision } from "../lib/room";
@@ -254,7 +254,7 @@ export const CASES: Case[] = [
     id: "off-03",
     category: "offline answers",
     expect: "Hindi mask answer is Devanagari",
-    run: () => /[ऀ-ॿ]/u.test(offlineAnswerHi("क्या मुझे मास्क चाहिए?", ctx)),
+    run: () => /[ऀ-ॿ]/u.test(offlineAnswer("क्या मुझे मास्क चाहिए?", ctx, "hi")),
   },
   {
     id: "off-04",
@@ -266,7 +266,7 @@ export const CASES: Case[] = [
     id: "off-05",
     category: "offline answers",
     expect: "Hindi general answer is grounded",
-    run: () => isGrounded(offlineAnswerHi("नमस्ते", ctx), ctx),
+    run: () => isGrounded(offlineAnswer("नमस्ते", ctx, "hi"), ctx),
   },
   {
     id: "off-06",
@@ -277,7 +277,7 @@ export const CASES: Case[] = [
       const hi = ["मास्क", "खिड़की", "प्यूरीफायर", "बच्चे", "रसोई", "मेट्रो", "नमस्ते"];
       return [
         ...qs.map((q) => offlineAnswer(q, ctx)),
-        ...hi.map((q) => offlineAnswerHi(q, ctx)),
+        ...hi.map((q) => offlineAnswer(q, ctx, "hi")),
       ].every((a) => unsupportedClaims(a).length === 0);
     },
   },

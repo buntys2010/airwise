@@ -53,9 +53,9 @@ const PURIFIER_FACTORS: Record<PurifierKind, number> = { hepa: 0.4, boxfan: 0.6 
 
 export const PURIFIER_FACTOR = PURIFIER_FACTORS.hepa;
 
+/** Share of outdoor PM2.5 a mask filters, adjusted for how well it fits. */
 export const MASK_EFFECT: Record<Mask, number> = { none: 0, cloth: 0.1, n95: 0.6 };
 
-// fit-adjusted
 /** In-transit exposure relative to ambient. Enclosed modes shield; open modes do not. */
 export const COMMUTE_EXPOSURE: Record<Commute, number> = {
   walk: 1,
@@ -93,9 +93,9 @@ export const CO2_G_PER_KM: Record<Commute, number> = {
 /** extra indoor PM2.5 (µg/m³) while cooking, per hour. */
 export const COOKING_ADD: Record<Cooking, number> = { wood: 150, lpg: 30, induction: 8 };
 
+/** The default hour of the family's outdoor time (school run, a walk, play). */
 export const OUTDOOR_HOUR = 7;
 
-// default family outdoor hour (school run, walk, play)
 /** Time outside during the outdoor hour, in hours. */
 const OUTDOOR_TIME_H = 0.5;
 
@@ -103,6 +103,7 @@ const COOKING_HOURS = [7, 20];
 
 const COMMUTE_HOURS = [8, 18];
 
+/** One cigarette per this many µg/m³ of daily PM2.5 (a Berkeley Earth rule of thumb). */
 export const CIGARETTE_PM = 22;
 
 /** A number rounded to one decimal, as shown to people and passed to the model. */

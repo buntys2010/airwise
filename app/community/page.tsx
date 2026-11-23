@@ -200,7 +200,7 @@ export default function CommunityPage() {
         return;
       }
     } catch (error) {
-      if ((error as Error).name === "AbortError") return;
+      if (error instanceof Error && error.name === "AbortError") return;
     }
     try {
       await navigator.clipboard.writeText(url);

@@ -3,6 +3,7 @@
  * used only if the feed is unreachable.
  */
 import { type City } from "../cities";
+import { asRecord, finiteNumber } from "../json";
 
 /** Deterministic 24-hour PM2.5 curve: high before dawn, evening bump, afternoon dip. */
 export function estimateHourly(city: City): number[] {
@@ -53,11 +54,11 @@ export function istClock(d = new Date()): { hour: number; label: string; elapsed
 
 /** Validates the live payload: 24 finite, non-negative PM2.5 values or nothing. */
 export function parseHourly(json: unknown): number[] | null {
-  const arr = (json as { hourly?: { pm2_5?: unknown } } | null)?.hourly?.pm2_5;
-  if (!Array.isArray(arr) || arr.length < 24) return null;
-  const day = arr.slice(0, 24);
-  if (day.some((v) => typeof v !== "number" || !Number.isFinite(v) || v < 0)) return null;
-  return (day as number[]).map((v) => Math.round(v));
+  const series = asRecord(asRecord(json).hourly).pm2_5;
+  if (!Array.isArray(series) || series.length < 24) return null;
+  const day = series.slice(0, 24).map(finiteNumber);
+  const values = day.filter((value): value is number => value !== null && value >= 0);
+  return values.length === 24 ? values.map((value) => Math.round(value)) : null;
 }
 
 /**
@@ -65,11 +66,15 @@ export function parseHourly(json: unknown): number[] | null {
  * a number.
  */
 export function parseWeather(json: unknown): { temp: number | null; wind: number | null } {
-  const cur = (json as { current?: { temperature_2m?: unknown; wind_speed_10m?: unknown } } | null)
-    ?.current;
-  const roundedOrNull = (v: unknown) =>
-    typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null;
-  return { temp: roundedOrNull(cur?.temperature_2m), wind: roundedOrNull(cur?.wind_speed_10m) };
+  const current = asRecord(asRecord(json).current);
+  const roundedOrNull = (value: unknown) => {
+    const number = finiteNumber(value);
+    return number === null ? null : Math.round(number);
+  };
+  return {
+    temp: roundedOrNull(current.temperature_2m),
+    wind: roundedOrNull(current.wind_speed_10m),
+  };
 }
 
 /**

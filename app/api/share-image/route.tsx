@@ -9,6 +9,7 @@ import { planSummary } from "@/lib/engine/actions";
 import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
 import { NO_PLAN, type Plan, pmAt, type Profile, simulate } from "@/lib/engine/model";
 import { json } from "@/lib/http";
+import { categoryLabel } from "@/lib/i18n";
 import { withObservability } from "@/lib/observe";
 import { clientIp, createLimiter } from "@/lib/ratelimit";
 import { decodeChoices } from "@/lib/share";
@@ -56,7 +57,7 @@ export const GET = withObservability("share-image", async (req: Request) => {
     og,
     cityName: city.name,
     aqi: aqiFromPm(pmAt(air.hourly, hour)),
-    level: categoryOf(pmAt(air.hourly, hour)).label,
+    level: categoryLabel(categoryOf(pmAt(air.hourly, hour)).tone),
     baseCigs: base.cigs,
     planCigs: withPlan.cigs,
     baseSoFar: cigsSoFar(base, hour),
