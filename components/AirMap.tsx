@@ -95,7 +95,7 @@ const LABEL: Record<string, { dx: number; dy: number; anchor: "start" | "end" }>
   patna: { dx: 18, dy: -4, anchor: "start" },
   kolkata: { dx: -20, dy: 4, anchor: "end" },
   ahmedabad: { dx: -18, dy: 0, anchor: "end" },
-  bhopal: { dx: 18, dy: 2, anchor: "start" },
+  bhopal: { dx: -18, dy: 2, anchor: "end" },
   mumbai: { dx: -18, dy: -6, anchor: "end" },
   pune: { dx: 18, dy: 36, anchor: "start" },
   hyderabad: { dx: 18, dy: -24, anchor: "start" },
