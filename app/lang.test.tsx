@@ -60,7 +60,7 @@ function disableVoice() {
 }
 
 function stubFetch(
-  chat: (body: Record<string, unknown>) => unknown = () => ({
+  chat: (body: Record<string, unknown>) => unknown = (_body) => ({
     answer: "Wear an N95.",
     verified: true,
   }),

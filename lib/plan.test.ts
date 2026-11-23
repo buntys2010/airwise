@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseChoices } from "./chat";
 import { CITIES, estimateHourly } from "./data";
 import { buildPlanPrompt, buildPlanRequest, schedulePlan, validatePlan } from "./plan";
+import { must } from "../test-support/must";
 
 const hourly = estimateHourly(must(CITIES[0]));
 const choices = must(
@@ -77,7 +78,6 @@ describe("schedulePlan", () => {
 
 import { communityPlan } from "./plan";
 import { NO_PLAN, simulate, buildActions, type Profile } from "./engine";
-import { must } from "../test-support/must";
 
 describe("communityPlan", () => {
   const household: Profile = {

@@ -12,6 +12,7 @@ import {
   simulate,
   type Profile,
 } from "./engine";
+import { must } from "../test-support/must";
 
 const delhi = CITIES[0];
 const hourly = estimateHourly(must(delhi));
@@ -155,7 +156,6 @@ describe("helpers", () => {
 });
 
 import { cigsSoFar } from "./engine";
-import { must } from "../test-support/must";
 
 describe("simulate().perHour", () => {
   const profile: Profile = {

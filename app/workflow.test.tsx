@@ -11,7 +11,7 @@ import { must } from "../test-support/must";
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
 function stubFetch(
-  chat: (body: Record<string, unknown>) => unknown = () => ({
+  chat: (body: Record<string, unknown>) => unknown = (_body) => ({
     answer: "Wear an N95.",
     verified: true,
   }),
@@ -322,10 +322,9 @@ describe("chat progress and time limits", () => {
 
 describe("chat controls layout", () => {
   it("the input has its own row, and the buttons below carry visible text labels", () => {
-    (window as unknown as Record<string, unknown>).SpeechRecognition = class {
-      start = () => undefined;
-      stop = () => undefined;
-      abort = () => undefined;
+    // A constructor that returns its own object, so the stub needs no class methods.
+    (window as unknown as Record<string, unknown>).SpeechRecognition = function FakeRecognition() {
+      return { start: () => undefined, stop: () => undefined, abort: () => undefined };
     };
     renderPage();
     const form = must(document.querySelector(".chatform"));

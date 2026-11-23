@@ -10,7 +10,7 @@ import {
 } from "./voice";
 
 /** What a server render sees: there is no window. */
-const NO_WINDOW: undefined = undefined;
+const NO_WINDOW = undefined;
 
 describe("getRecognitionCtor", () => {
   class A {
