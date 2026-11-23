@@ -91,6 +91,39 @@ function CigColumn({
   );
 }
 
+/** Both scenarios side by side: today with no changes, and today with the plan. */
+function CigRows({
+  a,
+  baseSticks,
+  planSticks,
+  changed,
+}: Readonly<{ a: Airwise; baseSticks: Stick[]; planSticks: Stick[]; changed: boolean }>) {
+  const { t } = useLang();
+  const f1 = (n: number) => n.toFixed(1);
+  return (
+    <div className="cigrows">
+      <CigColumn
+        tone="base"
+        sticks={baseSticks}
+        labelClass="dialbefore"
+        ariaLabel={`${f1(a.base.cigs)} ${t("dial.before")}`}
+      >
+        {t("cig.base")} <b>{f1(a.base.cigs)}</b>
+      </CigColumn>
+      <CigColumn
+        tone="plan"
+        sticks={planSticks}
+        labelClass={`dialafter${changed ? " changed" : ""}`}
+        ariaLabel={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}
+      >
+        {t("cig.plan")}{" "}
+        <b style={{ color: changed ? "var(--breath)" : "#fff" }}>{f1(a.withPlan.cigs)}</b>
+        {changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}
+      </CigColumn>
+    </div>
+  );
+}
+
 /** The hero: today's smoke as cigarettes that burn down hour by hour, and shrink when a fix is switched on. Figures come from the engine. */
 export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
   const { t } = useLang();
@@ -118,26 +151,7 @@ export function Cigarettes({ a }: Readonly<{ a: Airwise }>) {
         <p className="cigtext sr-only">
           {t("cig.sofar", { time: fmtHour(a.nowHour), n: a.soFar.toFixed(1) })}
         </p>
-        <div className="cigrows">
-          <CigColumn
-            tone="base"
-            sticks={baseSticks}
-            labelClass="dialbefore"
-            ariaLabel={`${f1(a.base.cigs)} ${t("dial.before")}`}
-          >
-            {t("cig.base")} <b>{f1(a.base.cigs)}</b>
-          </CigColumn>
-          <CigColumn
-            tone="plan"
-            sticks={planSticks}
-            labelClass={`dialafter${changed ? " changed" : ""}`}
-            ariaLabel={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}
-          >
-            {t("cig.plan")}{" "}
-            <b style={{ color: changed ? "var(--breath)" : "#fff" }}>{f1(a.withPlan.cigs)}</b>
-            {changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}
-          </CigColumn>
-        </div>
+        <CigRows a={a} baseSticks={baseSticks} planSticks={planSticks} changed={changed} />
       </div>
       <div className="meter" role="img" aria-label={t("dial.expo", { pct: a.savedPct })}>
         <i style={{ width: a.savedPct > 0 ? `${Math.max(2, a.savedPct)}%` : "0%" }} />
