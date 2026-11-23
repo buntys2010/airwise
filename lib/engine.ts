@@ -376,7 +376,7 @@ const maskAction: ActionBuilder = ({ solo }) => ({
   applicable: true,
   math: [
     `Fit-adjusted filtering: ${MASK_EFFECT.n95 * 100}% (cloth ${MASK_EFFECT.cloth * 100}%)`,
-    `Applies to walking, cycling, two-wheeler and bus legs, and outdoor play`,
+    "Applies to walking, cycling, two-wheeler and bus legs, and outdoor play",
   ],
   apply: (pl) => ({ ...pl, mask: "n95" }),
   isOn: (pl) => pl.mask === "n95",

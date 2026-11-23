@@ -8,7 +8,8 @@ const rect = (top: number, bottom: number) =>
   ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top }) as DOMRect;
 
 function setup(barPosition: string) {
-  document.body.innerHTML = `<nav class="dock"><button id="in-bar">tab</button></nav><button id="field">x</button>`;
+  document.body.innerHTML =
+    '<nav class="dock"><button id="in-bar">tab</button></nav><button id="field">x</button>';
   const bar = document.querySelector("nav.dock") as HTMLElement;
   bar.getBoundingClientRect = () => rect(600, 660);
   (document.getElementById("field") as HTMLElement).getBoundingClientRect = () => rect(580, 620);
