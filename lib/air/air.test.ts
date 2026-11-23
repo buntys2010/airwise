@@ -1,0 +1,181 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { must } from "../../test-support/must";
+import { CITIES } from "../cities";
+import { estimateHourly, istClock, loadAir, parseHourly, parseWeather, weatherNote } from "./live";
+
+const delhi = CITIES[0];
+const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);
+const ok = (json: unknown) => ({ ok: true, json: () => Promise.resolve(json) });
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe("parseHourly", () => {
+  it("accepts 24 finite non-negative numbers and rounds them", () => {
+    expect(parseHourly({ hourly: { pm2_5: day(10.4) } })).toHaveLength(24);
+    expect(must(parseHourly({ hourly: { pm2_5: day(10.4) } }))[0]).toBe(10);
+  });
+  it("rejects short, missing, null-containing, negative or non-numeric data", () => {
+    expect(parseHourly(null)).toBeNull();
+    expect(parseHourly({})).toBeNull();
+    expect(parseHourly({ hourly: { pm2_5: [1, 2, 3] } })).toBeNull();
+    expect(parseHourly({ hourly: { pm2_5: [...day(5).slice(0, 23), null] } })).toBeNull();
+    expect(parseHourly({ hourly: { pm2_5: [...day(5).slice(0, 23), -3] } })).toBeNull();
+    expect(parseHourly({ hourly: { pm2_5: [...day(5).slice(0, 23), "x"] } })).toBeNull();
+  });
+});
+
+describe("parseWeather", () => {
+  it("reads temperature and wind", () =>
+    expect(parseWeather({ current: { temperature_2m: 9.4, wind_speed_10m: 3.6 } })).toEqual({
+      temp: 9,
+      wind: 4,
+    }));
+  it("returns nulls on bad input", () =>
+    expect(parseWeather({ current: { temperature_2m: "x" } })).toEqual({ temp: null, wind: null }));
+});
+
+describe("loadAir", () => {
+  it("is labelled live only when the feed answered with valid data", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation((url: string) =>
+          Promise.resolve(
+            String(url).includes("air-quality")
+              ? ok({ hourly: { pm2_5: day(100) } })
+              : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+          ),
+        ),
+    );
+    const air = await loadAir(must(delhi));
+    expect(air.source).toBe("live");
+    expect(air.hourly[0]).toBe(100);
+    expect(air.temp).toBe(12);
+    expect(air.updated).toMatch(/^\d{2}:\d{2}$/);
+  });
+  it("still goes live when only the weather call fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        if (String(url).includes("air-quality"))
+          return Promise.resolve(ok({ hourly: { pm2_5: day(80) } }));
+        return Promise.reject(new Error("weather down"));
+      }),
+    );
+    const air = await loadAir(must(delhi));
+    expect(air.source).toBe("live");
+    expect(air.temp).toBeNull();
+  });
+  it("falls back to a labelled estimate on network failure, HTTP error or bad data", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    expect((await loadAir(must(delhi))).source).toBe("estimate");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }),
+    );
+    expect((await loadAir(must(delhi))).source).toBe("estimate");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok({ hourly: { pm2_5: [1] } })));
+    const air = await loadAir(must(delhi));
+    expect(air.source).toBe("estimate");
+    expect(air.hourly).toEqual(estimateHourly(must(delhi)));
+    expect(air.updated).toBeNull();
+  });
+});
+
+describe("weatherNote", () => {
+  it("derives a sentence from wind and temperature", () => {
+    expect(weatherNote(9, 3)).toMatch(/Cold, still air/);
+    expect(weatherNote(25, 3)).toMatch(/lingers/);
+    expect(weatherNote(20, 20)).toMatch(/disperse/);
+    expect(weatherNote(20, 10)).toMatch(/breeze/);
+    expect(weatherNote(null, null)).toBe("");
+  });
+});
+
+describe("istClock", () => {
+  it("returns India time", () => {
+    const clock = istClock(new Date("2026-11-22T04:30:00Z")); // 10:00 IST
+    expect(clock.hour).toBe(10);
+    expect(clock.label).toBe("10:00");
+  });
+});
+
+describe("getCityAir (server cache)", () => {
+  it("caches a live result for ten minutes and de-duplicates concurrent requests", async () => {
+    const { getCityAir, resetAirCache } = await import("./server");
+    resetAirCache();
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        Promise.resolve(
+          String(url).includes("air-quality")
+            ? ok({ hourly: { pm2_5: day(100) } })
+            : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const [a, b] = await Promise.all([getCityAir(must(delhi)), getCityAir(must(delhi))]);
+    expect(a).toBe(b);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // one air and one weather call, not four
+    await getCityAir(must(delhi));
+    expect(fetchMock).toHaveBeenCalledTimes(2); // served from cache
+  });
+  it("never caches an estimate", async () => {
+    const { getCityAir, resetAirCache } = await import("./server");
+    resetAirCache();
+    const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await getCityAir(must(delhi))).source).toBe("estimate");
+    const calls = fetchMock.mock.calls.length;
+    await getCityAir(must(delhi));
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(calls);
+  });
+});
+
+describe("loadMap (batched)", () => {
+  it("fetches cities in batches and labels a bad city as an estimate on its own", async () => {
+    const { loadMap, MAP_CHUNK } = await import("./server");
+    const good = { hourly: { pm2_5: day(50) } };
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const cityCount = must(new URL(url).searchParams.get("latitude")).split(",").length;
+      return Promise.resolve(
+        ok(
+          Array.from({ length: cityCount }, (_, i) =>
+            url.includes("latitude=28.65,") && i === 1 ? { hourly: { pm2_5: [1] } } : good,
+          ),
+        ),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const pts = await loadMap(9);
+    expect(fetchMock).toHaveBeenCalledTimes(Math.ceil(CITIES.length / MAP_CHUNK));
+    expect(String(must(fetchMock.mock.calls[0])[0])).toContain("latitude=28.65,26.85");
+    expect(pts).toHaveLength(CITIES.length);
+    expect(pts[0]).toMatchObject({ id: "delhi", source: "live", pm: 59 });
+    expect(pts[1]).toMatchObject({ id: "lucknow", source: "estimate" });
+  });
+  it("labels every city an estimate when the feed is down, and does not cache that", async () => {
+    const { loadMap } = await import("./server");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
+    const pts = await loadMap(10);
+    expect(pts.every((p) => p.source === "estimate")).toBe(true);
+  });
+});
+
+describe("parseMapBatch", () => {
+  it("handles the single-object response Open-Meteo sends for one location", async () => {
+    const { parseMapBatch } = await import("./server");
+    expect(parseMapBatch({ hourly: { pm2_5: day(5) } }, 1)[0]).toHaveLength(24);
+    expect(parseMapBatch(null, 2)).toEqual([null, null]);
+  });
+});
+
+describe("istClock elapsed hours", () => {
+  it("reports hours since midnight India time including minutes", () => {
+    expect(istClock(new Date("2026-11-22T10:30:00Z")).elapsed).toBe(16); // 16:00 IST
+    expect(istClock(new Date("2026-11-22T00:15:00Z")).elapsed).toBeCloseTo(5.75, 9); // 05:45 IST
+    expect(istClock(new Date("2026-11-21T18:30:00Z")).elapsed).toBe(0); // midnight IST
+  });
+});

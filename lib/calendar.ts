@@ -1,5 +1,6 @@
 /**
- * A daily-reminder calendar file, built entirely on the device. AirWise stores nothing: the user's own calendar app does the reminding,
+ * A daily-reminder calendar file, built entirely on the device. AirWise stores nothing: the user's
+ * own calendar app does the reminding,
  * and the event links back to the app with the household's choices (never numbers).
  */
 
@@ -7,20 +8,32 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 /** iCalendar text escaping: backslash, semicolon, comma and newlines. */
 export function icsEscape(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
 }
 
-/** Folds a content line at 75 octets, as RFC 5545 requires, continuing with a single space. Splits on character boundaries. */
+/**
+ * Folds a content line at 75 octets, as RFC 5545 requires, continuing with a single space. Splits
+ * on character boundaries.
+ */
 export function foldLine(line: string): string {
   const enc = new TextEncoder();
   const out: string[] = [];
   let cur = "";
   let bytes = 0;
-  let limit = 75;
+  const limit = 75;
   for (const ch of line) {
-    const b = enc.encode(ch).length;
-    if (bytes + b > limit) { out.push(cur); cur = " "; bytes = 1; limit = 75; }
-    cur += ch; bytes += b;
+    const byteLength = enc.encode(ch).length;
+    if (bytes + byteLength > limit) {
+      out.push(cur);
+      cur = " ";
+      bytes = 1;
+    }
+    cur += ch;
+    bytes += byteLength;
   }
   out.push(cur);
   return out.join("\r\n");
@@ -38,8 +51,17 @@ export interface ReminderOptions {
   description?: string;
 }
 
-export function buildReminderIcs({ url, hour = 7, minute = 0, now = new Date(), title = "Check today's air with AirWise", description }: ReminderOptions): string {
-  // First occurrence is tomorrow, so the event never starts in the past. Floating local time: it fires at 7:00 wherever the phone is.
+/** A daily-reminder .ics file that links back to AirWise. Floating local time, first fired tomorrow. */
+export function buildReminderIcs({
+  url,
+  hour = 7,
+  minute = 0,
+  now = new Date(),
+  title = "Check today's air with AirWise",
+  description,
+}: ReminderOptions): string {
+  // First occurrence is tomorrow, so the event never starts in the past. Floating local time: it
+  // fires at 7:00 wherever the phone is.
   const first = new Date(now.getTime() + 24 * 3600 * 1000);
   const day = `${first.getFullYear()}${pad(first.getMonth() + 1)}${pad(first.getDate())}`;
   const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
@@ -67,5 +89,5 @@ export function buildReminderIcs({ url, hour = 7, minute = 0, now = new Date(), 
     "END:VEVENT",
     "END:VCALENDAR",
   ];
-  return lines.map(foldLine).join("\r\n") + "\r\n";
+  return `${lines.map(foldLine).join("\r\n")}\r\n`;
 }

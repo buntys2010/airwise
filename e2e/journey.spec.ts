@@ -1,39 +1,82 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+import { must } from "../test-support/must";
 
 /**
  * The core journey in a real browser, with the network stubbed so it is deterministic and works offline:
  * open the sample room, fix things, ask, switch language, visit the other pages.
  */
 const CITIES = [
-  ["delhi", "Delhi", 28.65, 77.31], ["lucknow", "Lucknow", 26.85, 80.99], ["kolkata", "Kolkata", 22.52, 88.36],
-  ["mumbai", "Mumbai", 19.07, 72.87], ["pune", "Pune", 18.53, 73.85], ["bengaluru", "Bengaluru", 12.92, 77.62],
+  ["delhi", "Delhi", 28.65, 77.31],
+  ["lucknow", "Lucknow", 26.85, 80.99],
+  ["kolkata", "Kolkata", 22.52, 88.36],
+  ["mumbai", "Mumbai", 19.07, 72.87],
+  ["pune", "Pune", 18.53, 73.85],
+  ["bengaluru", "Bengaluru", 12.92, 77.62],
 ] as const;
-const day = (base: number) => Array.from({ length: 24 }, (_, h) => Math.round(base + 60 * Math.exp(-(((h - 7) / 3) ** 2)) + 30 * Math.exp(-(((h - 20) / 3) ** 2))));
+const day = (base: number) =>
+  Array.from({ length: 24 }, (_, h) =>
+    Math.round(base + 60 * Math.exp(-(((h - 7) / 3) ** 2)) + 30 * Math.exp(-(((h - 20) / 3) ** 2))),
+  );
 
 async function stub(page: Page, opts: { airDown?: boolean } = {}) {
-  await page.route("**/air-quality-api.open-meteo.com/**", (r) => (opts.airDown ? r.abort() : r.fulfill({ json: { hourly: { pm2_5: day(70) } } })));
-  await page.route("**/api.open-meteo.com/**", (r) => (opts.airDown ? r.abort() : r.fulfill({ json: { current: { temperature_2m: 14, wind_speed_10m: 5 } } })));
-  await page.route("**/api/chat", (r) => r.fulfill({ json: { answer: "Wear a fitted N95 for any trip outside.", source: "gemini", verified: true } }));
-  await page.route("**/api/map", (r) => r.fulfill({ json: { points: CITIES.map(([id, name, lat, lon], i) => ({ id, name, lat, lon, pm: 40 + i * 35, source: i === 4 ? "estimate" : "live" })), hour: 16, time: "16:00", live: 5 } }));
+  await page.route("**/air-quality-api.open-meteo.com/**", (r) =>
+    opts.airDown ? r.abort() : r.fulfill({ json: { hourly: { pm2_5: day(70) } } }),
+  );
+  await page.route("**/api.open-meteo.com/**", (r) =>
+    opts.airDown
+      ? r.abort()
+      : r.fulfill({ json: { current: { temperature_2m: 14, wind_speed_10m: 5 } } }),
+  );
+  await page.route("**/api/chat", (r) =>
+    r.fulfill({
+      json: { answer: "Wear a fitted N95 for any trip outside.", source: "gemini", verified: true },
+    }),
+  );
+  await page.route("**/api/map", (r) =>
+    r.fulfill({
+      json: {
+        points: CITIES.map(([id, name, lat, lon], i) => ({
+          id,
+          name,
+          lat,
+          lon,
+          pm: 40 + i * 35,
+          source: i === 4 ? "estimate" : "live",
+        })),
+        hour: 16,
+        time: "16:00",
+        live: 5,
+      },
+    }),
+  );
 }
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|net::ERR/.test(m.text())) errors.push(m.text()); });
+  page.on("console", (m) => {
+    if (m.type() === "error" && !/Failed to load resource|net::ERR/.test(m.text()))
+      errors.push(m.text());
+  });
   return errors;
 }
 
-const haze = (page: Page) => page.evaluate(() => Number(document.documentElement.style.getPropertyValue("--haze")));
+const haze = (page: Page) =>
+  page.evaluate(() => Number(document.documentElement.style.getPropertyValue("--haze")));
 
 test.describe("core journey", () => {
-  test("opens on the sample room, and tapping the hotspots lowers the dial and clears the haze", async ({ page }) => {
+  test("opens on the sample room, and tapping the hotspots lowers the dial and clears the haze", async ({
+    page,
+  }) => {
     const errors = trackErrors(page);
     await stub(page);
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Today's air is");
     await expect(page.getByText("Sample room")).toBeVisible();
-    await expect(page.getByRole("status").filter({ hasText: /Live air data, updated/ })).toBeVisible();
+    await expect(
+      page.getByRole("status").filter({ hasText: /Live air data, updated/ }),
+    ).toBeVisible();
 
     const before = await haze(page);
     const dial = page.getByRole("group", { name: /daily exposure/i });
@@ -42,10 +85,15 @@ test.describe("core journey", () => {
 
     await page.getByRole("button", { name: /^Fix 1:/ }).click();
     await page.getByRole("button", { name: /^Fix 3:/ }).click();
-    await expect(page.getByRole("button", { name: /^Fix 1:/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: /^Fix 1:/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await expect(page.getByRole("button", { name: "Done" })).toHaveCount(2);
     expect(await after.getAttribute("aria-label")).not.toBe(startLabel);
-    expect(parseFloat((await after.getAttribute("aria-label")) ?? "9")).toBeLessThan(parseFloat(startLabel ?? "0"));
+    expect(parseFloat((await after.getAttribute("aria-label")) ?? "9")).toBeLessThan(
+      parseFloat(startLabel ?? "0"),
+    );
     expect(await haze(page)).toBeLessThan(before * 0.75); // the haze visibly clears
     expect(errors).toEqual([]);
   });
@@ -72,12 +120,17 @@ test.describe("core journey", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
 
-  test("an unreachable air feed is labelled an offline estimate and the plan still works", async ({ page }) => {
+  test("an unreachable air feed is labelled an offline estimate and the plan still works", async ({
+    page,
+  }) => {
     await stub(page, { airDown: true });
     await page.goto("/");
     await expect(page.getByText(/Offline estimate/)).toBeVisible();
     await page.getByRole("button", { name: /^Fix 1:/ }).click();
-    await expect(page.getByRole("button", { name: /^Fix 1:/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: /^Fix 1:/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("every main navigation link opens a real page", async ({ page }) => {
@@ -85,7 +138,11 @@ test.describe("core journey", () => {
     await stub(page);
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main" });
-    for (const [name, heading] of [["Community", "Community plan"], ["Map", "Air across cities, right now"], ["Guide", "How to use AirWise"]] as const) {
+    for (const [name, heading] of [
+      ["Community", "Community plan"],
+      ["Map", "Air across cities, right now"],
+      ["Guide", "How to use AirWise"],
+    ] as const) {
       await nav.getByRole("link", { name }).click();
       await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
       await expect(nav.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
@@ -95,7 +152,9 @@ test.describe("core journey", () => {
     expect(errors).toEqual([]);
   });
 
-  test("the map shows a labelled estimate for the one city that failed, and a table", async ({ page }) => {
+  test("the map shows a labelled estimate for the one city that failed, and a table", async ({
+    page,
+  }) => {
     await stub(page);
     await page.goto("/map");
     await expect(page.getByRole("img", { name: /Schematic map of India/ })).toBeVisible();
@@ -109,7 +168,9 @@ test.describe("core journey", () => {
     await page.goto("/community");
     await expect(page.locator("#community-plan")).toContainText("Every household can");
     await page.getByLabel("Building, school or workplace name (optional)").fill("Gomti Heights");
-    await expect(page.getByRole("heading", { level: 2, name: "Smog plan for Gomti Heights" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: "Smog plan for Gomti Heights" }),
+    ).toBeVisible();
     await page.emulateMedia({ media: "print" });
     await expect(page.locator("#community-plan")).toBeVisible();
     await expect(page.getByRole("button", { name: "Print this notice" })).toBeHidden();
@@ -118,9 +179,9 @@ test.describe("core journey", () => {
   test("the app can be installed: the manifest and icons are served", async ({ request }) => {
     const manifest = await request.get("/manifest.webmanifest");
     expect(manifest.ok()).toBe(true);
-    const m = await manifest.json();
-    expect(m.display).toBe("standalone");
-    for (const icon of m.icons) {
+    const manifestJson = await manifest.json();
+    expect(manifestJson.display).toBe("standalone");
+    for (const icon of manifestJson.icons) {
       const res = await request.get(icon.src);
       expect(res.ok(), icon.src).toBe(true);
       expect(res.headers()["content-type"]).toMatch(/image\/png/);
@@ -139,18 +200,45 @@ test.describe("phone, 390 x 844", () => {
     const box = await bar.boundingBox();
     expect(box && box.y + box.height).toBeGreaterThan(800); // it is at the bottom, as designed
     const seen = new Set<string>();
-    let obscured: string[] = [];
+    const obscured: string[] = [];
     for (let i = 0; i < 90; i++) {
       await page.keyboard.press("Tab");
-      // Wait for any smooth scrolling to finish: what matters is where the control ends up, not where it is mid-scroll.
-      await page.evaluate(() => new Promise<void>((done) => { let last = -1, same = 0; const tick = () => { const y = window.scrollY; if (y === last) { if (++same >= 4) return done(); } else { same = 0; last = y; } requestAnimationFrame(tick); }; tick(); }));
+      // Wait for any smooth scrolling to finish: what matters is where the control ends up, not
+      // where it is mid-scroll.
+      await page.evaluate(
+        () =>
+          new Promise<void>((done) => {
+            let last = -1,
+              same = 0;
+            const tick = () => {
+              const currentY = window.scrollY;
+              if (currentY === last) {
+                if (++same >= 4) {
+                  done();
+                  return;
+                }
+              } else {
+                same = 0;
+                last = currentY;
+              }
+              requestAnimationFrame(tick);
+            };
+            tick();
+          }),
+      );
       const info = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
         const navEl = document.querySelector("nav.dock") as HTMLElement | null;
         if (!el || !navEl || el === document.body) return null;
-        const r = el.getBoundingClientRect(), n = navEl.getBoundingClientRect();
+        const rect = el.getBoundingClientRect(),
+          navRect = navEl.getBoundingClientRect();
         const inside = navEl.contains(el);
-        const hidden = !inside && r.bottom > n.top && r.top < n.bottom && r.right > n.left && r.left < n.right;
+        const hidden =
+          !inside &&
+          rect.bottom > navRect.top &&
+          rect.top < navRect.bottom &&
+          rect.right > navRect.left &&
+          rect.left < navRect.right;
         const id = `${el.tagName}:${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28)}`;
         return { id, hidden };
       });
@@ -165,27 +253,34 @@ test.describe("phone, 390 x 844", () => {
   test("the end of the page can be read above the bar", async ({ page }) => {
     await stub(page);
     await page.goto("/");
-    await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
+    await page.evaluate(() =>
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }),
+    );
     const footer = page.locator("footer").last();
     const fb = await footer.boundingBox();
     const nb = await page.getByRole("navigation", { name: "Sections" }).boundingBox();
     expect(fb && nb && fb.y + fb.height).toBeLessThanOrEqual((nb?.y ?? 0) + 1);
   });
 
-  test("the chat controls fit the screen: input on its own row, labelled buttons, 44 px targets, nothing sideways", async ({ page }) => {
+  test("the chat controls fit the screen: input on its own row, labelled buttons, 44 px targets, nothing sideways", async ({
+    page,
+  }) => {
     await stub(page);
     await page.goto("/");
     await page.getByRole("button", { name: /Co-pilot/ }).click();
     const input = page.getByLabel("Ask AirWise a question");
     await input.scrollIntoViewIfNeeded();
     const ib = await input.boundingBox();
-    expect(ib!.width).toBeGreaterThan(280);
+    expect(must(ib).width).toBeGreaterThan(280);
     for (const name of ["Send", "Add a photo of your room"]) {
-      const b = await page.getByRole("button", { name }).first().boundingBox();
-      expect(b!.height, name).toBeGreaterThanOrEqual(43.5);
-      expect(b!.y, name).toBeGreaterThan(ib!.y + ib!.height - 1); // the buttons are on the row below the input
+      const box = await page.getByRole("button", { name }).first().boundingBox();
+      expect(must(box).height, name).toBeGreaterThanOrEqual(43.5);
+      // the buttons are on the row below the input
+      expect(must(box).y, name).toBeGreaterThan(must(ib).y + must(ib).height - 1);
     }
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
     expect(overflow).toBeLessThanOrEqual(1);
   });
 });

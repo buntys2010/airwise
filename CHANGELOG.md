@@ -4,6 +4,14 @@ All notable changes to AirWise. Format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Quality
+- Prettier, type-aware ESLint with the SonarJS rule set, knip (unused code) and jscpd (duplication) now run in CI.
+- `noUncheckedIndexedAccess`, `noImplicitReturns`, `noFallthroughCasesInSwitch` and `noImplicitOverride` enabled; every array read is checked.
+- Removed three unused components and about 30 unused exports; removed all nested ternaries; split the longest components and hooks.
+- Hardened the grounding-guard regexes against long digit runs; fixed two unhandled promises in `useAirwise`; the request-body reader in `lib/http.ts` is its own function.
+- 516 unit tests (up from 471). Coverage now includes `app/**`: 95% lines, 88% branches, with CI floors raised to match.
+- `sonar-project.properties` for SonarQube: 0 bugs, 0 vulnerabilities, 0 code smells, 0 hotspots, 0% duplication.
+
 ### Added
 - Structured request logging for every API route: one JSON line with route, method, status, duration and a request id. Bodies, questions and photos are never logged.
 - `x-request-id` response header on every API response, and a JSON 500 that carries the same id when a route throws unexpectedly.

@@ -1,12 +1,15 @@
 "use client";
 import { useMemo, useState } from "react";
-import { CityPicker } from "@/components/CityPicker";
+
 import { Header } from "@/components/Chrome";
+import { CityPicker } from "@/components/CityPicker";
 import { useLang } from "@/components/LangProvider";
-import { useAirwise } from "@/components/useAirwise";
-import { fmtHour, type Cooking, type Home } from "@/lib/engine";
+import { type Airwise, useAirwise } from "@/components/useAirwise";
+import { runInBackground } from "@/lib/background";
+import { fmtHour } from "@/lib/engine/actions";
+import { type Cooking, type Home } from "@/lib/engine/model";
 import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
-import { communityPlan } from "@/lib/plan";
+import { type CommunityPlan, communityPlan } from "@/lib/plan";
 
 const HOME_OPTIONS: { v: Home; en: string; hi: string }[] = [
   { v: "leaky", en: "Older, gappy windows", hi: "पुराने, दरार वाली खिड़कियाँ" },
@@ -19,22 +22,192 @@ const COOK_OPTIONS: { v: Cooking; en: string; hi: string }[] = [
   { v: "induction", en: "Induction", hi: "इंडक्शन" },
 ];
 
-/** One printable page for a building, school or workplace. Every figure comes from the engine and live air; the link shares choices only. */
+interface OptionGroupProps<V extends string> {
+  legend: string;
+  fieldName: string;
+  options: { v: V; en: string; hi: string }[];
+  current: V;
+  onChange: (value: V) => void;
+}
+
+/** A radio group whose labels follow the page language. */
+function OptionGroup<V extends string>({
+  legend,
+  fieldName,
+  options,
+  current,
+  onChange,
+}: Readonly<OptionGroupProps<V>>) {
+  const { lang } = useLang();
+  return (
+    <fieldset>
+      <legend>{legend}</legend>
+      <div className="opts">
+        {options.map((option) => (
+          <label key={option.v} className="opt">
+            <input
+              type="radio"
+              name={fieldName}
+              value={option.v}
+              checked={current === option.v}
+              onChange={() => onChange(option.v)}
+            />
+            <span>{lang === "hi" ? option.hi : option.en}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** The inputs that shape the notice: a name, the city, the kind of home and how people cook. */
+function ProfileForm({
+  name,
+  setName,
+  airwise,
+}: Readonly<{ name: string; setName: (value: string) => void; airwise: Airwise }>) {
+  const { t } = useLang();
+  return (
+    <div className="panel profile">
+      <div>
+        <label htmlFor="cname" className="qhead">
+          {t("comm.name")}
+        </label>
+        <input
+          id="cname"
+          className="textfield"
+          type="text"
+          maxLength={60}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoComplete="off"
+        />
+        <p className="dim">{t("comm.nameHint")}</p>
+      </div>
+      <div>
+        <span className="qhead" aria-hidden="true">
+          {t("strip.city")}
+        </span>
+        <CityPicker value={airwise.cityId} onChange={airwise.setCityId} />
+      </div>
+      <OptionGroup
+        legend={t("comm.home")}
+        fieldName="chome"
+        options={HOME_OPTIONS}
+        current={airwise.profile.home}
+        onChange={(home) => airwise.setProfile({ ...airwise.profile, home })}
+      />
+      <OptionGroup
+        legend={t("comm.cook")}
+        fieldName="ccook"
+        options={COOK_OPTIONS}
+        current={airwise.profile.cooking}
+        onChange={(cooking) => airwise.setProfile({ ...airwise.profile, cooking })}
+      />
+    </div>
+  );
+}
+
+/** The printable notice itself, with the buttons to print or share it. */
+function NoticeSection({
+  title,
+  level,
+  plan,
+  cityName,
+  message,
+  onShare,
+}: Readonly<{
+  title: string;
+  level: string;
+  plan: CommunityPlan;
+  cityName: string;
+  message: string;
+  onShare: () => void;
+}>) {
+  const { lang, t } = useLang();
+  return (
+    <section id="notice-sec" aria-labelledby="h-notice">
+      <article id="community-plan" className="notice">
+        <h2 id="h-notice">{title}</h2>
+        <p className="u-notice-line">
+          <strong>{t("comm.now", { city: cityName, level, pm: plan.nowPm })}</strong>
+        </p>
+        <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
+
+        <h3>{t("comm.homes")}</h3>
+        <ol>
+          {plan.fixes.map((f) => {
+            const hi = lang === "hi" ? ACTION_HI[f.id] : undefined;
+            return (
+              <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>
+                {t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}
+              </li>
+            );
+          })}
+        </ol>
+
+        <h3>{t("comm.together")}</h3>
+        <ul>
+          {plan.rules.map((r) => (
+            <li key={r}>{t(r as Key, { hour: fmtHour(plan.bestHour) })}</li>
+          ))}
+        </ul>
+        <p className="fine">{t("comm.foot")}</p>
+      </article>
+      <div className="toolrow noprint u-mt-16">
+        <button type="button" className="btn" onClick={() => window.print()}>
+          {t("comm.print")}
+        </button>
+        <button type="button" className="btn ghost" onClick={onShare}>
+          {t("comm.share")}
+        </button>
+      </div>
+      <p className="statusline noprint" role="status" aria-live="polite">
+        {message}
+      </p>
+    </section>
+  );
+}
+
+/**
+ * One printable page for a building, school or workplace. Every figure comes from the engine and
+ * live air; the link shares choices only.
+ */
 export default function CommunityPage() {
   const { lang, t } = useLang();
-  const a = useAirwise(lang);
+  const airwise = useAirwise(lang);
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
-  const plan = useMemo(() => communityPlan(a.hourly, a.profile, a.nowHour), [a.hourly, a.profile, a.nowHour]);
+  const plan = useMemo(
+    () => communityPlan(airwise.hourly, airwise.profile, airwise.nowHour),
+    [airwise.hourly, airwise.profile, airwise.nowHour],
+  );
   const level = t(CATEGORY_KEY[plan.tone]);
-  const title = name.trim() ? t("comm.title", { name: name.trim() }) : t("comm.titleCity", { city: a.city.name });
+  const title = name.trim()
+    ? t("comm.title", { name: name.trim() })
+    : t("comm.titleCity", { city: airwise.city.name });
 
   async function share() {
-    const q = new URLSearchParams({ city: a.cityId, home: a.profile.home, cooking: a.profile.cooking });
-    const url = `${window.location.origin}/community?${q.toString()}`;
-    try { if (typeof navigator.share === "function") { await navigator.share({ title, url }); return; } }
-    catch (e) { if ((e as Error).name === "AbortError") return; }
-    try { await navigator.clipboard.writeText(url); setMsg(t("comm.copied")); } catch { setMsg(url); } // clipboard blocked: show the link
+    const params = new URLSearchParams({
+      city: airwise.cityId,
+      home: airwise.profile.home,
+      cooking: airwise.profile.cooking,
+    });
+    const url = `${window.location.origin}/community?${params.toString()}`;
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setMsg(t("comm.copied"));
+    } catch {
+      setMsg(url);
+    } // clipboard blocked: show the link
   }
 
   return (
@@ -47,61 +220,17 @@ export default function CommunityPage() {
         </section>
 
         <section className="noprint">
-          <div className="panel profile">
-            <div>
-              <label htmlFor="cname" className="qhead">{t("comm.name")}</label>
-              <input id="cname" className="textfield" type="text" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-              <p className="dim">{t("comm.nameHint")}</p>
-            </div>
-            <div>
-              <span className="qhead" aria-hidden="true">{t("strip.city")}</span>
-              <CityPicker value={a.cityId} onChange={a.setCityId} />
-            </div>
-            <fieldset>
-              <legend>{t("comm.home")}</legend>
-              <div className="opts">
-                {HOME_OPTIONS.map((o) => (
-                  <label key={o.v} className="opt"><input type="radio" name="chome" value={o.v} checked={a.profile.home === o.v} onChange={() => a.setProfile({ ...a.profile, home: o.v })} /><span>{lang === "hi" ? o.hi : o.en}</span></label>
-                ))}
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>{t("comm.cook")}</legend>
-              <div className="opts">
-                {COOK_OPTIONS.map((o) => (
-                  <label key={o.v} className="opt"><input type="radio" name="ccook" value={o.v} checked={a.profile.cooking === o.v} onChange={() => a.setProfile({ ...a.profile, cooking: o.v })} /><span>{lang === "hi" ? o.hi : o.en}</span></label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
+          <ProfileForm name={name} setName={setName} airwise={airwise} />
         </section>
 
-        <section id="notice-sec" aria-labelledby="h-notice">
-          <article id="community-plan" className="notice">
-            <h2 id="h-notice">{title}</h2>
-            <p style={{ margin: "10px 0 4px" }}><strong>{t("comm.now", { city: a.city.name, level, pm: plan.nowPm })}</strong></p>
-            <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
-
-            <h3>{t("comm.homes")}</h3>
-            <ol>
-              {plan.fixes.map((f) => {
-                const hi = lang === "hi" ? ACTION_HI[f.id] : undefined;
-                return <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>{t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}</li>;
-              })}
-            </ol>
-
-            <h3>{t("comm.together")}</h3>
-            <ul>
-              {plan.rules.map((r) => (<li key={r}>{t(r as Key, { hour: fmtHour(plan.bestHour) })}</li>))}
-            </ul>
-            <p className="fine">{t("comm.foot")}</p>
-          </article>
-          <div className="toolrow noprint" style={{ marginTop: 16 }}>
-            <button type="button" className="btn" onClick={() => window.print()}>{t("comm.print")}</button>
-            <button type="button" className="btn ghost" onClick={() => void share()}>{t("comm.share")}</button>
-          </div>
-          <p className="statusline noprint" role="status" aria-live="polite">{msg}</p>
-        </section>
+        <NoticeSection
+          title={title}
+          level={level}
+          plan={plan}
+          cityName={airwise.city.name}
+          message={msg}
+          onShare={() => runInBackground(share())}
+        />
       </main>
     </div>
   );

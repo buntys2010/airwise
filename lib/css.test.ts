@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(path.resolve(__dirname, "../app/globals.css"), "utf8");
 
-/** All bodies of rules whose selector is exactly `selector`. Plain string scanning, so there is no regex to get wrong. */
+/**
+ * All bodies of rules whose selector is exactly `selector`. Plain string scanning, so there is no
+ * regex to get wrong.
+ */
 function rules(selector: string): string {
   const out: string[] = [];
   let from = 0;
@@ -37,7 +41,9 @@ describe("stylesheet guarantees", () => {
   it("on phones the floating bar has clearance: page padding and scroll padding exceed the bar height", () => {
     const pad = Number(/body \{ padding-bottom: (\d+)px/.exec(css)?.[1]);
     const scroll = Number(/scroll-padding-bottom: (\d+)px/.exec(css)?.[1]);
-    const bar = 52, barPadding = 12, lift = 14; // 52 px buttons, the bar's own padding and its distance from the screen edge
+    const bar = 52,
+      barPadding = 12,
+      lift = 14; // 52 px buttons, the bar's own padding and its distance from the screen edge
     expect(pad).toBeGreaterThanOrEqual(bar + barPadding + lift);
     expect(scroll).toBeGreaterThanOrEqual(pad);
     expect(rules(".dock")).toMatch(/position:\s*fixed/);
