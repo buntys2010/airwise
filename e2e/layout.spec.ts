@@ -92,7 +92,12 @@ test.describe("map layout", () => {
     await page.goto("/map");
     await expect(page.getByRole("img", { name: /Schematic map of India/ })).toBeVisible();
     const outside = await page.evaluate(() => {
-      const svg = must(document.querySelector("svg.mapsvg")).getBoundingClientRect();
+      const needed = <T>(value: T | null | undefined): T => {
+        if (value === null || value === undefined) throw new Error("Expected a value");
+        return value;
+      };
+
+      const svg = needed(document.querySelector("svg.mapsvg")).getBoundingClientRect();
       return [...document.querySelectorAll<SVGGraphicsElement>("svg.mapsvg g[data-city]")]
         .filter((g) => {
           const rect = g.getBoundingClientRect();
@@ -117,7 +122,12 @@ test.describe("map layout", () => {
       await page.goto("/map");
       await expect(page.getByRole("table")).toBeVisible();
       const metrics = await page.evaluate(() => {
-        const wrap = must(document.querySelector<HTMLElement>(".tablewrap"));
+        const needed = <T>(value: T | null | undefined): T => {
+          if (value === null || value === undefined) throw new Error("Expected a value");
+          return value;
+        };
+
+        const wrap = needed(document.querySelector<HTMLElement>(".tablewrap"));
         const clipped = [...wrap.querySelectorAll<HTMLElement>("th, td, .cat")]
           .filter((c) => c.scrollWidth > c.clientWidth + 1)
           .map((c) => c.textContent?.trim());
@@ -143,7 +153,12 @@ test.describe("cigarette hero", () => {
     const hero = page.getByRole("group", { name: /daily exposure/i });
     await hero.scrollIntoViewIfNeeded();
     const fit = await page.evaluate(() => {
-      const card = must(
+      const needed = <T>(value: T | null | undefined): T => {
+        if (value === null || value === undefined) throw new Error("Expected a value");
+        return value;
+      };
+
+      const card = needed(
         document.querySelector<HTMLElement>("section.cigs"),
       ).getBoundingClientRect();
       const rows = [...document.querySelectorAll<HTMLElement>("section.cigs .cigrow")].map(
@@ -169,10 +184,14 @@ test.describe("cigarette hero", () => {
     await stub(page);
     await page.goto("/?city=delhi");
     const dur = () =>
-      page.evaluate(
-        () =>
-          getComputedStyle(must(document.querySelector("section.cigs .cpaper"))).transitionDuration,
-      );
+      page.evaluate(() => {
+        const needed = <T>(value: T | null | undefined): T => {
+          if (value === null || value === undefined) throw new Error("Expected a value");
+          return value;
+        };
+        return getComputedStyle(needed(document.querySelector("section.cigs .cpaper")))
+          .transitionDuration;
+      });
     expect(parseFloat(await dur())).toBeGreaterThan(0);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.reload();
@@ -208,11 +227,18 @@ test.describe("city strip", () => {
         strip.getByText(/Outdoors all day here: about [0-9.]+ cigarettes/).first(),
       ).toBeVisible();
       const fit = await page.evaluate(() => {
-        const rect = must(document.querySelector<HTMLElement>(".citycigs")).getBoundingClientRect();
-        const row = must(
+        const needed = <T>(value: T | null | undefined): T => {
+          if (value === null || value === undefined) throw new Error("Expected a value");
+          return value;
+        };
+
+        const rect = needed(
+          document.querySelector<HTMLElement>(".citycigs"),
+        ).getBoundingClientRect();
+        const row = needed(
           document.querySelector<HTMLElement>(".citycigs .cigrow"),
         ).getBoundingClientRect();
-        const text = must(
+        const text = needed(
           document.querySelector<HTMLElement>(".citycigs p"),
         ).getBoundingClientRect();
         return {
