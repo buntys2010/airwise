@@ -10,6 +10,7 @@ import {
 } from "./chat";
 import { CITIES, estimateHourly } from "./data";
 import { isGrounded } from "./guard";
+import { must } from "../test-support/must";
 
 const valid = {
   city: "delhi",
@@ -21,7 +22,7 @@ const valid = {
   plan: {},
   lang: "en",
 };
-const hourly = estimateHourly(CITIES[0]!);
+const hourly = estimateHourly(must(CITIES[0]));
 
 describe("parsePlan", () => {
   it("only accepts known values; anything else means not in the plan", () => {
@@ -52,7 +53,7 @@ describe("parsePlan", () => {
 
 describe("parseChoices", () => {
   it("accepts valid choices and defaults the language", () => {
-    const c = parseChoices({ ...valid, lang: "xx" })!;
+    const c = must(parseChoices({ ...valid, lang: "xx" }));
     expect(c.city.id).toBe("delhi");
     expect(c.lang).toBe("en");
     expect(c.profile).toEqual({
@@ -71,13 +72,13 @@ describe("parseChoices", () => {
     expect(parseChoices({ ...valid, km: "far" })).toBeNull();
   });
   it("clamps the distance", () => {
-    expect(parseChoices({ ...valid, km: 9999 })!.profile.km).toBe(60);
-    expect(parseChoices({ ...valid, km: -5 })!.profile.km).toBe(0);
+    expect(must(parseChoices({ ...valid, km: 9999 })).profile.km).toBe(60);
+    expect(must(parseChoices({ ...valid, km: -5 })).profile.km).toBe(0);
   });
 });
 
 describe("buildContext (server-side facts)", () => {
-  const choices = parseChoices(valid)!;
+  const choices = must(parseChoices(valid));
   it("computes every figure from the engine and the air data", () => {
     const c = buildContext(choices, hourly, 7);
     expect(c.pm).toBe(hourly[7]);
@@ -88,7 +89,7 @@ describe("buildContext (server-side facts)", () => {
   });
   it("reflects the plan the user chose", () => {
     const withPlan = buildContext(
-      parseChoices({ ...valid, plan: { purifier: true, mask: "n95" } })!,
+      must(parseChoices({ ...valid, plan: { purifier: true, mask: "n95" } })),
       hourly,
       7,
     );
@@ -96,7 +97,9 @@ describe("buildContext (server-side facts)", () => {
     expect(withPlan.actions).toEqual(expect.arrayContaining(["run a purifier"]));
   });
   it("a client cannot supply its own numbers: extra fields are ignored", () => {
-    const sneaky = parseChoices({ ...valid, baselineCigs: 0.1, pm: 1, options: [{ pct: 99 }] })!;
+    const sneaky = must(
+      parseChoices({ ...valid, baselineCigs: 0.1, pm: 1, options: [{ pct: 99 }] }),
+    );
     expect(buildContext(sneaky, hourly, 7).baselineCigs).toBe(
       buildContext(choices, hourly, 7).baselineCigs,
     );
@@ -124,7 +127,7 @@ describe("cleanQuestion", () => {
 });
 
 describe("buildPrompt", () => {
-  const ctx = buildContext(parseChoices(valid)!, hourly, 7);
+  const ctx = buildContext(must(parseChoices(valid)), hourly, 7);
   it("fences facts and question", () => {
     const p = buildPrompt("Is it safe to jog?", ctx);
     expect(p).toContain("<facts>");
@@ -138,7 +141,7 @@ describe("buildPrompt", () => {
 });
 
 describe("offlineAnswer", () => {
-  const ctx = buildContext(parseChoices(valid)!, hourly, 7);
+  const ctx = buildContext(must(parseChoices(valid)), hourly, 7);
   it("answers masks, windows and the general case from known facts only", () => {
     expect(offlineAnswer("which mask?", ctx)).toMatch(/N95/);
     expect(offlineAnswer("when to open windows", ctx)).toContain(ctx.bestHour);
@@ -149,7 +152,7 @@ describe("offlineAnswer", () => {
 });
 
 describe("offlineAnswer in Hindi", () => {
-  const ctx = buildContext(parseChoices(valid)!, hourly, 7);
+  const ctx = buildContext(must(parseChoices(valid)), hourly, 7);
   it("answers each topic in Devanagari and keeps digits ASCII", () => {
     for (const q of [
       "क्या मुझे मास्क चाहिए?",
@@ -175,7 +178,7 @@ describe("offlineAnswer in Hindi", () => {
 });
 
 describe("so-far figure in the server-built facts", () => {
-  const choices = parseChoices(valid)!;
+  const choices = must(parseChoices(valid));
   it("is computed by the engine on the server and rounded to one decimal, as shown", () => {
     const c = buildContext(choices, hourly, 16, 16);
     expect(c.soFar).toBeGreaterThan(0);
@@ -190,7 +193,7 @@ describe("so-far figure in the server-built facts", () => {
   });
   it("a plan lowers it", () => {
     const withPlan = buildContext(
-      parseChoices({ ...valid, plan: { purifier: true, sealGaps: true } })!,
+      must(parseChoices({ ...valid, plan: { purifier: true, sealGaps: true } })),
       hourly,
       16,
       16,

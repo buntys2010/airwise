@@ -84,5 +84,5 @@ export function buildReminderIcs({
     "END:VEVENT",
     "END:VCALENDAR",
   ];
-  return lines.map(foldLine).join("\r\n") + "\r\n";
+  return `${lines.map(foldLine).join("\r\n")}\r\n`;
 }

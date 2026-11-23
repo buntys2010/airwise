@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { must } from "../test-support/must";
 
 /** Reads the real design tokens from globals.css so the test cannot drift from the stylesheet. */
 const css = readFileSync(path.resolve(__dirname, "../app/globals.css"), "utf8");
@@ -24,9 +25,10 @@ const lin = (v: number) => {
 const lum = ([r, g, b]: RGB) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const ratio = (a: RGB, b: RGB) => {
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
-  return (hi! + 0.05) / (lo! + 0.05);
+  return (must(hi) + 0.05) / (must(lo) + 0.05);
 };
-const mix = (a: RGB, b: RGB, t: number): RGB => a.map((v, i) => v * (1 - t) + b[i]! * t) as RGB;
+const mix = (a: RGB, b: RGB, t: number): RGB =>
+  a.map((v, i) => v * (1 - t) + must(b[i]) * t) as RGB;
 
 const AA = 4.5;
 

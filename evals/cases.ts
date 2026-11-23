@@ -3,6 +3,7 @@ import { CITIES, estimateHourly } from "../lib/data";
 import { isGrounded, unsupportedClaims, verify } from "../lib/guard";
 import { decodeChoices } from "../lib/share";
 import { validateVision } from "../lib/room";
+import { must } from "../test-support/must";
 
 /**
  * The eval set: small, deterministic, offline cases for the parts of AirWise where a wrong answer is costly.
@@ -69,18 +70,20 @@ const vis = (id: string, text: string, expectStatus: string, kinds?: string[]): 
   },
 });
 
-const delhi = estimateHourly(CITIES[0]!);
+const delhi = estimateHourly(must(CITIES[0]));
 const ctx = buildContext(
-  parseChoices({
-    city: "delhi",
-    home: "typical",
-    commute: "bike",
-    km: 8,
-    cooking: "lpg",
-    vulnerable: true,
-    plan: {},
-    lang: "en",
-  })!,
+  must(
+    parseChoices({
+      city: "delhi",
+      home: "typical",
+      commute: "bike",
+      km: 8,
+      cooking: "lpg",
+      vulnerable: true,
+      plan: {},
+      lang: "en",
+    }),
+  ),
   delhi,
   7,
 );

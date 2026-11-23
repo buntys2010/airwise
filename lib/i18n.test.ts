@@ -14,6 +14,7 @@ import {
   t,
   type Key,
 } from "./i18n";
+import { must } from "../test-support/must";
 
 const keys = Object.keys(EN) as Key[];
 const DEVANAGARI = /[ऀ-ॿ]/;
@@ -91,8 +92,8 @@ describe("severity and advice tables", () => {
 describe("Hindi action text and speech", () => {
   it("the three room fixes have Hindi titles and costs", () => {
     for (const id of ["sealGaps", "induction", "purifier"]) {
-      expect(DEVANAGARI.test(ACTION_HI[id]!.title)).toBe(true);
-      expect(ACTION_HI[id]!.cost).toMatch(/₹/);
+      expect(DEVANAGARI.test(must(ACTION_HI[id]).title)).toBe(true);
+      expect(must(ACTION_HI[id]).cost).toMatch(/₹/);
     }
   });
   it("maps languages to Indian-English and Hindi speech locales", () => {

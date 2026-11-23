@@ -7,6 +7,7 @@ import { useAirwise } from "@/components/useAirwise";
 import { fmtHour, type Cooking, type Home } from "@/lib/engine";
 import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
 import { communityPlan } from "@/lib/plan";
+import { runInBackground } from "@/lib/background";
 
 const HOME_OPTIONS: { v: Home; en: string; hi: string }[] = [
   { v: "leaky", en: "Older, gappy windows", hi: "पुराने, दरार वाली खिड़कियाँ" },
@@ -158,7 +159,7 @@ export default function CommunityPage() {
             <button type="button" className="btn" onClick={() => window.print()}>
               {t("comm.print")}
             </button>
-            <button type="button" className="btn ghost" onClick={() => void share()}>
+            <button type="button" className="btn ghost" onClick={() => runInBackground(share())}>
               {t("comm.share")}
             </button>
           </div>

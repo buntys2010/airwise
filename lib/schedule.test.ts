@@ -3,8 +3,9 @@ import { CITIES, estimateHourly } from "./data";
 import { bestHour, type Profile } from "./engine";
 import { isGrounded } from "./guard";
 import { buildSchedule } from "./schedule";
+import { must } from "../test-support/must";
 
-const hourly = estimateHourly(CITIES[0]!);
+const hourly = estimateHourly(must(CITIES[0]));
 const family: Profile = {
   home: "typical",
   commute: "bike",
@@ -27,25 +28,30 @@ describe("buildSchedule", () => {
       expect(isGrounded(`${e.title}. ${e.detail}`, { hourly, schedule: s })).toBe(true);
   });
   it("adapts to the household", () => {
-    const wood = buildSchedule(hourly, { ...family, cooking: "wood" }).find((e) => e.hour === 7)!;
-    const induction = buildSchedule(hourly, { ...family, cooking: "induction" }).find(
-      (e) => e.hour === 7,
-    )!;
+    const wood = must(
+      buildSchedule(hourly, { ...family, cooking: "wood" }).find((e) => e.hour === 7),
+    );
+    const induction = must(
+      buildSchedule(hourly, { ...family, cooking: "induction" }).find((e) => e.hour === 7),
+    );
     expect(wood.detail).toMatch(/Wood and coal/);
     expect(induction.detail).toMatch(/Induction/);
-    const metro = buildSchedule(hourly, { ...family, commute: "metro" }).find((e) => e.hour === 8)!;
+    const metro = must(
+      buildSchedule(hourly, { ...family, commute: "metro" }).find((e) => e.hour === 8),
+    );
     expect(metro.detail).not.toMatch(/Wear a fitted N95/);
-    expect(buildSchedule(hourly, family).find((e) => e.hour === 8)!.detail).toMatch(
+    expect(must(buildSchedule(hourly, family).find((e) => e.hour === 8)).detail).toMatch(
       /Wear a fitted N95/,
     );
   });
   it("mentions extra care when someone is sensitive", () => {
     const best = bestHour(hourly);
-    expect(buildSchedule(hourly, family).find((e) => e.hour === best)!.detail).toMatch(
+    expect(must(buildSchedule(hourly, family).find((e) => e.hour === best)).detail).toMatch(
       /child or older adult/,
     );
     expect(
-      buildSchedule(hourly, { ...family, vulnerable: false }).find((e) => e.hour === best)!.detail,
+      must(buildSchedule(hourly, { ...family, vulnerable: false }).find((e) => e.hour === best))
+        .detail,
     ).not.toMatch(/child or older adult/);
   });
 });

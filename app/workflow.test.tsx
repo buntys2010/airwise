@@ -6,6 +6,7 @@ import { LangProvider } from "@/components/LangProvider";
 import { STORE_KEY } from "@/lib/store";
 import Page from "./page";
 import { cityBox, cityName, pickCity } from "./test-city";
+import { must } from "../test-support/must";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
@@ -15,10 +16,13 @@ function stubFetch(
     verified: true,
   }),
 ) {
-  const f = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+  const f = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
     if (String(url).startsWith("/api/chat"))
-      return { ok: true, json: async () => chat(JSON.parse(init?.body as string)) };
-    throw new Error("offline");
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(chat(JSON.parse(init?.body as string))),
+      });
+    return Promise.reject(new Error("offline"));
   });
   vi.stubGlobal("fetch", f);
   return f;
@@ -45,10 +49,10 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
@@ -131,9 +135,9 @@ describe("shared links carry choices only", () => {
     setUrl("?city=delhi&cooking=wood");
     renderPage();
     await waitFor(() => expect(cityName()).toBe("Delhi"));
-    expect(JSON.parse(saved()!).city).toBe("pune");
+    expect(JSON.parse(must(saved())).city).toBe("pune");
     pickCity("Mumbai"); // only the user's own change is saved
-    await waitFor(() => expect(JSON.parse(saved()!).city).toBe("mumbai"));
+    await waitFor(() => expect(JSON.parse(must(saved())).city).toBe("mumbai"));
   });
   it("Copy a link puts only choices in the link and says so", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -146,7 +150,7 @@ describe("shared links carry choices only", () => {
     expect(
       await screen.findByText(/Link copied\. It carries your choices only, never a number\./),
     ).toBeTruthy();
-    const url = new URL(writeText.mock.calls[0]![0]);
+    const url = new URL(must(writeText.mock.calls[0])[0]);
     expect(url.searchParams.get("city")).toBe("lucknow");
     expect(url.searchParams.get("plan")).toBe("seal");
     expect([...url.searchParams.keys()].sort()).toEqual([
@@ -166,7 +170,7 @@ describe("shared links carry choices only", () => {
     openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Copy a link to this plan" }));
     await waitFor(() => expect(share).toHaveBeenCalled());
-    expect(share.mock.calls[0]![0].url).toMatch(/\?city=lucknow/);
+    expect(must(share.mock.calls[0])[0].url).toMatch(/\?city=lucknow/);
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
   });
   it("shows the link to copy by hand when the clipboard is blocked", async () => {
@@ -187,7 +191,7 @@ describe("shared links carry choices only", () => {
     openTab("Share");
     const link = screen.getByRole("link", { name: /Share on WhatsApp/ }) as HTMLAnchorElement;
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
-    const text = decodeURIComponent(new URL(link.href).searchParams.get("text")!);
+    const text = decodeURIComponent(must(new URL(link.href).searchParams.get("text")));
     expect(text).toMatch(/smog in Lucknow, with AirWise: http.*\?city=lucknow/);
     expect(text).not.toMatch(/cigarette|µg|%/);
   });
@@ -217,7 +221,7 @@ describe("device-only save", () => {
     renderPage();
     fireEvent.click(radio(/Metro/));
     await waitFor(() => expect(screen.getByText("Saved on this phone")).toBeTruthy());
-    const data = JSON.parse(saved()!);
+    const data = JSON.parse(must(saved()));
     expect(data.profile.commute).toBe("metro");
     expect(Object.keys(data).sort()).toEqual(["city", "profile"]);
     expect(saved()).not.toMatch(/cig|pm|exposure/i);
@@ -251,19 +255,21 @@ describe("device-only save", () => {
 
 describe("calendar reminder", () => {
   it("downloads a daily 7:00 calendar file built on the device, and shows the link to add it by hand", async () => {
-    let blob: Blob | null = null;
+    const captured: { blob?: Blob } = {};
     URL.createObjectURL = vi.fn((b: Blob) => {
-      blob = b;
+      captured.blob = b;
       return "blob:ics";
     });
     URL.revokeObjectURL = vi.fn();
-    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
     renderPage();
     openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Remind me every morning" }));
     expect(click).toHaveBeenCalled();
-    expect(blob!.type).toMatch(/text\/calendar/);
-    const text = await blob!.text();
+    expect(must(captured.blob).type).toMatch(/text\/calendar/);
+    const text = await must(captured.blob).text();
     expect(text).toContain("RRULE:FREQ=DAILY");
     expect(text).toMatch(/DTSTART:\d{8}T070000/);
     expect(text).toMatch(/URL:http.*\?city=lucknow/);
@@ -317,14 +323,14 @@ describe("chat progress and time limits", () => {
 describe("chat controls layout", () => {
   it("the input has its own row, and the buttons below carry visible text labels", () => {
     (window as unknown as Record<string, unknown>).SpeechRecognition = class {
-      start() {}
-      stop() {}
-      abort() {}
+      start = () => undefined;
+      stop = () => undefined;
+      abort = () => undefined;
     };
     renderPage();
-    const form = document.querySelector(".chatform")!;
-    const input = form.querySelector("input#q")!;
-    const actions = form.querySelector(".chatactions")!;
+    const form = must(document.querySelector(".chatform"));
+    const input = must(form.querySelector("input#q"));
+    const actions = must(form.querySelector(".chatactions"));
     expect(input.parentElement).toBe(form);
     expect(actions.contains(input)).toBe(false);
     const labels = [...actions.querySelectorAll("button")].map((b) => b.textContent?.trim());

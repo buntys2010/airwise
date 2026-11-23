@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { must } from "../test-support/must";
 const CONFIG_PATH = "../next.config.mjs";
 
 describe("security headers", () => {
@@ -7,8 +8,8 @@ describe("security headers", () => {
       headers: () => Promise<{ source: string; headers: { key: string; value: string }[] }[]>;
     };
     const rules = await config.headers();
-    const h = Object.fromEntries(rules[0]!.headers.map((x) => [x.key, x.value]));
-    expect(rules[0]!.source).toBe("/(.*)");
+    const h = Object.fromEntries(must(rules[0]).headers.map((x) => [x.key, x.value]));
+    expect(must(rules[0]).source).toBe("/(.*)");
     expect(h["X-Content-Type-Options"]).toBe("nosniff");
     expect(h["X-Frame-Options"]).toBe("DENY");
     expect(h["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");

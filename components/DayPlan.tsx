@@ -4,6 +4,7 @@ import type { Choices } from "./Chat";
 import { useLang } from "./LangProvider";
 import type { DayPlan as Plan } from "@/lib/plan";
 import type { ScheduleEntry } from "@/lib/schedule";
+import { runInBackground } from "@/lib/background";
 
 interface Result extends Plan {
   source: "gemini" | "offline";
@@ -63,7 +64,7 @@ function usePlanWriter(choices: Choices, active: boolean) {
   useEffect(() => {
     if (!active || doneFor.current === key) return;
     const timer = setTimeout(() => {
-      void write(choices);
+      runInBackground(write(choices));
     }, ASK_DELAY_MS);
     return () => clearTimeout(timer);
   }, [active, key, choices, write]);
@@ -144,7 +145,7 @@ export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
         <button
           type="button"
           className="btn ghost"
-          onClick={() => void write(choices)}
+          onClick={() => runInBackground(write(choices))}
           disabled={busy}
         >
           {buttonLabel}

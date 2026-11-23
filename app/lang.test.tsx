@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { LangProvider } from "@/components/LangProvider";
 import Page from "./page";
+import { must } from "../test-support/must";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
@@ -55,7 +56,7 @@ function disableVoice() {
     "speechSynthesis",
     "SpeechSynthesisUtterance",
   ])
-    delete (window as unknown as Record<string, unknown>)[k];
+    Reflect.deleteProperty(window, k);
 }
 
 function stubFetch(
@@ -64,10 +65,13 @@ function stubFetch(
     verified: true,
   }),
 ) {
-  const f = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+  const f = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
     if (String(url).startsWith("/api/chat"))
-      return { ok: true, json: async () => chat(JSON.parse(init?.body as string)) };
-    throw new Error("offline");
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(chat(JSON.parse(init?.body as string))),
+      });
+    return Promise.reject(new Error("offline"));
   });
   vi.stubGlobal("fetch", f);
   return f;
@@ -87,10 +91,10 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
@@ -153,9 +157,9 @@ describe("language toggle", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "भेजें" }));
     expect(await screen.findByText("N95 पहनें।")).toBeTruthy();
-    expect(JSON.parse(chatCalls(f)[0]![1].body as string).choices.lang).toBe("hi");
+    expect(JSON.parse(must(chatCalls(f)[0])[1].body as string).choices.lang).toBe("hi");
     expect(screen.getByText(/Gemini का जवाब, हर संख्या आपकी योजना से जाँची गई/)).toBeTruthy();
-    expect(document.querySelector(".answer")!.getAttribute("lang")).toBe("hi");
+    expect(must(document.querySelector(".answer")).getAttribute("lang")).toBe("hi");
   });
 
   it("shows the Hindi fix titles for the room's three fixes", () => {
@@ -195,10 +199,10 @@ describe("voice", () => {
     renderPage();
     copilot();
     fireEvent.click(await screen.findByRole("button", { name: "Speak your question" }));
-    expect(FakeRec.last!.start).toHaveBeenCalled();
-    expect(FakeRec.last!.lang).toBe("en-IN");
-    expect(FakeRec.last!.continuous).toBe(false);
-    act(() => FakeRec.last!.say("do I need a mask"));
+    expect(must(FakeRec.last).start).toHaveBeenCalled();
+    expect(must(FakeRec.last).lang).toBe("en-IN");
+    expect(must(FakeRec.last).continuous).toBe(false);
+    act(() => must(FakeRec.last).say("do I need a mask"));
     expect((screen.getByLabelText("Ask AirWise a question") as HTMLInputElement).value).toBe(
       "do I need a mask",
     );
@@ -209,7 +213,7 @@ describe("voice", () => {
     }); // editable
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByText("Wear an N95.");
-    expect(JSON.parse(chatCalls(f)[0]![1].body as string).question).toBe("do I need an N95");
+    expect(JSON.parse(must(chatCalls(f)[0])[1].body as string).question).toBe("do I need an N95");
   });
 
   it("announces listening, and the button reflects it", async () => {
@@ -223,7 +227,7 @@ describe("voice", () => {
       screen.getByRole("button", { name: "Stop listening" }).getAttribute("aria-pressed"),
     ).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Stop listening" }));
-    expect(FakeRec.last!.stop).toHaveBeenCalled();
+    expect(must(FakeRec.last).stop).toHaveBeenCalled();
   });
 
   it.each([
@@ -235,7 +239,7 @@ describe("voice", () => {
     renderPage();
     copilot();
     fireEvent.click(await screen.findByRole("button", { name: "Speak your question" }));
-    act(() => FakeRec.last!.fail(code));
+    act(() => must(FakeRec.last).fail(code));
     expect(screen.getByText(text)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), {
       target: { value: "typed" },
@@ -251,8 +255,8 @@ describe("voice", () => {
     copilot();
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
     fireEvent.click(await screen.findByRole("button", { name: "बोलकर पूछें" }));
-    expect(FakeRec.last!.lang).toBe("hi-IN");
-    act(() => FakeRec.last!.say("मुझे मास्क चाहिए?"));
+    expect(must(FakeRec.last).lang).toBe("hi-IN");
+    act(() => must(FakeRec.last).say("मुझे मास्क चाहिए?"));
     expect(screen.getByText("शब्द जाँच लें, फिर भेजें दबाएँ।")).toBeTruthy();
   });
 

@@ -27,6 +27,7 @@ import { SAMPLE_PROFILE_PATCH } from "@/lib/room";
 import { buildSchedule } from "@/lib/schedule";
 import { decodeChoices, sanitizePlan } from "@/lib/share";
 import { clearSaved, readSaved, writeSaved, type StoreState } from "@/lib/store";
+import { runInBackground } from "@/lib/background";
 
 const REFRESH_MS = 15 * 60 * 1000;
 const LOAD_TIMEOUT_MS = 10_000;
@@ -92,8 +93,8 @@ function useLiveAir(city: City) {
           ctrl.signal.removeEventListener("abort", onAbort);
         });
     };
-    void run();
-    const timer = setInterval(() => void run(), REFRESH_MS);
+    runInBackground(run());
+    const timer = setInterval(() => runInBackground(run()), REFRESH_MS);
     return () => {
       ctrl.abort();
       clearInterval(timer);

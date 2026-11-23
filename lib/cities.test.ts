@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CITIES, INDIA_BOUNDS, ZONE_LEVELS, searchCities } from "./cities";
+import { must } from "../test-support/must";
 
 const CAPITALS = [
   "Delhi",
@@ -70,10 +71,10 @@ describe("city list", () => {
 
 describe("searchCities", () => {
   it("finds by name, old name, and state, ignoring case", () => {
-    expect(searchCities("bombay")[0]!.id).toBe("mumbai");
-    expect(searchCities("MADRAS")[0]!.id).toBe("chennai");
+    expect(must(searchCities("bombay")[0]).id).toBe("mumbai");
+    expect(must(searchCities("MADRAS")[0]).id).toBe("chennai");
     expect(searchCities("kerala").map((c) => c.state)).toContain("Kerala");
-    expect(searchCities("ben")[0]!.id).toBe("bengaluru");
+    expect(must(searchCities("ben")[0]).id).toBe("bengaluru");
   });
   it("returns everything for an empty query and nothing for nonsense", () => {
     expect(searchCities("  ").length).toBe(CITIES.length);

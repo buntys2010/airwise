@@ -8,6 +8,7 @@ import { NO_PLAN, cigsSoFar, simulate, toggleAction, buildActions } from "@/lib/
 import { DEFAULT_PROFILE } from "@/components/useAirwise";
 import { CityCigs } from "@/components/CityCigs";
 import Page from "./page";
+import { must } from "../test-support/must";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
@@ -15,10 +16,10 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
@@ -36,7 +37,7 @@ afterEach(() => {
 });
 
 describe("the dial's text matches the engine", () => {
-  const hourly = estimateHourly(CITIES.find((c) => c.id === "lucknow")!);
+  const hourly = estimateHourly(must(CITIES.find((c) => c.id === "lucknow")));
   const profile = DEFAULT_PROFILE;
   const expected = (plan = NO_PLAN) => ({
     day: simulate(hourly, profile, plan).cigs.toFixed(1),
@@ -45,9 +46,9 @@ describe("the dial's text matches the engine", () => {
   const read = () => {
     const dial = screen.getByRole("group", { name: /daily exposure/i });
     return {
-      before: dial.querySelector(".dialbefore")!.getAttribute("aria-label")!,
-      after: dial.querySelector(".dialafter")!.getAttribute("aria-label")!,
-      sofar: within(dial).getAllByText(/^So far today/)[0]!.textContent!,
+      before: must(must(dial.querySelector(".dialbefore")).getAttribute("aria-label")),
+      after: must(must(dial.querySelector(".dialafter")).getAttribute("aria-label")),
+      sofar: must(must(within(dial).getAllByText(/^So far today/)[0]).textContent),
     };
   };
 
@@ -68,7 +69,7 @@ describe("the dial's text matches the engine", () => {
     expect(read().after).toBe(`${none.day} with your plan`);
 
     fireEvent.click(screen.getByRole("button", { name: /^Fix 1:/ }));
-    const act = buildActions(hourly, profile).find((a) => a.id === "sealGaps")!;
+    const act = must(buildActions(hourly, profile).find((a) => a.id === "sealGaps"));
     const withFix = expected(toggleAction(NO_PLAN, act));
     await waitFor(() =>
       expect(read().sofar).toBe(`So far today (to 4 pm): ${withFix.sofar} cigarettes' worth`),
@@ -99,10 +100,10 @@ describe("the dial's text matches the engine", () => {
       </LangProvider>,
     );
     const dial = screen.getByRole("group", { name: /daily exposure/i });
-    const live = dial.querySelector('[aria-live="polite"]')!;
+    const live = must(dial.querySelector('[aria-live="polite"]'));
     expect(live.querySelector(".dialafter")).toBeTruthy();
     expect(live.querySelector(".cigtext")).toBeTruthy();
-    expect(dial.querySelector(".cigrow")!.getAttribute("aria-hidden")).toBe("true");
+    expect(must(dial.querySelector(".cigrow")).getAttribute("aria-hidden")).toBe("true");
   });
 
   it("shows the same figures in Hindi, with Hindi labels", () => {
@@ -138,7 +139,7 @@ describe("the city strip at the very top", () => {
       </LangProvider>,
     );
     expect(container.querySelectorAll(".stick")).toHaveLength(6);
-    expect(container.querySelector(".cigrow")!.getAttribute("aria-hidden")).toBe("true");
+    expect(must(container.querySelector(".cigrow")).getAttribute("aria-hidden")).toBe("true");
     expect(container.textContent).toMatch(/Outdoors all day here: about 5\.6 cigarettes/);
     expect(container.textContent).toMatch(/4\.8 so far today/);
   });
@@ -147,10 +148,10 @@ describe("the city strip at the very top", () => {
     window.matchMedia = ((q: string) => ({
       matches: false,
       media: q,
-      addEventListener() {},
-      removeEventListener() {},
-      addListener() {},
-      removeListener() {},
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
       onchange: null,
       dispatchEvent: () => false,
     })) as typeof window.matchMedia;
@@ -178,10 +179,10 @@ describe("the city strip at the very top", () => {
     window.matchMedia = ((q: string) => ({
       matches: true,
       media: q,
-      addEventListener() {},
-      removeEventListener() {},
-      addListener() {},
-      removeListener() {},
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
       onchange: null,
       dispatchEvent: () => false,
     })) as typeof window.matchMedia;

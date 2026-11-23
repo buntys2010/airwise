@@ -8,6 +8,7 @@ import {
   sanitizePlan,
   shareUrl,
 } from "./share";
+import { must } from "../test-support/must";
 
 const profile: Profile = {
   home: "leaky",
@@ -67,7 +68,7 @@ describe("decodeChoices", () => {
     const back = decodeChoices(encodeChoices({ city: "kolkata", profile, plan }));
     expect(back.city).toBe("kolkata");
     expect(back.profile).toEqual(profile);
-    expect(planToIds(back.plan!).sort()).toEqual(planToIds(plan).sort());
+    expect(planToIds(must(back.plan)).sort()).toEqual(planToIds(plan).sort());
   });
   it("drops anything outside the fixed lists, so a hand-edited link can only choose valid options", () => {
     const back = decodeChoices(

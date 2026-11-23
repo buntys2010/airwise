@@ -3,17 +3,19 @@ import { parseChoices } from "./chat";
 import { CITIES, estimateHourly } from "./data";
 import { buildPlanPrompt, buildPlanRequest, schedulePlan, validatePlan } from "./plan";
 
-const hourly = estimateHourly(CITIES[0]!);
-const choices = parseChoices({
-  city: "delhi",
-  home: "typical",
-  commute: "bike",
-  km: 8,
-  cooking: "lpg",
-  vulnerable: true,
-  plan: {},
-  lang: "en",
-})!;
+const hourly = estimateHourly(must(CITIES[0]));
+const choices = must(
+  parseChoices({
+    city: "delhi",
+    home: "typical",
+    commute: "bike",
+    km: 8,
+    cooking: "lpg",
+    vulnerable: true,
+    plan: {},
+    lang: "en",
+  }),
+);
 const req = buildPlanRequest(choices, hourly, 7);
 const schedule = req.schedule;
 const good = (over: Record<string, unknown> = {}) =>
@@ -75,6 +77,7 @@ describe("schedulePlan", () => {
 
 import { communityPlan } from "./plan";
 import { NO_PLAN, simulate, buildActions, type Profile } from "./engine";
+import { must } from "../test-support/must";
 
 describe("communityPlan", () => {
   const household: Profile = {
@@ -84,17 +87,17 @@ describe("communityPlan", () => {
     cooking: "lpg",
     vulnerable: true,
   };
-  const delhi = estimateHourly(CITIES[0]!);
-  const bengaluru = estimateHourly(CITIES[5]!);
+  const delhi = estimateHourly(must(CITIES[0]));
+  const bengaluru = estimateHourly(must(CITIES[5]));
 
   it("picks the three fixes that help most, each with its engine cut", () => {
     const p = communityPlan(delhi, household, 7);
     expect(p.fixes).toHaveLength(3);
     const actions = buildActions(delhi, household);
     for (const f of p.fixes)
-      expect(f.pct).toBe(Math.round(actions.find((a) => a.id === f.id)!.savedPct * 100));
+      expect(f.pct).toBe(Math.round(must(actions.find((a) => a.id === f.id)).savedPct * 100));
     for (let i = 1; i < p.fixes.length; i++)
-      expect(p.fixes[i - 1]!.pct).toBeGreaterThanOrEqual(p.fixes[i]!.pct);
+      expect(must(p.fixes[i - 1]).pct).toBeGreaterThanOrEqual(must(p.fixes[i]).pct);
   });
   it("takes every figure from the live air data and the engine", () => {
     const p = communityPlan(delhi, household, 7);

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CITIES, MAP_CHUNK, resetMapCache } from "@/lib/data";
 import { GET } from "./route";
+import { must } from "../../../test-support/must";
 
 let n = 0;
 const get = (ip = `10.9.0.${++n}`) =>
@@ -8,12 +9,15 @@ const get = (ip = `10.9.0.${++n}`) =>
 const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);
 /** A fake feed that answers each batched request with the right number of cities, by parsing the latitude list. */
 const feed = (make: (globalIndex: number) => unknown) => {
-  return vi.fn().mockImplementation(async (url: string) => {
-    const n = new URL(url).searchParams.get("latitude")!.split(",").length;
+  return vi.fn().mockImplementation((url: string) => {
+    const n = must(new URL(url).searchParams.get("latitude")).split(",").length;
     const first = CITIES.findIndex(
-      (c) => String(c.lat) === new URL(url).searchParams.get("latitude")!.split(",")[0],
+      (c) => String(c.lat) === must(new URL(url).searchParams.get("latitude")).split(",")[0],
     );
-    return { ok: true, json: async () => Array.from({ length: n }, (_, k) => make(first + k)) };
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(Array.from({ length: n }, (_, k) => make(first + k))),
+    });
   });
 };
 
@@ -49,13 +53,14 @@ describe("GET /api/map", () => {
     let call = 0;
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockImplementation(async (url: string) => {
-        if (++call === 1) throw new Error("one chunk down");
-        const n = new URL(url).searchParams.get("latitude")!.split(",").length;
-        return {
+      vi.fn().mockImplementation((url: string) => {
+        if (++call === 1) return Promise.reject(new Error("one chunk down"));
+        const n = must(new URL(url).searchParams.get("latitude")).split(",").length;
+        return Promise.resolve({
           ok: true,
-          json: async () => Array.from({ length: n }, () => ({ hourly: { pm2_5: day(80) } })),
-        };
+          json: () =>
+            Promise.resolve(Array.from({ length: n }, () => ({ hourly: { pm2_5: day(80) } }))),
+        });
       }),
     );
     const json = await (await get()).json();

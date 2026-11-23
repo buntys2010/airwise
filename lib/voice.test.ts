@@ -10,8 +10,12 @@ import {
 } from "./voice";
 
 describe("getRecognitionCtor", () => {
-  class A {}
-  class B {}
+  class A {
+    readonly name = "A";
+  }
+  class B {
+    readonly name = "B";
+  }
   it("prefers the standard name, then the webkit one, else null", () => {
     expect(
       getRecognitionCtor({ SpeechRecognition: A as never, webkitSpeechRecognition: B as never }),

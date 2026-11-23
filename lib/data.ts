@@ -89,10 +89,9 @@ export async function loadAir(city: City, signal?: AbortSignal): Promise<AirResu
     if (!airRes.ok) return estimate;
     const hourly = parseHourly(await airRes.json());
     if (!hourly) return estimate;
-    const wx =
-      wxRes && wxRes.ok
-        ? parseWeather(await wxRes.json().catch(() => null))
-        : { temp: null, wind: null };
+    const wx = wxRes?.ok
+      ? parseWeather(await wxRes.json().catch(() => null))
+      : { temp: null, wind: null };
     return { hourly, source: "live", ...wx, updated: istClock().label };
   } catch {
     return estimate;

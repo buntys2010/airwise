@@ -1,17 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { CITIES, estimateHourly, type AirResult } from "../lib/data";
 import { getCityAir, scoreActions, type LoadAir } from "./tools";
+import { must } from "../test-support/must";
 
 const live = (id: string): AirResult => ({
-  hourly: estimateHourly(CITIES.find((c) => c.id === id)!),
+  hourly: estimateHourly(must(CITIES.find((c) => c.id === id))),
   source: "live",
   temp: 20,
   wind: 5,
   updated: "10:30",
 });
-const load: LoadAir = async (id) => live(id);
-const down: LoadAir = async () => {
-  throw new Error("feed down");
+const load: LoadAir = (id) => Promise.resolve(live(id));
+const down: LoadAir = () => {
+  return Promise.reject(new Error("feed down"));
 };
 const good = {
   city: "delhi",
@@ -35,11 +36,13 @@ describe("get_city_air", () => {
     expect(typeof d.aqi_us_epa_style).toBe("number");
   });
   it("tells an agent when the numbers are an offline estimate", async () => {
-    const r = await getCityAir({ city: "pune" }, async (id) => ({
-      ...live(id),
-      source: "estimate",
-      updated: null,
-    }));
+    const r = await getCityAir({ city: "pune" }, (id) =>
+      Promise.resolve({
+        ...live(id),
+        source: "estimate",
+        updated: null,
+      }),
+    );
     expect(r.ok && (r.data as { note: string }).note).toMatch(/offline estimate/);
   });
   it("gives a structured error with the allowed values for an unknown or missing city", async () => {
@@ -78,7 +81,7 @@ describe("score_actions", () => {
     );
     expect(a.percent_less_exposure).toBe(0);
     expect(b.cigarettes_equivalent_per_day_with_actions).toBeLessThan(
-      b.cigarettes_equivalent_per_day_if_nothing_changes!,
+      must(b.cigarettes_equivalent_per_day_if_nothing_changes),
     );
     expect(b.percent_less_exposure).toBeGreaterThan(40);
     expect(b.cigarettes_equivalent_per_day_if_nothing_changes).toBe(
@@ -100,7 +103,7 @@ describe("score_actions", () => {
     expect(each.map((e) => e.id)).toEqual(
       expect.arrayContaining(["seal", "purifier", "n95", "shift", "swap", "induction"]),
     );
-    expect(each.find((e) => e.id === "purifier")!.percent_less_exposure).toBeGreaterThan(0);
+    expect(must(each.find((e) => e.id === "purifier")).percent_less_exposure).toBeGreaterThan(0);
   });
   it("defaults the distance, accepts vulnerable as optional, and labels the cigarette figure as a rule of thumb", async () => {
     const r = await scoreActions(

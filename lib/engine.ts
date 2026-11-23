@@ -336,10 +336,7 @@ const sealGapsAction: ActionBuilder = ({ p, base, best, solo }) => ({
   id: "sealGaps",
   title: "Seal door and window gaps",
   cost: "₹300–800 of weather-strip",
-  detail:
-    "Tape and strip the gaps, keep windows shut through the smog hours. Open them only around " +
-    fmtHour(best) +
-    ".",
+  detail: `Tape and strip the gaps, keep windows shut through the smog hours. Open them only around ${fmtHour(best)}.`,
   ...solo({ ...NO_PLAN, sealGaps: true }),
   applicable: p.home !== "sealed",
   math: [
@@ -382,7 +379,7 @@ const maskAction: ActionBuilder = ({ solo }) => ({
 
 const shiftOutdoorAction: ActionBuilder = ({ hourly, best, solo }) => ({
   id: "shiftOutdoor",
-  title: "Move the family's outdoor time to " + fmtHour(best),
+  title: `Move the family's outdoor time to ${fmtHour(best)}`,
   cost: "Free",
   detail: `Today the air is cleanest around ${fmtHour(best)} (${hourly[best]} µg/m³), not ${fmtHour(OUTDOOR_HOUR)} (${hourly[OUTDOOR_HOUR]} µg/m³).`,
   ...solo({ ...NO_PLAN, shiftOutdoor: true }),
@@ -488,7 +485,7 @@ export function planSummary(plan: Plan): string[] {
   if (plan.mask !== "none")
     out.push(plan.mask === "n95" ? "wear N95 outside" : "wear a cloth mask");
   if (plan.shiftOutdoor) out.push("move outdoor time to the cleanest hour");
-  if (plan.swapCommute) out.push("switch commute to " + modeLabel(plan.swapCommute));
+  if (plan.swapCommute) out.push(`switch commute to ${modeLabel(plan.swapCommute)}`);
   if (plan.induction) out.push("cook on induction");
   return out;
 }

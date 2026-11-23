@@ -1,18 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetGeminiBudget } from "@/lib/gemini";
 import { POST } from "./route";
+import { must } from "../../../test-support/must";
 
 vi.mock("@/lib/data", async (orig) => {
   const real = await orig<typeof import("@/lib/data")>();
   return {
     ...real,
-    getCityAir: async (c: Parameters<typeof real.estimateHourly>[0]) => ({
-      hourly: real.estimateHourly(c),
-      source: "live" as const,
-      temp: 9,
-      wind: 4,
-      updated: "10:00",
-    }),
+    getCityAir: (c: Parameters<typeof real.estimateHourly>[0]) =>
+      Promise.resolve({
+        hourly: real.estimateHourly(c),
+        source: "live" as const,
+        temp: 9,
+        wind: 4,
+        updated: "10:00",
+      }),
   };
 });
 
@@ -40,11 +42,11 @@ const call = (
   );
 const geminiText = (text: string) => ({
   ok: true,
-  json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }),
+  json: () => Promise.resolve({ candidates: [{ content: { parts: [{ text }] } }] }),
 });
-const status = (s: number) => ({ ok: false, status: s, json: async () => ({}) });
+const status = (s: number) => ({ ok: false, status: s, json: () => Promise.resolve({}) });
 const bodyOf = (f: ReturnType<typeof vi.fn>, i = 0) =>
-  JSON.parse((f.mock.calls[i]![1] as RequestInit).body as string);
+  JSON.parse((must(f.mock.calls[i])[1] as RequestInit).body as string);
 
 beforeEach(() => resetGeminiBudget());
 afterEach(() => {
@@ -103,8 +105,8 @@ describe("POST /api/chat", () => {
       })
     ).json();
     expect(json).toMatchObject({ answer: "Wear an N95.", source: "gemini", verified: true });
-    expect(String(f.mock.calls[0]![0])).not.toContain("test-key");
-    expect(f.mock.calls[0]![1]).toMatchObject({ headers: { "x-goog-api-key": "test-key" } });
+    expect(String(must(f.mock.calls[0])[0])).not.toContain("test-key");
+    expect(must(f.mock.calls[0])[1]).toMatchObject({ headers: { "x-goog-api-key": "test-key" } });
     const prompt: string = bodyOf(f).contents[0].parts[0].text;
     expect(prompt).toContain('"city":"Delhi"');
     expect(prompt).not.toContain('"pm":1,'); // the client's fake number never reaches the model
@@ -205,7 +207,7 @@ describe("chat time budget", () => {
       .mockImplementation(
         (_u: string, init: RequestInit) =>
           new Promise((_r, rej) =>
-            init.signal!.addEventListener("abort", () =>
+            must(init.signal).addEventListener("abort", () =>
               rej(Object.assign(new Error("aborted"), { name: "AbortError" })),
             ),
           ),
@@ -234,7 +236,7 @@ describe("chat time budget", () => {
       vi.fn().mockImplementation((_u: string, init: RequestInit) => {
         if (++n === 1)
           return new Promise((_r, rej) =>
-            init.signal!.addEventListener("abort", () =>
+            must(init.signal).addEventListener("abort", () =>
               rej(Object.assign(new Error("aborted"), { name: "AbortError" })),
             ),
           );

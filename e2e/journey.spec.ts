@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { must } from "../test-support/must";
 
 /**
  * The core journey in a real browser, with the network stubbed so it is deterministic and works offline:
@@ -261,11 +262,11 @@ test.describe("phone, 390 x 844", () => {
     const input = page.getByLabel("Ask AirWise a question");
     await input.scrollIntoViewIfNeeded();
     const ib = await input.boundingBox();
-    expect(ib!.width).toBeGreaterThan(280);
+    expect(must(ib).width).toBeGreaterThan(280);
     for (const name of ["Send", "Add a photo of your room"]) {
       const b = await page.getByRole("button", { name }).first().boundingBox();
-      expect(b!.height, name).toBeGreaterThanOrEqual(43.5);
-      expect(b!.y, name).toBeGreaterThan(ib!.y + ib!.height - 1); // the buttons are on the row below the input
+      expect(must(b).height, name).toBeGreaterThanOrEqual(43.5);
+      expect(must(b).y, name).toBeGreaterThan(must(ib).y + must(ib).height - 1); // the buttons are on the row below the input
     }
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,

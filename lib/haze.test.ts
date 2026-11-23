@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CITIES, estimateHourly } from "./data";
 import { HAZE_MIN, hazeLevel } from "./haze";
 import { NO_PLAN, fullPlan, simulate, type Profile } from "./engine";
+import { must } from "../test-support/must";
 
 describe("hazeLevel", () => {
   it("starts visibly hazy even on a moderate day", () => {
@@ -20,7 +21,7 @@ describe("hazeLevel", () => {
   it("thins as exposure falls, in proportion to what was removed", () => {
     const all = [1, 0.75, 0.5, 0.25, 0];
     const h = all.map((r) => hazeLevel(100, 100, 100 * r));
-    for (let i = 1; i < h.length; i++) expect(h[i]).toBeLessThan(h[i - 1]!);
+    for (let i = 1; i < h.length; i++) expect(h[i]).toBeLessThan(must(h[i - 1]));
   });
   it("applying most fixes makes a clear, visible difference at moderate and high air", () => {
     for (const pm of [38, 71, 157, 250]) {
@@ -44,8 +45,8 @@ describe("hazeLevel", () => {
       const hourly = estimateHourly(c);
       const base = simulate(hourly, family, NO_PLAN).meanPm,
         plan = simulate(hourly, family, fullPlan(family)).meanPm;
-      const before = hazeLevel(hourly[7]!, base, base),
-        after = hazeLevel(hourly[7]!, base, plan);
+      const before = hazeLevel(must(hourly[7]), base, base),
+        after = hazeLevel(must(hourly[7]), base, plan);
       expect((before - after) / before).toBeGreaterThan(0.33);
     }
   });

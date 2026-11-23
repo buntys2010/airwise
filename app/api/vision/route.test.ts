@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetGeminiBudget, setLogSink } from "@/lib/gemini";
 import { POST } from "./route";
+import { must } from "../../../test-support/must";
 
 let n = 0;
 const imageOf = (tag: string) =>
@@ -15,15 +16,16 @@ const call = (body: unknown, ip = `10.2.0.${++n}`) =>
   );
 const gem = (obj: unknown) => ({
   ok: true,
-  json: async () => ({
-    candidates: [
-      { content: { parts: [{ text: typeof obj === "string" ? obj : JSON.stringify(obj) }] } },
-    ],
-  }),
+  json: () =>
+    Promise.resolve({
+      candidates: [
+        { content: { parts: [{ text: typeof obj === "string" ? obj : JSON.stringify(obj) }] } },
+      ],
+    }),
 });
 const box = { x: 0.1, y: 0.2, w: 0.3, h: 0.3 };
 const bodyOf = (f: ReturnType<typeof vi.fn>) =>
-  JSON.parse((f.mock.calls[0]![1] as RequestInit).body as string);
+  JSON.parse((must(f.mock.calls[0])[1] as RequestInit).body as string);
 
 beforeEach(() => {
   resetGeminiBudget();
@@ -32,7 +34,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
-  setLogSink(() => {});
+  setLogSink(() => undefined);
 });
 
 describe("POST /api/vision", () => {
@@ -61,7 +63,7 @@ describe("POST /api/vision", () => {
     expect(json.hotspots.map((h: { kind: string }) => h.kind)).toEqual(["window_gap", "gas_stove"]);
     expect(bodyOf(f).contents[0].parts[1].inlineData.mimeType).toBe("image/jpeg");
     expect(bodyOf(f).generationConfig.responseMimeType).toBe("application/json");
-    expect(String(f.mock.calls[0]![0])).not.toContain("test-key");
+    expect(String(must(f.mock.calls[0])[0])).not.toContain("test-key");
   });
   it("caches findings by photo hash and never calls Gemini twice for the same photo", async () => {
     const f = vi
@@ -91,7 +93,7 @@ describe("POST /api/vision", () => {
   it("names the reason when Gemini is unavailable, with a normal 200", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({}) }),
+      vi.fn().mockResolvedValue({ ok: false, status: 429, json: () => Promise.resolve({}) }),
     );
     const res = await call({ image: imageOf("quota") });
     expect(res.status).toBe(200);
@@ -116,6 +118,6 @@ describe("POST /api/vision", () => {
     expect(lines.join("\n")).not.toContain(
       Buffer.from("fake-jpeg-secret-bytes-here").toString("base64"),
     );
-    expect(JSON.parse(lines[0]!)).toMatchObject({ kind: "vision", images: 1 });
+    expect(JSON.parse(must(lines[0]))).toMatchObject({ kind: "vision", images: 1 });
   });
 });

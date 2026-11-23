@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as image from "@/lib/image";
 import Page from "./page";
+import { must } from "../test-support/must";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 vi.mock("@/lib/image", async (orig) => ({
@@ -26,10 +27,10 @@ const STOVE = hot("gas_stove", "Gas stove", "induction");
 const PURIFIER = hot("purifier_seen", "Air purifier", "purifier");
 
 function stubVision(reply: unknown, status = 200) {
-  const f = vi.fn().mockImplementation(async (url: string) => {
+  const f = vi.fn().mockImplementation((url: string) => {
     if (String(url).startsWith("/api/vision"))
-      return { ok: status === 200, status, json: async () => reply };
-    throw new Error("offline"); // air feed falls back to the labelled estimate
+      return Promise.resolve({ ok: status === 200, status, json: () => Promise.resolve(reply) });
+    return Promise.reject(new Error("offline")); // air feed falls back to the labelled estimate
   });
   vi.stubGlobal("fetch", f);
   return f;
@@ -48,10 +49,10 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
@@ -109,10 +110,10 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     pick();
     await screen.findByText(/^Found 1 in your photo\./);
     expect(rows()).toHaveLength(1);
-    expect(within(fixList()!).queryByText("No air purifier")).toBeNull();
+    expect(within(must(fixList())).queryByText("No air purifier")).toBeNull();
     answer(/air purifier in this room/, false);
     expect(rows()).toHaveLength(2);
-    expect(within(fixList()!).getByText("No air purifier")).toBeTruthy();
+    expect(within(must(fixList())).getByText("No air purifier")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Fix 2:/ })).toBeNull(); // answered, not seen: listed, not drawn
   });
 
@@ -141,12 +142,12 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     render(<Page />);
     pick();
     await screen.findByText(/^Found 1 in your photo\./);
-    expect(within(fixList()!).getByText("Gas stove")).toBeTruthy();
+    expect(within(must(fixList())).getByText("Gas stove")).toBeTruthy();
     answer(/gap around a window or door/, true);
     expect(rows()).toHaveLength(2);
     answer(/cook on gas or wood/, false); // the user knows their kitchen
     expect(rows()).toHaveLength(1);
-    expect(within(fixList()!).queryByText("Gas stove")).toBeNull();
+    expect(within(must(fixList())).queryByText("Gas stove")).toBeNull();
   });
 
   it("a visible purifier is shown as a keep-it-on fix", async () => {
@@ -154,7 +155,7 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     render(<Page />);
     pick();
     await screen.findByText(/^Found 1 in your photo\./);
-    expect(within(fixList()!).getByText("Air purifier")).toBeTruthy();
+    expect(within(must(fixList())).getByText("Air purifier")).toBeTruthy();
     expect(
       within(question(/air purifier in this room/)).getByText("Seen in your photo"),
     ).toBeTruthy();
@@ -166,8 +167,10 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
     render(<Page />);
     pick();
     await screen.findByText(/Nothing from our list was visible/);
-    const call = f.mock.calls.find((c) => String(c[0]).startsWith("/api/vision"))!;
-    expect(JSON.parse(call[1]!.body as string)).toEqual({ image: "data:image/jpeg;base64,QUJD" });
+    const call = must(f.mock.calls.find((c) => String(c[0]).startsWith("/api/vision")));
+    expect(JSON.parse(must(call[1]).body as string)).toEqual({
+      image: "data:image/jpeg;base64,QUJD",
+    });
   });
 
   it("the photo's markers work like the sample's: tapping one adds the fix", async () => {
@@ -219,7 +222,7 @@ describe("photo reader problems always lead to the questions", () => {
       ),
     ).toBeTruthy();
     answer(/cook on gas or wood/, true);
-    expect(within(fixList()!).getByText("Gas stove")).toBeTruthy();
+    expect(within(must(fixList())).getByText("Gas stove")).toBeTruthy();
   });
 
   it("explains a photo the browser cannot decode (for example HEIC) without calling the server", async () => {
@@ -282,9 +285,9 @@ describe("rupee-ranked value list", () => {
   it("shows the catalog best value first with indicative prices and safe external links", () => {
     render(<Page />);
     fireEvent.click(screen.getByRole("button", { name: /Day plan/ }));
-    const list = screen
-      .getByRole("heading", { name: "What to buy first, by value" })
-      .closest("section")!;
+    const list = must(
+      screen.getByRole("heading", { name: "What to buy first, by value" }).closest("section"),
+    );
     const items = list.querySelectorAll("ol > li");
     expect(items.length).toBeGreaterThanOrEqual(3);
     expect(within(list).getAllByText(/\(indicative\)/).length).toBe(items.length);

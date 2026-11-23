@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Key } from "@/lib/i18n";
 import { useLang } from "./LangProvider";
 import { useVoice } from "./useVoice";
+import { runInBackground } from "@/lib/background";
 
 export type Choices = Record<string, unknown>;
 
@@ -200,7 +201,7 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
             type="button"
             onClick={() => {
               setQ(t(k));
-              void ask(t(k));
+              runInBackground(ask(t(k)));
             }}
           >
             {t(k)}
@@ -211,7 +212,7 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
         className="chatform"
         onSubmit={(e) => {
           e.preventDefault();
-          void ask(q);
+          runInBackground(ask(q));
         }}
       >
         <label htmlFor="q" className="sr-only">

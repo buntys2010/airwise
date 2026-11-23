@@ -16,11 +16,12 @@ import {
   rankProducts,
   validateVision,
 } from "./room";
+import { must } from "../test-support/must";
 
 const box = { x: 0.1, y: 0.2, w: 0.3, h: 0.3 };
 const reply = (o: unknown) => JSON.stringify(o);
 const good = (findings: unknown[], is_room = true) => reply({ is_room, findings });
-const hourly = estimateHourly(CITIES[0]!);
+const hourly = estimateHourly(must(CITIES[0]));
 const family: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
 
 describe("validateVision: only visible evidence", () => {
@@ -94,7 +95,7 @@ describe("validateVision: only visible evidence", () => {
     expect(out.status).toBe("ok");
     if (out.status === "ok") {
       expect(out.hotspots).toHaveLength(1);
-      expect(out.hotspots[0]!.kind).toBe("gas_stove");
+      expect(must(out.hotspots[0]).kind).toBe("gas_stove");
     }
   });
   it("reads boxes given on a 0 to 1000 scale (seen on gemini-3.5-flash-lite) as fractions", () => {
@@ -103,7 +104,7 @@ describe("validateVision: only visible evidence", () => {
     );
     expect(out.status).toBe("ok");
     if (out.status === "ok")
-      expect(out.hotspots[0]!.bbox).toEqual({ x: 0.133, y: 0.311, w: 0.353, h: 0.491 });
+      expect(must(out.hotspots[0]).bbox).toEqual({ x: 0.133, y: 0.311, w: 0.353, h: 0.491 });
   });
   it("still rejects pixel-scale boxes and 0 to 1000 boxes that leave the image", () => {
     expect(
@@ -127,7 +128,7 @@ describe("validateVision: only visible evidence", () => {
       good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: 0.5, y: 0.5, w: 0.5, h: 0.5 } }]),
     );
     if (out.status !== "ok") throw new Error("expected ok");
-    expect(out.hotspots[0]!.bbox).toEqual({ x: 0.5, y: 0.5, w: 0.5, h: 0.5 });
+    expect(must(out.hotspots[0]).bbox).toEqual({ x: 0.5, y: 0.5, w: 0.5, h: 0.5 });
   });
   it("caps how many findings it will look at", () => {
     const many = Array.from({ length: 500 }, () => ({
@@ -221,24 +222,24 @@ describe("rankProducts (engine cut per rupee)", () => {
   const ranked = rankProducts(hourly, family);
   it("ranks best value first, with every figure from the engine", () => {
     for (let i = 1; i < ranked.length; i++)
-      expect(ranked[i - 1]!.perThousand).toBeGreaterThanOrEqual(ranked[i]!.perThousand);
+      expect(must(ranked[i - 1]).perThousand).toBeGreaterThanOrEqual(must(ranked[i]).perThousand);
     const base = simulate(hourly, family, NO_PLAN).meanPm;
-    const seal = ranked.find((p) => p.id === "weather-strip")!;
+    const seal = must(ranked.find((p) => p.id === "weather-strip"));
     expect(seal.cutPm).toBeCloseTo(
       base - simulate(hourly, family, { ...NO_PLAN, sealGaps: true }).meanPm,
       6,
     );
   });
   it("the cheap box-fan filter beats the HEPA unit on value but not on absolute cut", () => {
-    const hepa = ranked.find((p) => p.id === "purifier-hepa")!,
-      fan = ranked.find((p) => p.id === "purifier-boxfan")!;
+    const hepa = must(ranked.find((p) => p.id === "purifier-hepa")),
+      fan = must(ranked.find((p) => p.id === "purifier-boxfan"));
     expect(fan.perThousand).toBeGreaterThan(hepa.perThousand);
     expect(fan.cutPm).toBeLessThan(hepa.cutPm);
   });
   it("drops items that change nothing for this household", () => {
     const sealed = rankProducts(hourly, { ...family, home: "sealed", cooking: "induction" });
     expect(sealed.find((p) => p.id === "weather-strip")?.cutPm ?? 0).toBeLessThan(
-      ranked.find((p) => p.id === "weather-strip")!.cutPm,
+      must(ranked.find((p) => p.id === "weather-strip")).cutPm,
     );
     expect(sealed.find((p) => p.id === "induction")).toBeUndefined();
   });
@@ -247,6 +248,6 @@ describe("rankProducts (engine cut per rupee)", () => {
       expect(p.link.startsWith("https://www.amazon.in/s?k=")).toBe(true);
       expect(p.price[0]).toBeLessThan(p.price[1]);
     }
-    expect(priceRange(CATALOG[0]!)).toBe("₹8,000 to ₹15,000");
+    expect(priceRange(must(CATALOG[0]))).toBe("₹8,000 to ₹15,000");
   });
 });

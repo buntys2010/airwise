@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import Page from "./page";
 import { cityBox, pickCity } from "./test-city";
+import { must } from "../test-support/must";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
@@ -11,14 +12,14 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
-  window.print = () => {};
+  window.print = () => undefined;
 });
 
 const live = Array.from({ length: 24 }, (_, i) => 120 + i);
@@ -34,15 +35,17 @@ function stubFetch(
       const result = await (opts.chat ?? (() => ({ answer: "Wear an N95.", verified: true })))(
         JSON.parse(init?.body as string),
       );
-      return { ok: true, json: async () => result };
+      return { ok: true, json: () => Promise.resolve(result) };
     }
     if (!opts.air) throw new Error("offline");
     return {
       ok: true,
-      json: async () =>
-        String(url).includes("air-quality")
-          ? { hourly: { pm2_5: live } }
-          : { current: { temperature_2m: 11, wind_speed_10m: 4 } },
+      json: () =>
+        Promise.resolve(
+          String(url).includes("air-quality")
+            ? { hourly: { pm2_5: live } }
+            : { current: { temperature_2m: 11, wind_speed_10m: 4 } },
+        ),
     };
   });
   vi.stubGlobal("fetch", f);
@@ -117,7 +120,8 @@ describe("AirWise home", () => {
     render(<Page />);
     const hazeBefore = Number(document.documentElement.style.getPropertyValue("--haze"));
     const dial = screen.getByRole("group", { name: /daily exposure/i });
-    const label = (el: HTMLElement) => el.querySelector(".dialafter")!.getAttribute("aria-label")!;
+    const label = (el: HTMLElement) =>
+      must(must(el.querySelector(".dialafter")).getAttribute("aria-label"));
     const cigsBefore = parseFloat(label(dial));
     fireEvent.click(marker(1));
     expect(marker(1).getAttribute("aria-pressed")).toBe("true");
@@ -132,7 +136,7 @@ describe("AirWise home", () => {
   it("the row button and the hotspot stay in sync, and either one removes the fix again", () => {
     render(<Page />);
     const list = screen.getByRole("list", { name: "Fixes found in your room" });
-    fireEvent.click(within(list).getAllByRole("button", { name: "Do this" })[0]!);
+    fireEvent.click(must(within(list).getAllByRole("button", { name: "Do this" })[0]));
     expect(marker(1).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(marker(1));
     expect(marker(1).getAttribute("aria-pressed")).toBe("false");
@@ -159,7 +163,7 @@ describe("chat on the home screen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByText("Wear an N95.")).toBeTruthy();
     expect(screen.getByText(/Answered by Gemini, with every number checked/)).toBeTruthy();
-    const call = f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat"))!;
+    const call = must(f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")));
     const body = JSON.parse(call[1].body as string);
     expect(Object.keys(body).sort()).toEqual(["choices", "question"]);
     expect(body.choices).toMatchObject({
@@ -193,7 +197,7 @@ describe("chat on the home screen", () => {
   });
 
   it("shows only the latest answer when questions are asked one after another", async () => {
-    let release: (v: unknown) => void = () => {};
+    let release: (value: unknown) => void = (_value: unknown) => undefined;
     const slow = new Promise((r) => {
       release = r;
     });
@@ -273,7 +277,7 @@ describe("user journey: household pills, stage dock and share pass", () => {
       expect(f.mock.calls.some((c) => String(c[0]).startsWith("/api/chat"))).toBe(true),
     );
     const body = JSON.parse(
-      f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat"))![1].body as string,
+      must(f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")))[1].body as string,
     );
     expect(body.choices).toMatchObject({ cooking: "induction", vulnerable: false });
   });
@@ -288,12 +292,12 @@ describe("user journey: household pills, stage dock and share pass", () => {
       "Co-pilot",
       "Share",
     ]);
-    expect(tabs[0]!.getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(tabs[1]!);
-    expect(tabs[1]!.getAttribute("aria-pressed")).toBe("true");
-    expect(tabs[0]!.getAttribute("aria-pressed")).toBe("false");
+    expect(must(tabs[0]).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(must(tabs[1]));
+    expect(must(tabs[1]).getAttribute("aria-pressed")).toBe("true");
+    expect(must(tabs[0]).getAttribute("aria-pressed")).toBe("false");
     expect(screen.getByRole("heading", { name: "What to buy first, by value" })).toBeTruthy();
-    fireEvent.click(tabs[3]!);
+    fireEvent.click(must(tabs[3]));
     expect(screen.getByRole("heading", { name: "Your card" })).toBeTruthy();
   });
 
@@ -306,7 +310,7 @@ describe("user journey: household pills, stage dock and share pass", () => {
     const img = screen.getByRole("img", {
       name: /AirWise clean-air card for Lucknow: .+ cigarettes equivalent a day, .+ with this plan\./,
     }) as HTMLImageElement;
-    const src = new URL(img.getAttribute("src")!, "http://x");
+    const src = new URL(must(img.getAttribute("src")), "http://x");
     expect(src.pathname).toBe("/api/share-image");
     expect(src.searchParams.get("city")).toBe("lucknow");
     expect(
@@ -316,7 +320,7 @@ describe("user journey: household pills, stage dock and share pass", () => {
     ).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /Share the card on WhatsApp/ }));
     await waitFor(() => expect(open).toHaveBeenCalled());
-    expect(String(open.mock.calls[0]![0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(String(must(open.mock.calls[0])[0])).toMatch(/^https:\/\/wa\.me\/\?text=/);
     expect(await screen.findByText("WhatsApp opened with your link.")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Download the image" }).getAttribute("download")).toBe(
       "airwise-plan.png",

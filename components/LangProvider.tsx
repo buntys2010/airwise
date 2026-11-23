@@ -11,7 +11,7 @@ interface Ctx {
 
 const LangContext = createContext<Ctx>({
   lang: "en",
-  setLang: () => {},
+  setLang: () => undefined,
   t: (k, v) => translate("en", k, v),
 });
 const STORE = "airwise.lang";

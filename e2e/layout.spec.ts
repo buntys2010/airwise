@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { CITIES as ALL } from "../lib/cities";
+import { must } from "../test-support/must";
 
 /** Layout checks that only a real browser can make: overlap, clipping, sizes and motion. Network stubbed. */
 const day = (base: number) =>
@@ -67,9 +68,14 @@ test.describe("map layout", () => {
         for (let j = i + 1; j < boxes.length; j++) {
           const a = boxes[i],
             b = boxes[j];
-          if (a!.city === b!.city) continue; // a city's own name and value lines are stacked on purpose
-          if (a!.l < b!.r - 1 && b!.l < a!.r - 1 && a!.t < b!.b - 1 && b!.t < a!.b - 1)
-            clash.push(`${a!.city}:${a!.text} / ${b!.city}:${b!.text}`);
+          if (must(a).city === must(b).city) continue; // a city's own name and value lines are stacked on purpose
+          if (
+            must(a).l < must(b).r - 1 &&
+            must(b).l < must(a).r - 1 &&
+            must(a).t < must(b).b - 1 &&
+            must(b).t < must(a).b - 1
+          )
+            clash.push(`${must(a).city}:${must(a).text} / ${must(b).city}:${must(b).text}`);
         }
       expect(clash).toEqual([]);
       for (const b of boxes) expect(b.h, b.text).toBeGreaterThanOrEqual(width < 500 ? 10 : 12); // value text is the smaller line
@@ -84,7 +90,7 @@ test.describe("map layout", () => {
     await page.goto("/map");
     await expect(page.getByRole("img", { name: /Schematic map of India/ })).toBeVisible();
     const outside = await page.evaluate(() => {
-      const svg = document.querySelector("svg.mapsvg")!.getBoundingClientRect();
+      const svg = must(document.querySelector("svg.mapsvg")).getBoundingClientRect();
       return [...document.querySelectorAll<SVGGraphicsElement>("svg.mapsvg g[data-city]")]
         .filter((g) => {
           const r = g.getBoundingClientRect();
@@ -109,7 +115,7 @@ test.describe("map layout", () => {
       await page.goto("/map");
       await expect(page.getByRole("table")).toBeVisible();
       const m = await page.evaluate(() => {
-        const wrap = document.querySelector<HTMLElement>(".tablewrap")!;
+        const wrap = must(document.querySelector<HTMLElement>(".tablewrap"));
         const clipped = [...wrap.querySelectorAll<HTMLElement>("th, td, .cat")]
           .filter((c) => c.scrollWidth > c.clientWidth + 1)
           .map((c) => c.textContent?.trim());
@@ -135,7 +141,9 @@ test.describe("cigarette hero", () => {
     const hero = page.getByRole("group", { name: /daily exposure/i });
     await hero.scrollIntoViewIfNeeded();
     const fit = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>("section.cigs")!.getBoundingClientRect();
+      const card = must(
+        document.querySelector<HTMLElement>("section.cigs"),
+      ).getBoundingClientRect();
       const rows = [...document.querySelectorAll<HTMLElement>("section.cigs .cigrow")].map(
         (r) => r.getBoundingClientRect().right,
       );
@@ -160,7 +168,8 @@ test.describe("cigarette hero", () => {
     await page.goto("/?city=delhi");
     const dur = () =>
       page.evaluate(
-        () => getComputedStyle(document.querySelector("section.cigs .cpaper")!).transitionDuration,
+        () =>
+          getComputedStyle(must(document.querySelector("section.cigs .cpaper"))).transitionDuration,
       );
     expect(parseFloat(await dur())).toBeGreaterThan(0);
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -197,11 +206,13 @@ test.describe("city strip", () => {
         strip.getByText(/Outdoors all day here: about [0-9.]+ cigarettes/).first(),
       ).toBeVisible();
       const fit = await page.evaluate(() => {
-        const r = document.querySelector<HTMLElement>(".citycigs")!.getBoundingClientRect();
-        const row = document
-          .querySelector<HTMLElement>(".citycigs .cigrow")!
-          .getBoundingClientRect();
-        const text = document.querySelector<HTMLElement>(".citycigs p")!.getBoundingClientRect();
+        const r = must(document.querySelector<HTMLElement>(".citycigs")).getBoundingClientRect();
+        const row = must(
+          document.querySelector<HTMLElement>(".citycigs .cigrow"),
+        ).getBoundingClientRect();
+        const text = must(
+          document.querySelector<HTMLElement>(".citycigs p"),
+        ).getBoundingClientRect();
         return {
           right: r.right,
           rowRight: row.right,

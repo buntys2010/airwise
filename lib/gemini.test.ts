@@ -7,20 +7,21 @@ import {
   resetGeminiBudget,
   setLogSink,
 } from "./gemini";
+import { must } from "../test-support/must";
 
 beforeEach(() => resetGeminiBudget());
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.useRealTimers();
-  setLogSink(() => {});
+  setLogSink(() => undefined);
 });
 
 const reply = (text: string) => ({
   ok: true,
-  json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }),
+  json: () => Promise.resolve({ candidates: [{ content: { parts: [{ text }] } }] }),
 });
-const status = (s: number) => ({ ok: false, status: s, json: async () => ({}) });
+const status = (s: number) => ({ ok: false, status: s, json: () => Promise.resolve({}) });
 const opts = { prompt: "hi", maxTokens: 10 };
 
 describe("modelChain", () => {
@@ -81,7 +82,7 @@ describe("generateDetailed: typed failure reasons", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ promptFeedback: { blockReason: "SAFETY" } }),
+        json: () => Promise.resolve({ promptFeedback: { blockReason: "SAFETY" } }),
       }),
     );
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "blocked" });
@@ -89,7 +90,7 @@ describe("generateDetailed: typed failure reasons", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ candidates: [{ finishReason: "SAFETY" }] }),
+        json: () => Promise.resolve({ candidates: [{ finishReason: "SAFETY" }] }),
       }),
     );
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "blocked" });
@@ -100,7 +101,7 @@ describe("generateDetailed: typed failure reasons", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ candidates: [{ content: { role: "model" } }] }),
+        json: () => Promise.resolve({ candidates: [{ content: { role: "model" } }] }),
       }),
     );
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "empty" });
@@ -142,7 +143,7 @@ describe("generateDetailed: chain, images, budget", () => {
       model: "gemini-lite-x",
     });
     expect(
-      JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string).generationConfig,
+      JSON.parse((must(f.mock.calls[1])[1] as RequestInit).body as string).generationConfig,
     ).not.toHaveProperty("thinkingConfig");
   });
   it("sends images as inline parts after the text, and keeps the key out of the URL", async () => {
@@ -150,11 +151,12 @@ describe("generateDetailed: chain, images, budget", () => {
     const f = vi.fn().mockResolvedValue(reply("ok"));
     vi.stubGlobal("fetch", f);
     await generateDetailed({ ...opts, images: [{ mimeType: "image/jpeg", data: "QUJD" }] });
-    const parts = JSON.parse((f.mock.calls[0]![1] as RequestInit).body as string).contents[0].parts;
+    const parts = JSON.parse((must(f.mock.calls[0])[1] as RequestInit).body as string).contents[0]
+      .parts;
     expect(parts[0]).toEqual({ text: "hi" });
     expect(parts[1]).toEqual({ inlineData: { mimeType: "image/jpeg", data: "QUJD" } });
-    expect(String(f.mock.calls[0]![0])).not.toContain("secret-key");
-    expect((f.mock.calls[0]![1] as RequestInit).headers).toMatchObject({
+    expect(String(must(f.mock.calls[0])[0])).not.toContain("secret-key");
+    expect((must(f.mock.calls[0])[1] as RequestInit).headers).toMatchObject({
       "x-goog-api-key": "secret-key",
     });
   });
@@ -177,7 +179,7 @@ describe("generateDetailed: chain, images, budget", () => {
         .mockImplementation(
           (_u: string, init: RequestInit) =>
             new Promise((_r, rej) =>
-              init.signal!.addEventListener("abort", () =>
+              must(init.signal).addEventListener("abort", () =>
                 rej(Object.assign(new Error("a"), { name: "AbortError" })),
               ),
             ),
@@ -203,7 +205,7 @@ describe("structured log", () => {
       images: [{ mimeType: "image/jpeg", data: "SECRETIMAGEDATA" }],
     });
     expect(lines).toHaveLength(1);
-    const rec = JSON.parse(lines[0]!);
+    const rec = JSON.parse(must(lines[0]));
     expect(rec).toMatchObject({ evt: "gemini", kind: "vision", ok: true, images: 1 });
     expect(lines[0]).not.toContain("private question");
     expect(lines[0]).not.toContain("SECRETIMAGEDATA");

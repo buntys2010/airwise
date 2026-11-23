@@ -4,6 +4,7 @@ import type { Key } from "@/lib/i18n";
 import { QUESTIONS, type QuestionId } from "@/lib/room";
 import { useLang } from "./LangProvider";
 import type { Room } from "./useRoom";
+import { runInBackground } from "@/lib/background";
 
 /** The id of the file input, so other controls (the chat camera button) can open the same picker. */
 export const PHOTO_INPUT_ID = "room-photo-input";
@@ -58,7 +59,7 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
           aria-label="Choose a photo of your room"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) void room.pickFile(f);
+            if (f) runInBackground(room.pickFile(f));
             e.target.value = "";
           }}
         />

@@ -2,6 +2,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FocusGuard } from "./FocusGuard";
+import { must } from "../test-support/must";
 
 const rect = (top: number, bottom: number) =>
   ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top }) as DOMRect;
@@ -18,7 +19,7 @@ function setup(barPosition: string) {
 }
 
 const focus = (id: string) =>
-  document.getElementById(id)!.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+  must(document.getElementById(id)).dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
 
 describe("FocusGuard", () => {
   const scrollBy = vi.fn();

@@ -8,17 +8,18 @@ import {
   parseWeather,
   weatherNote,
 } from "./data";
+import { must } from "../test-support/must";
 
 const delhi = CITIES[0];
 const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);
-const ok = (json: unknown) => ({ ok: true, json: async () => json });
+const ok = (json: unknown) => ({ ok: true, json: () => Promise.resolve(json) });
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("parseHourly", () => {
   it("accepts 24 finite non-negative numbers and rounds them", () => {
     expect(parseHourly({ hourly: { pm2_5: day(10.4) } })).toHaveLength(24);
-    expect(parseHourly({ hourly: { pm2_5: day(10.4) } })![0]).toBe(10);
+    expect(must(parseHourly({ hourly: { pm2_5: day(10.4) } }))[0]).toBe(10);
   });
   it("rejects short, missing, null-containing, negative or non-numeric data", () => {
     expect(parseHourly(null)).toBeNull();
@@ -46,13 +47,15 @@ describe("loadAir", () => {
       "fetch",
       vi
         .fn()
-        .mockImplementation(async (url: string) =>
-          String(url).includes("air-quality")
-            ? ok({ hourly: { pm2_5: day(100) } })
-            : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+        .mockImplementation((url: string) =>
+          Promise.resolve(
+            String(url).includes("air-quality")
+              ? ok({ hourly: { pm2_5: day(100) } })
+              : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+          ),
         ),
     );
-    const r = await loadAir(delhi!);
+    const r = await loadAir(must(delhi));
     expect(r.source).toBe("live");
     expect(r.hourly[0]).toBe(100);
     expect(r.temp).toBe(12);
@@ -61,24 +64,28 @@ describe("loadAir", () => {
   it("still goes live when only the weather call fails", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockImplementation(async (url: string) => {
-        if (String(url).includes("air-quality")) return ok({ hourly: { pm2_5: day(80) } });
-        throw new Error("weather down");
+      vi.fn().mockImplementation((url: string) => {
+        if (String(url).includes("air-quality"))
+          return Promise.resolve(ok({ hourly: { pm2_5: day(80) } }));
+        return Promise.reject(new Error("weather down"));
       }),
     );
-    const r = await loadAir(delhi!);
+    const r = await loadAir(must(delhi));
     expect(r.source).toBe("live");
     expect(r.temp).toBeNull();
   });
   it("falls back to a labelled estimate on network failure, HTTP error or bad data", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
-    expect((await loadAir(delhi!)).source).toBe("estimate");
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) }));
-    expect((await loadAir(delhi!)).source).toBe("estimate");
+    expect((await loadAir(must(delhi))).source).toBe("estimate");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }),
+    );
+    expect((await loadAir(must(delhi))).source).toBe("estimate");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok({ hourly: { pm2_5: [1] } })));
-    const r = await loadAir(delhi!);
+    const r = await loadAir(must(delhi));
     expect(r.source).toBe("estimate");
-    expect(r.hourly).toEqual(estimateHourly(delhi!));
+    expect(r.hourly).toEqual(estimateHourly(must(delhi)));
     expect(r.updated).toBeNull();
   });
 });
@@ -107,16 +114,18 @@ describe("getCityAir (server cache)", () => {
     resetAirCache();
     const f = vi
       .fn()
-      .mockImplementation(async (url: string) =>
-        String(url).includes("air-quality")
-          ? ok({ hourly: { pm2_5: day(100) } })
-          : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+      .mockImplementation((url: string) =>
+        Promise.resolve(
+          String(url).includes("air-quality")
+            ? ok({ hourly: { pm2_5: day(100) } })
+            : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+        ),
       );
     vi.stubGlobal("fetch", f);
-    const [a, b] = await Promise.all([getCityAir(delhi!), getCityAir(delhi!)]);
+    const [a, b] = await Promise.all([getCityAir(must(delhi)), getCityAir(must(delhi))]);
     expect(a).toBe(b);
     expect(f).toHaveBeenCalledTimes(2); // one air and one weather call, not four
-    await getCityAir(delhi!);
+    await getCityAir(must(delhi));
     expect(f).toHaveBeenCalledTimes(2); // served from cache
   });
   it("never caches an estimate", async () => {
@@ -124,9 +133,9 @@ describe("getCityAir (server cache)", () => {
     resetAirCache();
     const f = vi.fn().mockRejectedValue(new Error("down"));
     vi.stubGlobal("fetch", f);
-    expect((await getCityAir(delhi!)).source).toBe("estimate");
+    expect((await getCityAir(must(delhi))).source).toBe("estimate");
     const calls = f.mock.calls.length;
-    await getCityAir(delhi!);
+    await getCityAir(must(delhi));
     expect(f.mock.calls.length).toBeGreaterThan(calls);
   });
 });
@@ -135,18 +144,20 @@ describe("loadMap (batched)", () => {
   it("fetches cities in batches and labels a bad city as an estimate on its own", async () => {
     const { loadMap, MAP_CHUNK } = await import("./data");
     const good = { hourly: { pm2_5: day(50) } };
-    const f = vi.fn().mockImplementation(async (url: string) => {
-      const n = new URL(url).searchParams.get("latitude")!.split(",").length;
-      return ok(
-        Array.from({ length: n }, (_, i) =>
-          url.includes("latitude=28.65,") && i === 1 ? { hourly: { pm2_5: [1] } } : good,
+    const f = vi.fn().mockImplementation((url: string) => {
+      const n = must(new URL(url).searchParams.get("latitude")).split(",").length;
+      return Promise.resolve(
+        ok(
+          Array.from({ length: n }, (_, i) =>
+            url.includes("latitude=28.65,") && i === 1 ? { hourly: { pm2_5: [1] } } : good,
+          ),
         ),
       );
     });
     vi.stubGlobal("fetch", f);
     const pts = await loadMap(9);
     expect(f).toHaveBeenCalledTimes(Math.ceil(CITIES.length / MAP_CHUNK));
-    expect(String(f.mock.calls[0]![0])).toContain("latitude=28.65,26.85");
+    expect(String(must(f.mock.calls[0])[0])).toContain("latitude=28.65,26.85");
     expect(pts).toHaveLength(CITIES.length);
     expect(pts[0]).toMatchObject({ id: "delhi", source: "live", pm: 59 });
     expect(pts[1]).toMatchObject({ id: "lucknow", source: "estimate" });

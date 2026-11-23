@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Profile } from "./engine";
 import { STORE_KEY, clearSaved, readSaved, sanitizeSaved, writeSaved } from "./store";
+import { must } from "../test-support/must";
 
 const profile: Profile = {
   home: "leaky",
@@ -48,7 +49,7 @@ describe("device-only save", () => {
   it("stores only choices, never a computed figure", () => {
     const s = memory();
     writeSaved(saved, s);
-    const text = s.m.get(STORE_KEY)!;
+    const text = must(s.m.get(STORE_KEY));
     expect(Object.keys(JSON.parse(text)).sort()).toEqual(["city", "profile"]);
     expect(text).not.toMatch(/cig|pm|exposure/i);
   });

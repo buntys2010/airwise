@@ -10,6 +10,7 @@ import { CITIES } from "@/lib/data";
 import CommunityPage from "./community/page";
 import { pickCity } from "./test-city";
 import MapPage from "./map/page";
+import { must } from "../test-support/must";
 
 let currentPath = "/";
 vi.mock("next/navigation", () => ({ usePathname: () => currentPath }));
@@ -28,7 +29,7 @@ function stubFetch(map: () => unknown | Promise<unknown>) {
   const f = vi.fn().mockImplementation(async (url: string) => {
     if (String(url).startsWith("/api/map")) {
       const r = await map();
-      return r instanceof Error ? Promise.reject(r) : { ok: true, json: async () => r };
+      return r instanceof Error ? Promise.reject(r) : { ok: true, json: () => Promise.resolve(r) };
     }
     throw new Error("offline");
   });
@@ -47,10 +48,10 @@ beforeAll(() => {
   window.matchMedia = ((q: string) => ({
     matches: true,
     media: q,
-    addEventListener() {},
-    removeEventListener() {},
-    addListener() {},
-    removeListener() {},
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
     onchange: null,
     dispatchEvent: () => false,
   })) as typeof window.matchMedia;
@@ -103,14 +104,14 @@ describe("/map", () => {
   it("each dot carries an icon and a value, and the table gives a level in words, so colour is never the only signal", async () => {
     wrap(<MapPage />);
     await screen.findByRole("img", { name: /Schematic map of India/ });
-    const svg = document.querySelector("svg.mapsvg")!;
+    const svg = must(document.querySelector("svg.mapsvg"));
     const named = CITIES.filter((c) => c.label).length;
     expect(svg.querySelectorAll("circle.map-dot")).toHaveLength(named); // the big cities carry a name and value
     expect(svg.querySelectorAll("text.map-icon")).toHaveLength(named);
     expect(svg.querySelectorAll("g.map-mark")).toHaveLength(CITIES.length); // every city is a tappable marker with a shape
     await screen.findByRole("table");
     const levels = [...document.querySelectorAll(".maptable .cat")].map((e) =>
-      e.textContent!.trim(),
+      must(e.textContent).trim(),
     );
     expect(levels.every((l) => l.length > 3 && !/^[●◆▲■⬣✖]$/.test(l))).toBe(true);
   });
@@ -119,16 +120,18 @@ describe("/map", () => {
     stubFetch(() => ({ points: points({ pune: { source: "estimate" } }), time: "16:00", live: 5 }));
     wrap(<MapPage />);
     await screen.findByRole("img", { name: /Schematic map of India/ });
-    const row = (
-      await screen.findByRole("rowheader", { name: /^Pune[.]/ }, { timeout: 5000 })
-    ).closest("tr")!;
+    const row = must(
+      (await screen.findByRole("rowheader", { name: /^Pune[.]/ }, { timeout: 5000 })).closest("tr"),
+    );
     expect(within(row).getByText("Estimate")).toBeTruthy();
     expect(
-      within(screen.getByRole("rowheader", { name: /^Delhi[.]/ }).closest("tr")!).getByText("Live"),
+      within(must(screen.getByRole("rowheader", { name: /^Delhi[.]/ }).closest("tr"))).getByText(
+        "Live",
+      ),
     ).toBeTruthy();
-    expect(document.querySelector("svg.mapsvg")!.textContent).toMatch(/Pune/);
+    expect(must(document.querySelector("svg.mapsvg")).textContent).toMatch(/Pune/);
     expect(
-      document.querySelector('g[data-city="pune"] circle')!.getAttribute("stroke-dasharray") ??
+      must(document.querySelector('g[data-city="pune"] circle')).getAttribute("stroke-dasharray") ??
         document.querySelector('g[data-city="pune"] .est-ring'),
     ).toBeTruthy();
     expect(document.querySelectorAll(".est-ring, circle.map-dot[stroke-dasharray]").length).toBe(1);
@@ -172,7 +175,7 @@ describe("/map", () => {
 describe("/community", () => {
   it("builds a one-page plan for the city with live figures, three household fixes and community rules", () => {
     wrap(<CommunityPage />);
-    const notice = document.getElementById("community-plan")!;
+    const notice = must(document.getElementById("community-plan"));
     expect(
       within(notice).getByRole("heading", { level: 2, name: "Smog plan for Lucknow" }),
     ).toBeTruthy();
@@ -199,19 +202,19 @@ describe("/community", () => {
 
   it("changes the plan when the city or the typical homes change, recomputed by the engine", () => {
     wrap(<CommunityPage />);
-    const before = document.getElementById("community-plan")!.textContent;
+    const before = must(document.getElementById("community-plan")).textContent;
     pickCity("Bengaluru");
-    expect(document.getElementById("community-plan")!.textContent).not.toBe(before);
+    expect(must(document.getElementById("community-plan")).textContent).not.toBe(before);
     expect(screen.getByRole("heading", { level: 2, name: "Smog plan for Bengaluru" })).toBeTruthy();
   });
 
   it("prints only the notice: the controls are marked noprint and Print calls the browser", () => {
-    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
     wrap(<CommunityPage />);
     fireEvent.click(screen.getByRole("button", { name: "Print this notice" }));
     expect(print).toHaveBeenCalledTimes(1);
     expect(document.querySelectorAll(".noprint").length).toBeGreaterThanOrEqual(3);
-    expect(document.getElementById("community-plan")!.closest(".noprint")).toBeNull();
+    expect(must(document.getElementById("community-plan")).closest(".noprint")).toBeNull();
   });
 
   it("shares a link with choices only, using the share sheet when there is one", async () => {
@@ -223,7 +226,7 @@ describe("/community", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Share this plan" }));
     await waitFor(() => expect(share).toHaveBeenCalled());
-    const url = new URL(share.mock.calls[0]![0].url);
+    const url = new URL(must(share.mock.calls[0])[0].url);
     expect(url.pathname).toBe("/community");
     expect([...url.searchParams.keys()].sort()).toEqual(["city", "cooking", "home"]);
     expect(url.toString()).not.toMatch(/Secret|cig|pm/i); // the name stays on the device, and no figure is in the link
@@ -239,7 +242,7 @@ describe("/community", () => {
     expect(
       await screen.findByText(/Link copied\. It carries choices only, never a number\./),
     ).toBeTruthy();
-    expect(writeText.mock.calls[0]![0]).toMatch(/\/community\?city=lucknow/);
+    expect(must(writeText.mock.calls[0])[0]).toMatch(/\/community\?city=lucknow/);
     writeText.mockRejectedValue(new Error("blocked"));
     fireEvent.click(screen.getByRole("button", { name: "Share this plan" }));
     expect(await screen.findByText(/\/community\?city=lucknow/)).toBeTruthy();
@@ -260,7 +263,9 @@ describe("/community", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Lucknow के लिए स्मॉग योजना" }),
     ).toBeTruthy();
-    expect(document.getElementById("community-plan")!.textContent).toMatch(/हर परिवार कर सकता है/);
+    expect(must(document.getElementById("community-plan")).textContent).toMatch(
+      /हर परिवार कर सकता है/,
+    );
     expect(screen.getByRole("button", { name: "यह नोटिस छापें" })).toBeTruthy();
     expect(document.documentElement.lang).toBe("hi");
   });

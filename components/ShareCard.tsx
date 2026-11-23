@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { shareUrl, encodeChoices, whatsappLink } from "@/lib/share";
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
+import { runInBackground } from "@/lib/background";
 
 /**
  * The share card is a real picture, rendered on the server from CHOICES only (the same query a share link carries), so every number on it
@@ -88,7 +89,7 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
         <button
           type="button"
           className="btn wa"
-          onClick={() => void shareWhatsApp()}
+          onClick={() => runInBackground(shareWhatsApp())}
           disabled={busy}
         >
           {t("share.wa")}

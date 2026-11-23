@@ -14,7 +14,7 @@ import {
 } from "./engine";
 
 const delhi = CITIES[0];
-const hourly = estimateHourly(delhi!);
+const hourly = estimateHourly(must(delhi));
 const family: Profile = {
   home: "typical",
   commute: "bike",
@@ -52,11 +52,11 @@ describe("categoryOf", () => {
 
 describe("estimateHourly", () => {
   it("is deterministic and has 24 hours", () => {
-    expect(estimateHourly(delhi!)).toEqual(estimateHourly(delhi!));
+    expect(estimateHourly(must(delhi))).toEqual(estimateHourly(must(delhi)));
     expect(hourly).toHaveLength(24);
   });
   it("is worst before dawn and lighter in the afternoon", () => {
-    expect(hourly[6]).toBeGreaterThan(hourly[15]!);
+    expect(hourly[6]).toBeGreaterThan(must(hourly[15]));
   });
 });
 
@@ -65,7 +65,7 @@ describe("bestHour", () => {
     const h = bestHour(hourly);
     expect(h).toBeGreaterThanOrEqual(10);
     expect(h).toBeLessThanOrEqual(16);
-    for (let i = 10; i <= 16; i++) expect(hourly[h]).toBeLessThanOrEqual(hourly[i]!);
+    for (let i = 10; i <= 16; i++) expect(hourly[h]).toBeLessThanOrEqual(must(hourly[i]));
   });
 });
 
@@ -109,7 +109,7 @@ describe("simulate", () => {
     expect(metro).toBeLessThan(car);
   });
   it("cleaner air means fewer cigarettes", () => {
-    const clean = simulate(estimateHourly(CITIES[5]!), family, NO_PLAN);
+    const clean = simulate(estimateHourly(must(CITIES[5])), family, NO_PLAN);
     expect(clean.cigs).toBeLessThan(base.cigs);
   });
   it("handles zero commute distance without NaN", () => {
@@ -155,6 +155,7 @@ describe("helpers", () => {
 });
 
 import { cigsSoFar } from "./engine";
+import { must } from "../test-support/must";
 
 describe("simulate().perHour", () => {
   const profile: Profile = {
@@ -237,7 +238,7 @@ describe("cigsSoFar", () => {
     );
   });
   it("is bigger in a smoggier city at the same hour", () => {
-    const clean = estimateHourly(CITIES[5]!);
+    const clean = estimateHourly(must(CITIES[5]));
     expect(cigsSoFar(clean, profile, NO_PLAN, 12)).toBeLessThan(
       cigsSoFar(hourly, profile, NO_PLAN, 12),
     );
