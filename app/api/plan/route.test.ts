@@ -5,13 +5,14 @@ import { resetGeminiBudget } from "@/lib/gemini";
 import { must } from "../../../test-support/must";
 import { POST } from "./route";
 
-vi.mock("@/lib/data", async (orig) => {
-  const real = await orig<typeof import("@/lib/data")>();
+vi.mock("@/lib/air/server", async (orig) => {
+  const real = await orig<typeof import("@/lib/air/server")>();
+  const { estimateHourly } = await import("@/lib/air/live");
   return {
     ...real,
-    getCityAir: (c: Parameters<typeof real.estimateHourly>[0]) =>
+    getCityAir: (c: Parameters<typeof estimateHourly>[0]) =>
       Promise.resolve({
-        hourly: real.estimateHourly(c),
+        hourly: estimateHourly(c),
         source: "live" as const,
         temp: 9,
         wind: 4,

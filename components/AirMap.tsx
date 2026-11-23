@@ -1,9 +1,9 @@
 "use client";
 import { lazy, Suspense, useState } from "react";
 
+import type { MapPoint } from "@/lib/air/server";
 import { CITIES } from "@/lib/cities";
-import type { MapPoint } from "@/lib/data";
-import { aqiFromPm, categoryOf, type Tone } from "@/lib/engine";
+import { aqiFromPm, categoryOf, type Tone } from "@/lib/engine/aqi";
 import { CATEGORY_KEY } from "@/lib/i18n";
 
 import { useLang } from "./LangProvider";

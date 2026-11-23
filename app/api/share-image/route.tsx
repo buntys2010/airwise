@@ -1,19 +1,13 @@
 import { ImageResponse } from "next/og";
 
+import { istClock } from "@/lib/air/live";
+import { getCityAir } from "@/lib/air/server";
 import { cigsSoFar } from "@/lib/cigsHourly";
 import { CITIES } from "@/lib/cities";
 import { FALLBACK_CITY } from "@/lib/cities";
-import { getCityAir, istClock } from "@/lib/data";
-import {
-  aqiFromPm,
-  categoryOf,
-  NO_PLAN,
-  type Plan,
-  planSummary,
-  pmAt,
-  type Profile,
-  simulate,
-} from "@/lib/engine";
+import { planSummary } from "@/lib/engine/actions";
+import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
+import { NO_PLAN, type Plan, pmAt, type Profile, simulate } from "@/lib/engine/model";
 import { json } from "@/lib/http";
 import { withObservability } from "@/lib/observe";
 import { clientIp, createLimiter } from "@/lib/ratelimit";

@@ -1,5 +1,5 @@
 "use client";
-import type { ActionResult } from "@/lib/engine";
+import type { ActionResult } from "@/lib/engine/actions";
 import { ACTION_HI, englishIn, type Key } from "@/lib/i18n";
 import type { Hotspot } from "@/lib/room";
 

@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { MapPoint } from "@/lib/data";
+import type { MapPoint } from "@/lib/air/server";
 
 import { must } from "../test-support/must";
 import CityTable from "./CityTable";

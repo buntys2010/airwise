@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
+import { estimateHourly } from "./air/live";
 import { parseChoices } from "./chat";
 import { CITIES } from "./cities";
-import { estimateHourly } from "./data";
 import { buildPlanPrompt, buildPlanRequest, schedulePlan, validatePlan } from "./plan";
 
 const hourly = estimateHourly(must(CITIES[0]));
@@ -78,7 +78,8 @@ describe("schedulePlan", () => {
   });
 });
 
-import { buildActions, NO_PLAN, type Profile, simulate } from "./engine";
+import { buildActions } from "./engine/actions";
+import { NO_PLAN, type Profile, simulate } from "./engine/model";
 import { communityPlan } from "./plan";
 
 describe("communityPlan", () => {

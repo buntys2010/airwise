@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MAP_CHUNK, resetMapCache } from "@/lib/air/server";
 import { CITIES } from "@/lib/cities";
-import { MAP_CHUNK, resetMapCache } from "@/lib/data";
 
 import { must } from "../../../test-support/must";
 import { GET } from "./route";

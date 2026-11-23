@@ -1,6 +1,6 @@
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
 import { CITIES } from "./cities";
-import type { Profile } from "./engine";
+import type { Profile } from "./engine/model";
 
 /**
  * Device-only save. The profile and last city live in this browser's localStorage and nowhere else.

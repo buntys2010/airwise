@@ -1,3 +1,5 @@
+import { istClock } from "@/lib/air/live";
+import { getCityAir } from "@/lib/air/server";
 import { createCache } from "@/lib/cache";
 import {
   buildContext,
@@ -7,7 +9,6 @@ import {
   offlineAnswer,
   parseChoices,
 } from "@/lib/chat";
-import { getCityAir, istClock } from "@/lib/data";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { verify } from "@/lib/guard";
 import { json, readGuarded } from "@/lib/http";

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AirMap } from "@/components/AirMap";
 import { Header } from "@/components/Chrome";
 import { useLang } from "@/components/LangProvider";
-import type { MapPoint } from "@/lib/data";
+import type { MapPoint } from "@/lib/air/server";
 
 interface MapReply {
   points: MapPoint[];

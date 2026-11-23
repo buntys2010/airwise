@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
+import { estimateHourly } from "./air/live";
 import { CITIES } from "./cities";
-import { estimateHourly } from "./data";
-import { fullPlan, NO_PLAN, type Profile, simulate } from "./engine";
+import { fullPlan } from "./engine/actions";
+import { NO_PLAN, type Profile, simulate } from "./engine/model";
 import { HAZE_MIN, hazeLevel } from "./haze";
 
 describe("hazeLevel", () => {

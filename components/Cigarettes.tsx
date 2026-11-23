@@ -2,7 +2,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import { cigsSoFar, type Stick, sticksFor } from "@/lib/cigsHourly";
-import { fmtHour } from "@/lib/engine";
+import { fmtHour } from "@/lib/engine/actions";
 
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";

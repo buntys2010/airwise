@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { must } from "../test-support/must";
-import { fullPlan, NO_PLAN, type Profile } from "./engine";
+import { fullPlan } from "./engine/actions";
+import { NO_PLAN, type Profile } from "./engine/model";
 import {
   decodeChoices,
   encodeChoices,

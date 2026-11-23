@@ -21,9 +21,10 @@ import { ShareCard } from "@/components/ShareCard";
 import { type Airwise, useAirwise } from "@/components/useAirwise";
 import { type Room, useRoom } from "@/components/useRoom";
 import { ValueList } from "@/components/ValueList";
-import type { Lang } from "@/lib/chat";
-import { fmtHour, OUTDOOR_HOUR } from "@/lib/engine";
+import { fmtHour } from "@/lib/engine/actions";
+import { OUTDOOR_HOUR } from "@/lib/engine/model";
 import { englishIn } from "@/lib/i18n";
+import type { Lang } from "@/lib/lang";
 import { type Hotspot, type RankedProduct, rankProducts } from "@/lib/room";
 
 /** The "your home" stage: the room photo, the fixes it points to, and the household. */

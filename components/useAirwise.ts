@@ -1,31 +1,32 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { type AirResult, estimateHourly, istClock, loadAir } from "@/lib/air/live";
 import { runInBackground } from "@/lib/background";
-import type { Lang } from "@/lib/chat";
 import { CITIES, type City } from "@/lib/cities";
 import { FALLBACK_CITY } from "@/lib/cities";
-import { type AirResult, estimateHourly, istClock, loadAir } from "@/lib/data";
 import {
   type ActionResult,
-  aqiFromPm,
-  bestHour,
   buildActions,
-  categoryOf,
-  cigsSoFar,
   fmtHour,
+  planSummary,
+  toggleAction,
+} from "@/lib/engine/actions";
+import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
+import {
+  bestHour,
+  cigsSoFar,
   NO_PLAN,
   OUTDOOR_HOUR,
   outdoorCigs,
   outdoorCigsSoFar,
   type Plan,
-  planSummary,
   pmAt,
   type Profile,
   simulate,
-  toggleAction,
-} from "@/lib/engine";
+} from "@/lib/engine/model";
 import { hazeLevel } from "@/lib/haze";
+import type { Lang } from "@/lib/lang";
 import { SAMPLE_PROFILE_PATCH } from "@/lib/room";
 import { buildSchedule } from "@/lib/schedule";
 import { decodeChoices, sanitizePlan } from "@/lib/share";

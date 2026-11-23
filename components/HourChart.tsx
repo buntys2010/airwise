@@ -1,4 +1,6 @@
-import { aqiFromPm, categoryOf, fmtHour, pmAt } from "@/lib/engine";
+import { fmtHour } from "@/lib/engine/actions";
+import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
+import { pmAt } from "@/lib/engine/model";
 
 const TONE_FILL: Record<string, string> = {
   good: "#45d1b7",

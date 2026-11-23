@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { runInBackground } from "@/lib/background";
 import { buildReminderIcs } from "@/lib/calendar";
-import { NO_PLAN } from "@/lib/engine";
+import { NO_PLAN } from "@/lib/engine/model";
 import { shareUrl, whatsappLink } from "@/lib/share";
 
 import { useLang } from "./LangProvider";

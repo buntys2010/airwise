@@ -1,12 +1,11 @@
 import { CITIES, type City } from "./cities";
+import { buildActions, fmtHour, planSummary } from "./engine/actions";
+import { categoryOf } from "./engine/aqi";
 import {
   bestHour,
-  buildActions,
-  categoryOf,
   cigsSoFar,
   type Commute,
   type Cooking,
-  fmtHour,
   type Home,
   type Mask,
   NO_PLAN,
@@ -14,18 +13,15 @@ import {
   outdoorCigs,
   outdoorCigsSoFar,
   type Plan,
-  planSummary,
   pmAt,
   type Profile,
   type PurifierKind,
   round1,
   simulate,
-} from "./engine";
+} from "./engine/model";
+import { type Lang, LANGS } from "./lang";
 
 export const MAX_QUESTION = 400;
-
-export type Lang = "en" | "hi";
-const LANGS: Lang[] = ["en", "hi"];
 
 /**
  * Everything the model is allowed to know. Built on the SERVER from the user's choices and the

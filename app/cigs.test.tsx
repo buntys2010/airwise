@@ -6,9 +6,10 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { CityCigs } from "@/components/CityCigs";
 import { LangProvider } from "@/components/LangProvider";
 import { DEFAULT_PROFILE } from "@/components/useAirwise";
+import { estimateHourly } from "@/lib/air/live";
 import { CITIES } from "@/lib/cities";
-import { estimateHourly } from "@/lib/data";
-import { buildActions, cigsSoFar, NO_PLAN, simulate, toggleAction } from "@/lib/engine";
+import { buildActions, toggleAction } from "@/lib/engine/actions";
+import { cigsSoFar, NO_PLAN, simulate } from "@/lib/engine/model";
 
 import { must } from "../test-support/must";
 import Page from "./page";

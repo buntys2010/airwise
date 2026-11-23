@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { must } from "../test-support/must";
-import { CITIES } from "./cities";
-import { estimateHourly, istClock, loadAir, parseHourly, parseWeather, weatherNote } from "./data";
+import { must } from "../../test-support/must";
+import { CITIES } from "../cities";
+import { estimateHourly, istClock, loadAir, parseHourly, parseWeather, weatherNote } from "./live";
 
 const delhi = CITIES[0];
 const day = (v: number) => Array.from({ length: 24 }, (_, i) => v + i);
@@ -104,7 +104,7 @@ describe("istClock", () => {
 
 describe("getCityAir (server cache)", () => {
   it("caches a live result for ten minutes and de-duplicates concurrent requests", async () => {
-    const { getCityAir, resetAirCache } = await import("./data");
+    const { getCityAir, resetAirCache } = await import("./server");
     resetAirCache();
     const fetchMock = vi
       .fn()
@@ -123,7 +123,7 @@ describe("getCityAir (server cache)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2); // served from cache
   });
   it("never caches an estimate", async () => {
-    const { getCityAir, resetAirCache } = await import("./data");
+    const { getCityAir, resetAirCache } = await import("./server");
     resetAirCache();
     const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
     vi.stubGlobal("fetch", fetchMock);
@@ -136,7 +136,7 @@ describe("getCityAir (server cache)", () => {
 
 describe("loadMap (batched)", () => {
   it("fetches cities in batches and labels a bad city as an estimate on its own", async () => {
-    const { loadMap, MAP_CHUNK } = await import("./data");
+    const { loadMap, MAP_CHUNK } = await import("./server");
     const good = { hourly: { pm2_5: day(50) } };
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       const cityCount = must(new URL(url).searchParams.get("latitude")).split(",").length;
@@ -157,7 +157,7 @@ describe("loadMap (batched)", () => {
     expect(pts[1]).toMatchObject({ id: "lucknow", source: "estimate" });
   });
   it("labels every city an estimate when the feed is down, and does not cache that", async () => {
-    const { loadMap } = await import("./data");
+    const { loadMap } = await import("./server");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("down")));
     const pts = await loadMap(10);
     expect(pts.every((p) => p.source === "estimate")).toBe(true);
@@ -166,7 +166,7 @@ describe("loadMap (batched)", () => {
 
 describe("parseMapBatch", () => {
   it("handles the single-object response Open-Meteo sends for one location", async () => {
-    const { parseMapBatch } = await import("./data");
+    const { parseMapBatch } = await import("./server");
     expect(parseMapBatch({ hourly: { pm2_5: day(5) } }, 1)[0]).toHaveLength(24);
     expect(parseMapBatch(null, 2)).toEqual([null, null]);
   });

@@ -110,11 +110,6 @@ export default tseslint.config(
     files: ["**/*.{mjs,js}", "*.config.*"],
     ...tseslint.configs.disableTypeChecked,
   },
-  {
-    // Translation tables are data, not logic: they grow with every string.
-    files: ["lib/i18n.ts"],
-    rules: { "max-lines": "off" },
-  },
   prettier,
   {
     // Last on purpose: eslint-config-prettier switches max-len off. Long lines hide code: wrap

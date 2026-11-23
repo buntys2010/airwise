@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { Lang } from "@/lib/chat";
 import { type Key, SPEECH_LANG } from "@/lib/i18n";
+import type { Lang } from "@/lib/lang";
 import {
   canSpeak,
   getRecognitionCtor,
