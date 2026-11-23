@@ -21,9 +21,9 @@ function useHourReplay(target: number) {
     const start = performance.now();
     const ms = 2400;
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / ms);
-      setHour(-1 + (target + 1) * (1 - Math.pow(1 - t, 2)));
-      if (t < 1) raf.current = requestAnimationFrame(tick);
+      const progress = Math.min(1, (now - start) / ms);
+      setHour(-1 + (target + 1) * (1 - Math.pow(1 - progress, 2)));
+      if (progress < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
   }, [target]);
@@ -34,14 +34,15 @@ function useHourReplay(target: number) {
   return { hour, play };
 }
 
+/** One row of cigarette sticks, each drawn partly burned according to its share of the day's exposure. */
 export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base" | "plan" }>) {
   return (
     <div className={`cigrow ${tone}`} aria-hidden="true">
-      {sticks.map((s, i) => {
+      {sticks.map((s) => {
         const left = Math.max(0, s.total - s.burned);
         const burning = s.burned > 0.005 && s.burned < s.total - 0.005;
         return (
-          <div className="stick" key={i}>
+          <div className="stick" key={s.id}>
             <span className="cfilter" />
             <span className="ctrack">
               <span className="cpaper" style={{ width: `${left * 100}%` }} />

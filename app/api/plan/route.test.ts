@@ -1,18 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetGeminiBudget } from "@/lib/gemini";
 import { POST } from "./route";
+import { must } from "../../../test-support/must";
 
 vi.mock("@/lib/data", async (orig) => {
   const real = await orig<typeof import("@/lib/data")>();
   return {
     ...real,
-    getCityAir: async (c: Parameters<typeof real.estimateHourly>[0]) => ({
-      hourly: real.estimateHourly(c),
-      source: "live" as const,
-      temp: 9,
-      wind: 4,
-      updated: "10:00",
-    }),
+    getCityAir: (c: Parameters<typeof real.estimateHourly>[0]) =>
+      Promise.resolve({
+        hourly: real.estimateHourly(c),
+        source: "live" as const,
+        temp: 9,
+        wind: 4,
+        updated: "10:00",
+      }),
   };
 });
 
@@ -26,8 +28,8 @@ const choices = {
   plan: {},
   lang: "en",
 };
-let n = 0;
-const call = (body: unknown, ip = `10.1.0.${++n}`) =>
+let callCount = 0;
+const call = (body: unknown, ip = `10.1.0.${++callCount}`) =>
   POST(
     new Request("http://x/api/plan", {
       method: "POST",
@@ -36,33 +38,34 @@ const call = (body: unknown, ip = `10.1.0.${++n}`) =>
     }),
   );
 const bodyOf = (f: ReturnType<typeof vi.fn>) =>
-  JSON.parse((f.mock.calls[0]![1] as RequestInit).body as string);
+  JSON.parse((must(f.mock.calls[0])[1] as RequestInit).body as string);
 /** Echoes the step times Gemini was asked to keep, so the reply is valid for whatever schedule the server built. */
 const echoPlan = (headline: string, textOf = (title: string) => `${title}.`) =>
-  vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+  vi.fn().mockImplementation((_url: string, init: RequestInit) => {
     const prompt: string = JSON.parse(init.body as string).contents[0].parts[0].text;
-    const facts = JSON.parse(prompt.split("<facts>\n")[1]!.split("\n</facts>")[0]!) as {
+    const facts = JSON.parse(must(must(prompt.split("<facts>\n")[1]).split("\n</facts>")[0])) as {
       steps: { time: string; title: string }[];
     };
-    return {
+    return Promise.resolve({
       ok: true,
-      json: async () => ({
-        candidates: [
-          {
-            content: {
-              parts: [
-                {
-                  text: JSON.stringify({
-                    headline,
-                    steps: facts.steps.map((s) => ({ time: s.time, text: textOf(s.title) })),
-                  }),
-                },
-              ],
+      json: () =>
+        Promise.resolve({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      headline,
+                      steps: facts.steps.map((s) => ({ time: s.time, text: textOf(s.title) })),
+                    }),
+                  },
+                ],
+              },
             },
-          },
-        ],
-      }),
-    };
+          ],
+        }),
+    });
   });
 
 beforeEach(() => resetGeminiBudget());
@@ -82,15 +85,15 @@ describe("POST /api/plan", () => {
   });
   it("serves Gemini's plan when valid and grounded, with JSON output, thinking off and the key in a header", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = echoPlan("A calmer day");
-    vi.stubGlobal("fetch", f);
+    const fetchMock = echoPlan("A calmer day");
+    vi.stubGlobal("fetch", fetchMock);
     const json = await (await call({ choices })).json();
     expect(json).toMatchObject({ source: "gemini", verified: true, headline: "A calmer day" });
-    expect(bodyOf(f).generationConfig).toMatchObject({
+    expect(bodyOf(fetchMock).generationConfig).toMatchObject({
       responseMimeType: "application/json",
       thinkingConfig: { thinkingBudget: 0 },
     });
-    expect(String(f.mock.calls[0]![0])).not.toContain("test-key");
+    expect(String(must(fetchMock.mock.calls[0])[0])).not.toContain("test-key");
   });
   it("rejects Gemini's plan when it invents a number, and says so", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
@@ -100,8 +103,8 @@ describe("POST /api/plan", () => {
   });
   it("serves a repeated verified plan from cache without another model call", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = echoPlan("Cached plan");
-    vi.stubGlobal("fetch", f);
+    const fetchMock = echoPlan("Cached plan");
+    vi.stubGlobal("fetch", fetchMock);
     const req = { choices: { ...choices, city: "kolkata" } };
     await call(req);
     expect(await (await call(req)).json()).toMatchObject({
@@ -109,7 +112,7 @@ describe("POST /api/plan", () => {
       verified: true,
       cached: true,
     });
-    expect(f).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   it("validates input, size and rate", async () => {
     expect((await call("{bad")).status).toBe(400);

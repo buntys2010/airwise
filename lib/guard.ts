@@ -13,9 +13,10 @@ const TOLERANCE = 0.051; // allows 3.74 to be written as 3.7
 
 /** Devanagari digits (०-९) written by a model in Hindi become ASCII so the same checks apply. */
 function normaliseDigits(text: string): string {
-  return text.replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
+  return text.replace(/[०-९]/gu, (d) => String(d.charCodeAt(0) - 0x0966));
 }
 
+/** Every number in a text as a value. Thousands separators and Devanagari digits are normalised first. */
 export function extractNumbers(text: string): number[] {
   const flat = normaliseDigits(text).replace(/(\d),(?=\d{3}\b)/g, "$1");
   return (flat.match(/\d+(?:\.\d+)?/g) ?? []).map(Number).filter(Number.isFinite);
@@ -44,6 +45,7 @@ export function ungroundedNumbers(text: string, facts: unknown): number[] {
   return extractNumbers(text).filter((n) => !allowed.some((a) => Math.abs(a - n) <= TOLERANCE));
 }
 
+/** True when every number in `text` can be traced to `facts`. */
 export const isGrounded = (text: string, facts: unknown): boolean =>
   ungroundedNumbers(text, facts).length === 0;
 
@@ -53,9 +55,9 @@ export const isGrounded = (text: string, facts: unknown): boolean =>
  */
 const ATTRIBUTIONS: RegExp[] = [
   // Hindi: studies, research, experts, scientists, surveys, doctors claiming, AIIMS, ICMR
-  /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने|डॉक्टरों के अनुसार|चिकित्सकों ने|एम्स|आईसीएमआर)/,
-  /\d{1,9}(?:\.\d{1,9})?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/,
-  /(?:ज़्यादातर|ज्यादातर|अधिकतर|अधिकांश|करोड़ों)\s+(?:लोग|परिवार|उपयोगकर्ता)/,
+  /(अध्ययन|शोध|अनुसंधान|विशेषज्ञ|वैज्ञानिक|सर्वे|सर्वेक्षण|डॉक्टरों ने|डॉक्टरों के अनुसार|चिकित्सकों ने|एम्स|आईसीएमआर)/u,
+  /\d{1,9}(?:\.\d{1,9})?\s?%\s+(?:लोग|परिवार|उपयोगकर्ता|मरीज़|मरीज|बच्चे)/u,
+  /(?:ज़्यादातर|ज्यादातर|अधिकतर|अधिकांश|करोड़ों)\s+(?:लोग|परिवार|उपयोगकर्ता)/u,
   /\b(studies|research|surveys?|scientists?|experts?|clinical|peer-reviewed|trials?)\b/i,
   /\bdoctors?\s+(?:say|said|claim|claimed|recommend|recommended|suggest|suggested|advise|advised)\b/i,
   /\b(WHO|CPCB|EPA|CDC|ICMR|AIIMS|MoHFW|Lancet)\b/,
@@ -63,9 +65,10 @@ const ATTRIBUTIONS: RegExp[] = [
   /\b(?:most|many|majority of|millions of)\s+(?:people|families|users|households)\b/i,
 ];
 
+/** Phrases in `text` that cite studies, experts or population statistics the app never supplied. */
 export function unsupportedClaims(text: string): string[] {
-  const t = normaliseDigits(text);
-  return ATTRIBUTIONS.map((re) => re.exec(t)?.[0]).filter((m): m is string => Boolean(m));
+  const normalised = normaliseDigits(text);
+  return ATTRIBUTIONS.map((re) => re.exec(normalised)?.[0]).filter((m): m is string => Boolean(m));
 }
 
 export interface Verdict {

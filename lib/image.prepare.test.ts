@@ -6,11 +6,13 @@ type Behaviour = { decode: boolean; ctx: boolean; blob: boolean; read: boolean }
 let behave: Behaviour;
 const revoked: string[] = [];
 
+const noop = (): void => undefined;
+
 class FakeImage {
   naturalWidth = 4000;
   naturalHeight = 3000;
-  onload: () => void = () => {};
-  onerror: () => void = () => {};
+  onload: () => void = noop;
+  onerror: () => void = noop;
   set src(_: string) {
     queueMicrotask(() => (behave.decode ? this.onload() : this.onerror()));
   }
@@ -18,8 +20,8 @@ class FakeImage {
 
 class FakeReader {
   result: string | null = "data:image/jpeg;base64,AAAA";
-  onload: () => void = () => {};
-  onerror: () => void = () => {};
+  onload: () => void = noop;
+  onerror: () => void = noop;
   readAsDataURL() {
     queueMicrotask(() => (behave.read ? this.onload() : this.onerror()));
   }
@@ -30,8 +32,8 @@ beforeEach(() => {
   revoked.length = 0;
   vi.stubGlobal("Image", FakeImage);
   vi.stubGlobal("FileReader", FakeReader);
-  let n = 0;
-  URL.createObjectURL = () => `blob:${++n}`;
+  let callCount = 0;
+  URL.createObjectURL = () => `blob:${++callCount}`;
   URL.revokeObjectURL = (u: string) => {
     revoked.push(u);
   };
@@ -41,7 +43,7 @@ beforeEach(() => {
     return {
       width: 0,
       height: 0,
-      getContext: () => (behave.ctx ? { drawImage: () => {} } : null),
+      getContext: () => (behave.ctx ? { drawImage: () => undefined } : null),
       toBlob: (cb: (b: Blob | null) => void) => cb(behave.blob ? new Blob(["x"]) : null),
     } as unknown as HTMLCanvasElement;
   }) as typeof document.createElement);

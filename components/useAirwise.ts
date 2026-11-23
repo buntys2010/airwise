@@ -11,22 +11,23 @@ import {
   buildActions,
   categoryOf,
   cigsSoFar,
+  fmtHour,
   outdoorCigs,
   outdoorCigsSoFar,
-  fmtHour,
   planSummary,
+  pmAt,
   simulate,
   toggleAction,
   type ActionResult,
   type Plan,
   type Profile,
-  pmAt,
 } from "@/lib/engine";
 import { hazeLevel } from "@/lib/haze";
 import { SAMPLE_PROFILE_PATCH } from "@/lib/room";
 import { buildSchedule } from "@/lib/schedule";
 import { decodeChoices, sanitizePlan } from "@/lib/share";
 import { clearSaved, readSaved, writeSaved, type StoreState } from "@/lib/store";
+import { runInBackground } from "@/lib/background";
 
 const REFRESH_MS = 15 * 60 * 1000;
 const LOAD_TIMEOUT_MS = 10_000;
@@ -83,17 +84,17 @@ function useLiveAir(city: City) {
           if (ctrl.signal.aborted) return;
           setAir(r);
           setStatus(r.source);
-          const c = istClock();
-          setNowHour(c.hour);
-          setElapsed(c.elapsed);
+          const clock = istClock();
+          setNowHour(clock.hour);
+          setElapsed(clock.elapsed);
         })
         .finally(() => {
           clearTimeout(timeout);
           ctrl.signal.removeEventListener("abort", onAbort);
         });
     };
-    void run();
-    const timer = setInterval(() => void run(), REFRESH_MS);
+    runInBackground(run());
+    const timer = setInterval(() => runInBackground(run()), REFRESH_MS);
     return () => {
       ctrl.abort();
       clearInterval(timer);
@@ -174,11 +175,11 @@ export function useAirwise(lang: Lang = "en") {
   }, []);
   /** Changing the household resets the plan, but only when something actually changed: an unchanged profile keeps the fixes already ticked. */
   const updateProfile = useCallback((next: Profile | ((cur: Profile) => Profile)) => {
-    const p = typeof next === "function" ? next(profileRef.current) : next;
-    if (sameProfile(p, profileRef.current)) return;
+    const nextProfile = typeof next === "function" ? next(profileRef.current) : next;
+    if (sameProfile(nextProfile, profileRef.current)) return;
     touched.current = true;
-    profileRef.current = p;
-    setProfileRaw(p);
+    profileRef.current = nextProfile;
+    setProfileRaw(nextProfile);
     setPlan(NO_PLAN);
   }, []);
   const setProfile = updateProfile;

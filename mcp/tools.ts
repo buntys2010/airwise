@@ -6,9 +6,10 @@ import {
   bestHour,
   buildActions,
   categoryOf,
+  pmAt,
+  round1,
   simulate,
   type Profile,
-  pmAt,
 } from "../lib/engine";
 import { PLAN_IDS, idsToPlan, sanitizePlan } from "../lib/share";
 
@@ -29,7 +30,9 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: ToolError };
 
 export type LoadAir = (cityId: string) => Promise<AirResult>;
 const defaultLoad: LoadAir = (id) => {
-  const city = CITIES.find((c) => c.id === id)!;
+  const city = CITIES.find((c) => c.id === id);
+  // Callers only pass ids that pick() accepted, and they treat a rejection as "air data unavailable".
+  if (!city) return Promise.reject(new Error(`Unknown city id: ${id}`));
   return loadAir(city, AbortSignal.timeout(6_000));
 };
 
@@ -42,22 +45,15 @@ function shown(value: unknown): string {
   return text.slice(0, 40);
 }
 
-function pick<T extends string>(
-  field: string,
-  value: unknown,
-  allowed: readonly T[],
-  required = true,
-): Result<T | undefined> {
+function pick<T extends string>(field: string, value: unknown, allowed: readonly T[]): Result<T> {
   if (value === undefined || value === null || value === "") {
-    return required
-      ? fail({
-          code: "missing_argument",
-          field,
-          message: `${field} is required.`,
-          allowed: [...allowed],
-          next_step: `Call again with ${field} set to one of the allowed values.`,
-        })
-      : { ok: true, data: undefined };
+    return fail({
+      code: "missing_argument",
+      field,
+      message: `${field} is required.`,
+      allowed: [...allowed],
+      next_step: `Call again with ${field} set to one of the allowed values.`,
+    });
   }
   if (typeof value === "string" && (allowed as readonly string[]).includes(value))
     return { ok: true, data: value as T };
@@ -75,15 +71,16 @@ const note = (a: AirResult) =>
     ? "Live hourly PM2.5 from Open-Meteo."
     : "The live feed was unreachable, so these hourly values are an offline estimate. Say so if you quote them.";
 
+/** MCP tool: today's hourly PM2.5 for a city, labelled live or estimate. */
 export async function getCityAir(
   args: { city?: unknown },
   load: LoadAir = defaultLoad,
 ): Promise<Result<unknown>> {
   const city = pick("city", args.city, CITY_IDS);
   if (!city.ok) return city;
-  const info = CITIES.find((c) => c.id === city.data)!;
-  const air = await load(info.id).catch(() => null);
-  if (!air)
+  const info = CITIES.find((c) => c.id === city.data);
+  const air = info ? await load(info.id).catch(() => null) : null;
+  if (!air || !info)
     return fail({
       code: "air_data_unavailable",
       message: "Air data could not be loaded.",
@@ -132,6 +129,7 @@ const PLAN_OF: Record<string, string> = {
   induction: "induction",
 };
 
+/** MCP tool: each fix's effect on a household's exposure, computed by the engine. */
 export async function scoreActions(
   args: {
     city?: unknown;
@@ -184,7 +182,7 @@ export async function scoreActions(
       });
     ids = args.actions as string[];
   }
-  const air = await load(city.data!).catch(() => null);
+  const air = await load(city.data).catch(() => null);
   if (!air)
     return fail({
       code: "air_data_unavailable",
@@ -193,10 +191,10 @@ export async function scoreActions(
     });
 
   const profile: Profile = {
-    home: home.data!,
-    commute: commute.data!,
+    home: home.data,
+    commute: commute.data,
     km,
-    cooking: cooking.data!,
+    cooking: cooking.data,
     vulnerable: args.vulnerable === true,
   };
   const plan = sanitizePlan(idsToPlan(ids), profile.commute);
@@ -233,5 +231,3 @@ export async function scoreActions(
     },
   };
 }
-
-const round1 = (n: number) => Math.round(n * 10) / 10;

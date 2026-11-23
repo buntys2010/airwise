@@ -1,7 +1,6 @@
-import { createCache } from "./cache";
-
 /** City list, live-air loader, and an offline estimate curve used only if the live feed is unreachable. */
 
+import { createCache } from "./cache";
 import { CITIES, type City } from "./cities";
 import { pmAt } from "./engine";
 export { CITIES };
@@ -33,6 +32,7 @@ export interface AirResult {
 const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
+/** The time in India (IST): hour, an HH:MM label, and hours elapsed since midnight with minutes as a fraction. */
 export function istClock(d = new Date()): { hour: number; label: string; elapsed: number } {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
@@ -58,11 +58,13 @@ export function parseHourly(json: unknown): number[] | null {
   return (day as number[]).map((v) => Math.round(v));
 }
 
+/** Current temperature (°C) and wind (km/h) from the weather payload, each null when missing or not a number. */
 export function parseWeather(json: unknown): { temp: number | null; wind: number | null } {
   const cur = (json as { current?: { temperature_2m?: unknown; wind_speed_10m?: unknown } } | null)
     ?.current;
-  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
-  return { temp: n(cur?.temperature_2m), wind: n(cur?.wind_speed_10m) };
+  const roundedOrNull = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null;
+  return { temp: roundedOrNull(cur?.temperature_2m), wind: roundedOrNull(cur?.wind_speed_10m) };
 }
 
 /**
@@ -78,20 +80,19 @@ export async function loadAir(city: City, signal?: AbortSignal): Promise<AirResu
     updated: null,
   };
   try {
-    const q = `latitude=${city.lat}&longitude=${city.lon}&timezone=Asia%2FKolkata`;
+    const query = `latitude=${city.lat}&longitude=${city.lon}&timezone=Asia%2FKolkata`;
     const [airRes, wxRes] = await Promise.all([
-      fetch(`${AIR_URL}?${q}&hourly=pm2_5&forecast_days=1`, { signal }),
-      fetch(`${WEATHER_URL}?${q}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh`, {
+      fetch(`${AIR_URL}?${query}&hourly=pm2_5&forecast_days=1`, { signal }),
+      fetch(`${WEATHER_URL}?${query}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh`, {
         signal,
       }).catch(() => null),
     ]);
     if (!airRes.ok) return estimate;
     const hourly = parseHourly(await airRes.json());
     if (!hourly) return estimate;
-    const wx =
-      wxRes && wxRes.ok
-        ? parseWeather(await wxRes.json().catch(() => null))
-        : { temp: null, wind: null };
+    const wx = wxRes?.ok
+      ? parseWeather(await wxRes.json().catch(() => null))
+      : { temp: null, wind: null };
     return { hourly, source: "live", ...wx, updated: istClock().label };
   } catch {
     return estimate;
@@ -123,15 +124,16 @@ export function getCityAir(city: City): Promise<AirResult> {
   if (hit) return Promise.resolve(hit);
   const pending = inflight.get(city.id);
   if (pending) return pending;
-  const p = loadAir(city, AbortSignal.timeout(AIR_TIMEOUT_MS))
+  const request = loadAir(city, AbortSignal.timeout(AIR_TIMEOUT_MS))
     .then((r) => {
       if (r.source === "live") airCache.set(city.id, r);
       return r;
     })
     .finally(() => inflight.delete(city.id));
-  inflight.set(city.id, p);
-  return p;
+  inflight.set(city.id, request);
+  return request;
 }
+/** Test hook: forget cached city air so each test starts clean. */
 export const resetAirCache = () => airCache.clear();
 
 export interface MapPoint {

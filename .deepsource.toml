@@ -1,0 +1,30 @@
+version = 1
+
+# Tests are analysed, but marked so coverage and documentation metrics treat them as tests.
+test_patterns = ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"]
+
+exclude_patterns = [
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/.next/**",
+  "**/coverage/**",
+  "**/out/**",
+]
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  dialect = "typescript"
+  # The code is ES modules (import/export), as tsconfig.json says ("module": "esnext").
+  module_system = "es-modules"
+  environment = ["browser", "nodejs"]
+  plugins = ["react"]
+  style_guide = "airbnb"
+  ecma_version = 2022
+  # The project's own CI caps cyclomatic and cognitive complexity at 15 (eslint.config.mjs).
+  cyclomatic_complexity_threshold = "high"
+
+[[analyzers]]
+name = "secrets"

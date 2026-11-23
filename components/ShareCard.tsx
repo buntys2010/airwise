@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { shareUrl, encodeChoices, whatsappLink } from "@/lib/share";
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
+import { runInBackground } from "@/lib/background";
 
 /**
  * The share card is a real picture, rendered on the server from CHOICES only (the same query a share link carries), so every number on it
@@ -21,8 +22,8 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
     [],
   );
 
-  const q = encodeChoices({ city: a.cityId, profile: a.profile, plan: a.plan });
-  const imageUrl = `/api/share-image?${q}&size=card`;
+  const query = encodeChoices({ city: a.cityId, profile: a.profile, plan: a.plan });
+  const imageUrl = `/api/share-image?${query}&size=card`;
   const say = (m: string) => {
     setToast(m);
     if (timer.current) clearTimeout(timer.current);
@@ -59,8 +60,8 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
           return;
         }
       }
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
+    } catch (error) {
+      if ((error as Error).name === "AbortError") {
         setToast("");
         return;
       }
@@ -74,9 +75,7 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
 
   return (
     <div className="sharecard">
-      <h2 className="chat-h" style={{ marginTop: 0 }}>
-        {t("share.cardH")}
-      </h2>
+      <h2 className="chat-h u-mt-0">{t("share.cardH")}</h2>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="sharepic"
@@ -90,7 +89,7 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
         <button
           type="button"
           className="btn wa"
-          onClick={() => void shareWhatsApp()}
+          onClick={() => runInBackground(shareWhatsApp())}
           disabled={busy}
         >
           {t("share.wa")}

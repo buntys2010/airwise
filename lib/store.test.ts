@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Profile } from "./engine";
 import { STORE_KEY, clearSaved, readSaved, sanitizeSaved, writeSaved } from "./store";
+import { must } from "../test-support/must";
 
 const profile: Profile = {
   home: "leaky",
@@ -12,16 +13,16 @@ const profile: Profile = {
 const saved = { city: "lucknow", profile };
 
 function memory() {
-  const m = new Map<string, string>();
+  const entries = new Map<string, string>();
   return {
-    getItem: (k: string) => m.get(k) ?? null,
+    getItem: (k: string) => entries.get(k) ?? null,
     setItem: (k: string, v: string) => {
-      m.set(k, v);
+      entries.set(k, v);
     },
     removeItem: (k: string) => {
-      m.delete(k);
+      entries.delete(k);
     },
-    m,
+    m: entries,
   };
 }
 const throwing = {
@@ -38,17 +39,17 @@ const throwing = {
 
 describe("device-only save", () => {
   it("writes, reads back and clears", () => {
-    const s = memory();
-    expect(readSaved(s)).toEqual({ data: null, state: "empty" });
-    expect(writeSaved(saved, s)).toBe("saved");
-    expect(readSaved(s)).toEqual({ data: saved, state: "saved" });
-    expect(clearSaved(s)).toBe("empty");
-    expect(readSaved(s).data).toBeNull();
+    const storage = memory();
+    expect(readSaved(storage)).toEqual({ data: null, state: "empty" });
+    expect(writeSaved(saved, storage)).toBe("saved");
+    expect(readSaved(storage)).toEqual({ data: saved, state: "saved" });
+    expect(clearSaved(storage)).toBe("empty");
+    expect(readSaved(storage).data).toBeNull();
   });
   it("stores only choices, never a computed figure", () => {
-    const s = memory();
-    writeSaved(saved, s);
-    const text = s.m.get(STORE_KEY)!;
+    const storage = memory();
+    writeSaved(saved, storage);
+    const text = must(storage.m.get(STORE_KEY));
     expect(Object.keys(JSON.parse(text)).sort()).toEqual(["city", "profile"]);
     expect(text).not.toMatch(/cig|pm|exposure/i);
   });
@@ -61,16 +62,16 @@ describe("device-only save", () => {
     expect(clearSaved(throwing)).toBe("blocked");
   });
   it("ignores corrupt or tampered entries instead of trusting them", () => {
-    const s = memory();
-    s.setItem(STORE_KEY, "{not json");
-    expect(readSaved(s)).toEqual({ data: null, state: "blocked" });
-    s.setItem(STORE_KEY, JSON.stringify({ city: "atlantis", profile }));
-    expect(readSaved(s)).toEqual({ data: null, state: "empty" });
-    s.setItem(
+    const storage = memory();
+    storage.setItem(STORE_KEY, "{not json");
+    expect(readSaved(storage)).toEqual({ data: null, state: "blocked" });
+    storage.setItem(STORE_KEY, JSON.stringify({ city: "atlantis", profile }));
+    expect(readSaved(storage)).toEqual({ data: null, state: "empty" });
+    storage.setItem(
       STORE_KEY,
       JSON.stringify({ city: "delhi", profile: { ...profile, home: "castle" } }),
     );
-    expect(readSaved(s)).toEqual({ data: null, state: "empty" });
+    expect(readSaved(storage)).toEqual({ data: null, state: "empty" });
   });
 });
 

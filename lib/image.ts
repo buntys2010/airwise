@@ -9,6 +9,7 @@ export const MAX_PICK_BYTES = 15 * 1024 * 1024;
 /** Largest decoded image the server accepts, after the client has downscaled. */
 export const MAX_UPLOAD_BYTES = 1_500_000;
 
+/** Dimensions scaled down to fit within `max` on the longer edge, never enlarged and never below 1 px. */
 export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: number } {
   if (w <= 0 || h <= 0) return { w: 0, h: 0 };
   const scale = Math.min(1, max / Math.max(w, h));
@@ -17,6 +18,7 @@ export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: n
 
 export type PickCheck = { ok: true } | { ok: false; message: string };
 
+/** Whether a picked file is a supported type and small enough to try, with a message a person can act on if not. */
 export function checkPick(file: { type: string; size: number }): PickCheck {
   if (!ACCEPTED_TYPES.includes(file.type))
     return {
@@ -59,10 +61,10 @@ export async function prepareImage(file: Blob): Promise<Prepared> {
     );
     if (!blob) throw new Error("encode");
     const dataUrl = await new Promise<string>((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(typeof r.result === "string" ? r.result : "");
-      r.onerror = () => rej(new Error("read"));
-      r.readAsDataURL(blob);
+      const reader = new FileReader();
+      reader.onload = () => res(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => rej(new Error("read"));
+      reader.readAsDataURL(blob);
     });
     return { dataUrl, objectUrl: URL.createObjectURL(blob) };
   } finally {
@@ -77,10 +79,10 @@ export function parseDataUrl(
   value: unknown,
 ): { mimeType: string; data: string } | "bad_type" | "too_large" {
   if (typeof value !== "string") return "bad_type";
-  const m = DATA_URL.exec(value);
-  if (!m) return "bad_type";
+  const match = DATA_URL.exec(value);
+  if (!match) return "bad_type";
   // Strict base64 length alignment: standard base64 must align to 4 characters
-  const [, mimeType, data] = m;
+  const [, mimeType, data] = match;
   if (!mimeType || !data || data.length % 4 !== 0 || data.length < 4) return "bad_type";
   const decoded = Math.floor((data.length * 3) / 4);
   if (decoded > MAX_UPLOAD_BYTES) return "too_large";

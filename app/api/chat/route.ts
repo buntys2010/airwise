@@ -56,18 +56,18 @@ export const POST = withObservability("chat", async (req: Request) => {
       air: air.source,
     });
 
-  const r = await generateDetailed({
+  const generated = await generateDetailed({
     prompt: buildPrompt(question, ctx, choices.lang),
     maxTokens: 260,
     kind: "chat",
     timeoutMs: PER_CALL_MS,
     budgetMs: Math.max(2_000, CHAT_BUDGET_MS - (Date.now() - started)),
   });
-  if (r.ok) {
+  if (generated.ok) {
     // Grounding guard: a Gemini answer is shown only if every number and claim in it traces back to the engine's facts.
-    const verdict = verify(r.text, ctx);
+    const verdict = verify(generated.text, ctx);
     if (verdict.ok) {
-      const answer = r.text.slice(0, 900);
+      const answer = generated.text.slice(0, 900);
       verifiedAnswers.set(cacheKey, answer);
       return json({ answer, source: "gemini", verified: true, air: air.source });
     }
@@ -84,8 +84,8 @@ export const POST = withObservability("chat", async (req: Request) => {
     source: "offline",
     verified: false,
     rejected: false,
-    reason: r.reason,
-    reasonText: REASON_TEXT[r.reason],
+    reason: generated.reason,
+    reasonText: REASON_TEXT[generated.reason],
     air: air.source,
   });
 });

@@ -1,18 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetGeminiBudget } from "@/lib/gemini";
 import { POST } from "./route";
+import { must } from "../../../test-support/must";
 
 vi.mock("@/lib/data", async (orig) => {
   const real = await orig<typeof import("@/lib/data")>();
   return {
     ...real,
-    getCityAir: async (c: Parameters<typeof real.estimateHourly>[0]) => ({
-      hourly: real.estimateHourly(c),
-      source: "live" as const,
-      temp: 9,
-      wind: 4,
-      updated: "10:00",
-    }),
+    getCityAir: (c: Parameters<typeof real.estimateHourly>[0]) =>
+      Promise.resolve({
+        hourly: real.estimateHourly(c),
+        source: "live" as const,
+        temp: 9,
+        wind: 4,
+        updated: "10:00",
+      }),
   };
 });
 
@@ -26,10 +28,10 @@ const choices = {
   plan: {},
   lang: "en",
 };
-let n = 0;
+let callCount = 0;
 const call = (
   body: unknown,
-  headers: Record<string, string> = { "x-forwarded-for": `10.0.0.${++n}` },
+  headers: Record<string, string> = { "x-forwarded-for": `10.0.0.${++callCount}` },
 ) =>
   POST(
     new Request("http://x/api/chat", {
@@ -40,11 +42,11 @@ const call = (
   );
 const geminiText = (text: string) => ({
   ok: true,
-  json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }),
+  json: () => Promise.resolve({ candidates: [{ content: { parts: [{ text }] } }] }),
 });
-const status = (s: number) => ({ ok: false, status: s, json: async () => ({}) });
+const status = (s: number) => ({ ok: false, status: s, json: () => Promise.resolve({}) });
 const bodyOf = (f: ReturnType<typeof vi.fn>, i = 0) =>
-  JSON.parse((f.mock.calls[i]![1] as RequestInit).body as string);
+  JSON.parse((must(f.mock.calls[i])[1] as RequestInit).body as string);
 
 beforeEach(() => resetGeminiBudget());
 afterEach(() => {
@@ -94,8 +96,8 @@ describe("POST /api/chat", () => {
   });
   it("uses Gemini with the key in a header, and recomputes the facts itself", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = vi.fn().mockResolvedValue(geminiText("Wear an N95."));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockResolvedValue(geminiText("Wear an N95."));
+    vi.stubGlobal("fetch", fetchMock);
     const json = await (
       await call({
         question: "which mask works?",
@@ -103,59 +105,63 @@ describe("POST /api/chat", () => {
       })
     ).json();
     expect(json).toMatchObject({ answer: "Wear an N95.", source: "gemini", verified: true });
-    expect(String(f.mock.calls[0]![0])).not.toContain("test-key");
-    expect(f.mock.calls[0]![1]).toMatchObject({ headers: { "x-goog-api-key": "test-key" } });
-    const prompt: string = bodyOf(f).contents[0].parts[0].text;
+    expect(String(must(fetchMock.mock.calls[0])[0])).not.toContain("test-key");
+    expect(must(fetchMock.mock.calls[0])[1]).toMatchObject({
+      headers: { "x-goog-api-key": "test-key" },
+    });
+    const prompt: string = bodyOf(fetchMock).contents[0].parts[0].text;
     expect(prompt).toContain('"city":"Delhi"');
     expect(prompt).not.toContain('"pm":1,'); // the client's fake number never reaches the model
     expect(prompt).not.toContain("99");
   });
   it("serves a repeated verified question from cache without another model call", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = vi.fn().mockResolvedValue(geminiText("Keep windows shut."));
-    vi.stubGlobal("fetch", f);
-    const q = { question: "windows cache check", choices };
-    expect((await (await call(q)).json()).cached).toBeUndefined();
-    expect(await (await call(q)).json()).toMatchObject({
+    const fetchMock = vi.fn().mockResolvedValue(geminiText("Keep windows shut."));
+    vi.stubGlobal("fetch", fetchMock);
+    const body = { question: "windows cache check", choices };
+    expect((await (await call(body)).json()).cached).toBeUndefined();
+    expect(await (await call(body)).json()).toMatchObject({
       answer: "Keep windows shut.",
       verified: true,
       cached: true,
     });
-    expect(f).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   it("keeps languages apart in the cache and asks for Hindi", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = vi.fn().mockResolvedValue(geminiText("Keep windows shut."));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockResolvedValue(geminiText("Keep windows shut."));
+    vi.stubGlobal("fetch", fetchMock);
     await call({ question: "language cache check", choices });
     await call({ question: "language cache check", choices: { ...choices, lang: "hi" } });
-    expect(f).toHaveBeenCalledTimes(2);
-    expect(bodyOf(f, 1).contents[0].parts[0].text).toMatch(/Hindi/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(bodyOf(fetchMock, 1).contents[0].parts[0].text).toMatch(/Hindi/);
   });
   it("falls through to the next model when the first is rate limited", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = vi
+    const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(status(429))
       .mockResolvedValueOnce(geminiText("Use a purifier."));
-    vi.stubGlobal("fetch", f);
+    vi.stubGlobal("fetch", fetchMock);
     expect(await (await call({ question: "chain fallback check", choices })).json()).toMatchObject({
       source: "gemini",
       verified: true,
     });
-    expect(f).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
   it("rejects a Gemini answer with a number we did not compute, and does not cache it", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    const f = vi.fn().mockResolvedValue(geminiText("An N95 cuts your exposure by 87% in Delhi."));
-    vi.stubGlobal("fetch", f);
-    const q = { question: "invented number check", choices };
-    const json = await (await call(q)).json();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(geminiText("An N95 cuts your exposure by 87% in Delhi."));
+    vi.stubGlobal("fetch", fetchMock);
+    const body = { question: "invented number check", choices };
+    const json = await (await call(body)).json();
     expect(json).toMatchObject({ source: "offline", verified: false, rejected: true });
     expect(json.answer).not.toMatch(/87/);
-    const before = f.mock.calls.length;
-    await call(q);
-    expect(f.mock.calls.length).toBeGreaterThan(before);
+    const before = fetchMock.mock.calls.length;
+    await call(body);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
   });
   it("names the reason when Gemini is rate limited, times out, or cannot be reached", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
@@ -180,19 +186,19 @@ describe("POST /api/chat", () => {
   it("stops calling Gemini when the global budget is spent", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
     vi.stubEnv("GEMINI_BUDGET_PER_MIN", "1");
-    const f = vi.fn().mockResolvedValue(status(503));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockResolvedValue(status(503));
+    vi.stubGlobal("fetch", fetchMock);
     const json = await (await call({ question: "budget check", choices })).json();
-    expect(f).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(json.reason).toBe("budget");
   });
   it("turns off hidden thinking for 2.5 models", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
     vi.stubEnv("GEMINI_MODEL", "gemini-2.5-flash");
-    const f = vi.fn().mockResolvedValue(geminiText("Wear an N95."));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockResolvedValue(geminiText("Wear an N95."));
+    vi.stubGlobal("fetch", fetchMock);
     await call({ question: "thinking budget check", choices });
-    expect(bodyOf(f).generationConfig.thinkingConfig.thinkingBudget).toBe(0);
+    expect(bodyOf(fetchMock).generationConfig.thinkingConfig.thinkingBudget).toBe(0);
   });
 });
 
@@ -205,7 +211,7 @@ describe("chat time budget", () => {
       .mockImplementation(
         (_u: string, init: RequestInit) =>
           new Promise((_r, rej) =>
-            init.signal!.addEventListener("abort", () =>
+            must(init.signal).addEventListener("abort", () =>
               rej(Object.assign(new Error("aborted"), { name: "AbortError" })),
             ),
           ),
@@ -228,13 +234,13 @@ describe("chat time budget", () => {
   it("a hanging first model still leaves the second one time to answer", async () => {
     vi.useFakeTimers();
     vi.stubEnv("GEMINI_API_KEY", "test-key");
-    let n = 0;
+    let requestCount = 0;
     vi.stubGlobal(
       "fetch",
       vi.fn().mockImplementation((_u: string, init: RequestInit) => {
-        if (++n === 1)
+        if (++requestCount === 1)
           return new Promise((_r, rej) =>
-            init.signal!.addEventListener("abort", () =>
+            must(init.signal).addEventListener("abort", () =>
               rej(Object.assign(new Error("aborted"), { name: "AbortError" })),
             ),
           );

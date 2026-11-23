@@ -49,22 +49,22 @@ export function useVoice(lang: Lang, onTranscript: (text: string) => void) {
     }
     const Ctor = getRecognitionCtor(speechWindow());
     if (!Ctor) return;
-    const r = new Ctor();
-    r.lang = SPEECH_LANG[lang];
-    r.interimResults = false;
-    r.continuous = false;
-    r.maxAlternatives = 1;
-    r.onresult = (e) => {
+    const recognition = new Ctor();
+    recognition.lang = SPEECH_LANG[lang];
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (e) => {
       const text = transcriptOf(e);
       if (text) onTranscript(text);
       setMessage(text ? "voice.review" : "voice.nospeech");
     };
-    r.onerror = (e) => setMessage(VOICE_PROBLEM_KEY[mapVoiceError(e.error)]);
-    r.onend = () => setListening(false);
-    rec.current = r;
+    recognition.onerror = (e) => setMessage(VOICE_PROBLEM_KEY[mapVoiceError(e.error)]);
+    recognition.onend = () => setListening(false);
+    rec.current = recognition;
     setMessage(null);
     try {
-      r.start();
+      recognition.start();
       setListening(true);
     } catch {
       setMessage("voice.error");

@@ -52,6 +52,7 @@ const KIND_META: Record<FindingKind, { label: string; actionId: RoomActionId }> 
   no_purifier: { label: "No air purifier", actionId: "purifier" },
 };
 
+/** A hotspot for a finding kind, with its label and the fix it points to taken from KIND_META. */
 export function hotspotFor(kind: FindingKind, bbox: BBox | undefined, confidence: number): Hotspot {
   const { label, actionId } = KIND_META[kind];
   return { id: kind, kind, label, actionId, bbox, confidence };
@@ -82,7 +83,7 @@ export function profilePatch(
     patch.home = "typical"; // "no gap": stop assuming a leaky home
   if (hotspots.some((h) => h.kind === "gas_stove")) {
     if (current?.cooking !== "wood") patch.cooking = "lpg"; // a wood stove stays wood: it is the worse case
-  } else if (answers.stove === false && (!current || current.cooking !== "induction"))
+  } else if (answers.stove === false && current?.cooking !== "induction")
     patch.cooking = "induction"; // "no gas or wood": stop assuming smoke
   return patch;
 }
@@ -170,11 +171,13 @@ function validBox(raw: unknown): BBox | null {
 
 /** One raw finding from the model as a hotspot, or null if it breaks any rule. */
 function validFinding(raw: unknown): { kind: VisionKind; box: BBox; conf: number } | null {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const kind = VISION_KINDS.find((k) => k === r.kind);
-  const box = validBox(r.bbox);
+  const fields = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const kind = VISION_KINDS.find((k) => k === fields.kind);
+  const box = validBox(fields.bbox);
   const conf =
-    typeof r.confidence === "number" && Number.isFinite(r.confidence) ? r.confidence : -1;
+    typeof fields.confidence === "number" && Number.isFinite(fields.confidence)
+      ? fields.confidence
+      : -1;
   if (!kind || !box || conf < MIN_CONFIDENCE || conf > 1) return null;
   return { kind, box, conf };
 }
@@ -187,17 +190,17 @@ export function validateVision(text: string): VisionOutcome {
   } catch {
     return { status: "unreadable" };
   }
-  const j = json as { is_room?: unknown; findings?: unknown };
-  if (typeof j?.is_room !== "boolean" || !Array.isArray(j.findings))
+  const parsed = json as { is_room?: unknown; findings?: unknown };
+  if (typeof parsed?.is_room !== "boolean" || !Array.isArray(parsed.findings))
     return { status: "unreadable" };
-  if (!j.is_room) return { status: "not_room" };
+  if (!parsed.is_room) return { status: "not_room" };
   const seen = new Set<VisionKind>();
   const hotspots: Hotspot[] = [];
-  for (const raw of j.findings.slice(0, 12)) {
-    const f = validFinding(raw);
-    if (!f || seen.has(f.kind)) continue;
-    seen.add(f.kind);
-    hotspots.push(hotspotFor(f.kind, f.box, f.conf));
+  for (const raw of parsed.findings.slice(0, 12)) {
+    const finding = validFinding(raw);
+    if (!finding || seen.has(finding.kind)) continue;
+    seen.add(finding.kind);
+    hotspots.push(hotspotFor(finding.kind, finding.box, finding.conf));
   }
   hotspots.sort((a, b) => FINDING_KINDS.indexOf(a.kind) - FINDING_KINDS.indexOf(b.kind));
   return hotspots.length ? { status: "ok", hotspots } : { status: "none" };
@@ -218,8 +221,9 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
   if (window) out.push(seen("window_gap") ?? hotspotFor("window_gap", undefined, 1));
   const stove = answers.stove ?? (seen("gas_stove") ? true : undefined);
   if (stove) out.push(seen("gas_stove") ?? hotspotFor("gas_stove", undefined, 1));
-  const purifier = answers.purifier ?? (seen("purifier_seen") ? true : undefined);
-  if (purifier === true && seen("purifier_seen")) out.push(seen("purifier_seen")!);
+  const seenPurifier = seen("purifier_seen");
+  const purifier = answers.purifier ?? (seenPurifier ? true : undefined);
+  if (purifier === true && seenPurifier) out.push(seenPurifier);
   if (purifier === false) out.push(seen("no_purifier") ?? hotspotFor("no_purifier", undefined, 1));
   return out;
 }
@@ -330,5 +334,6 @@ export function rankProducts(hourly: number[], profile: Profile): RankedProduct[
 }
 
 const formatRupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+/** A product's indicative price as text, for example '₹8,000 to ₹15,000'. */
 export const priceRange = (p: Pick<Product, "price">) =>
   `${formatRupees(p.price[0])} to ${formatRupees(p.price[1])}`;

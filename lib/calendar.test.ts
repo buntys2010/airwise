@@ -15,7 +15,7 @@ describe("icsEscape", () => {
 
 describe("foldLine", () => {
   it("never leaves a physical line over 75 octets, even with multi-byte Hindi text", () => {
-    const text = "SUMMARY:" + "आज हवा कैसी है? ".repeat(20);
+    const text = `SUMMARY:${"आज हवा कैसी है? ".repeat(20)}`;
     const folded = foldLine(text);
     const enc = new TextEncoder();
     for (const physical of folded.split("\r\n"))
@@ -47,7 +47,7 @@ describe("buildReminderIcs", () => {
   it("links back to the app with choices only", () => {
     expect(all).toContain(`URL:${url}`);
     expect(all.find((l) => l.startsWith("DESCRIPTION:"))).toContain("airwise.example");
-    expect(ics).not.toMatch(/cigarette|µg|exposure/i);
+    expect(ics).not.toMatch(/cigarette|µg|exposure/iu);
   });
   it("has a display alarm at the start time", () => {
     expect(all).toContain("BEGIN:VALARM");

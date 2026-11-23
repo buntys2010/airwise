@@ -7,23 +7,23 @@ const never = () => false;
 
 describe("readGuarded", () => {
   it("returns the parsed body on success", async () => {
-    const r = await readGuarded(post('{"a":1}'), { limited: never, maxBytes: 100 });
-    expect(r).toEqual({ ok: true, body: { a: 1 } });
+    const parsed = await readGuarded(post('{"a":1}'), { limited: never, maxBytes: 100 });
+    expect(parsed).toEqual({ ok: true, body: { a: 1 } });
   });
   it("429 when the limiter says so, before reading the body", async () => {
-    const r = await readGuarded(post("{}"), {
+    const parsed = await readGuarded(post("{}"), {
       limited: () => true,
       maxBytes: 100,
       tooMany: "Slow down.",
     });
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.res.status).toBe(429);
-      expect(await r.res.json()).toEqual({ error: "Slow down." });
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) {
+      expect(parsed.res.status).toBe(429);
+      expect(await parsed.res.json()).toEqual({ error: "Slow down." });
     }
   });
   it("413 over the size cap, 400 on invalid JSON", async () => {
-    const big = await readGuarded(post('{"a":"' + "x".repeat(200) + '"}'), {
+    const big = await readGuarded(post(`{"a":"${"x".repeat(200)}"}`), {
       limited: never,
       maxBytes: 100,
     });
@@ -56,8 +56,8 @@ describe("readGuarded", () => {
 
 describe("json", () => {
   it("builds a JSON response with a status", async () => {
-    const r = json({ ok: true }, 201);
-    expect(r.status).toBe(201);
-    expect(await r.json()).toEqual({ ok: true });
+    const response = json({ ok: true }, 201);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ ok: true });
   });
 });

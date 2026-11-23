@@ -5,6 +5,7 @@ import { NO_PLAN } from "@/lib/engine";
 import { shareUrl, whatsappLink } from "@/lib/share";
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
+import { runInBackground } from "@/lib/background";
 
 /**
  * Keep this plan: a link that carries choices only, a calendar reminder built on this device, and the device-only save with a Clear control.
@@ -33,8 +34,8 @@ export function PlanTools({ a }: Readonly<{ a: Airwise }>) {
         setMsg("");
         return;
       }
-    } catch (e) {
-      if ((e as Error).name === "AbortError") return; /* fall through to copy */
+    } catch (error) {
+      if ((error as Error).name === "AbortError") return; /* fall through to copy */
     }
     try {
       await navigator.clipboard.writeText(url);
@@ -81,7 +82,7 @@ export function PlanTools({ a }: Readonly<{ a: Airwise }>) {
     <div className="plantools">
       <h2 className="chat-h">{t("tools.h")}</h2>
       <div className="toolrow">
-        <button type="button" className="btn ghost" onClick={() => void copyLink()}>
+        <button type="button" className="btn ghost" onClick={() => runInBackground(copyLink())}>
           {t("tools.link")}
         </button>
         <button type="button" className="btn ghost" onClick={remind}>

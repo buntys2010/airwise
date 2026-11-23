@@ -38,7 +38,7 @@ export const POST = withObservability("plan", async (req: Request) => {
   if (cached)
     return json({ ...cached, source: "gemini", verified: true, cached: true, air: air.source });
 
-  const r = await generateDetailed({
+  const generated = await generateDetailed({
     prompt: buildPlanPrompt(request, choices.lang),
     maxTokens: 900,
     temperature: 0.5,
@@ -47,7 +47,7 @@ export const POST = withObservability("plan", async (req: Request) => {
     timeoutMs: 15_000,
     kind: "plan",
   });
-  const plan = r.ok ? validatePlan(r.text, request) : null;
+  const plan = generated.ok ? validatePlan(generated.text, request) : null;
   if (plan) {
     verifiedPlans.set(cacheKey, plan);
     return json({ ...plan, source: "gemini", verified: true, air: air.source });
@@ -57,7 +57,9 @@ export const POST = withObservability("plan", async (req: Request) => {
     source: "offline",
     verified: false,
     air: air.source,
-    rejected: r.ok,
-    ...(r.ok ? {} : { reason: r.reason, reasonText: REASON_TEXT[r.reason] }),
+    rejected: generated.ok,
+    ...(generated.ok
+      ? {}
+      : { reason: generated.reason, reasonText: REASON_TEXT[generated.reason] }),
   });
 });

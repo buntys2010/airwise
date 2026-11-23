@@ -66,14 +66,14 @@ const OUTLINE: [number, number][] = [
   [70.9, 20.7],
   [69.2, 22.2],
 ];
-const W = 620,
-  H = 680,
+const MAP_WIDTH = 620,
+  MAP_HEIGHT = 680,
   LON0 = 67,
   LON1 = 98.5,
   LAT0 = 6,
   LAT1 = 38;
-const x = (lon: number) => ((lon - LON0) / (LON1 - LON0)) * W;
-const y = (lat: number) => H - ((lat - LAT0) / (LAT1 - LAT0)) * H;
+const xFor = (lon: number) => ((lon - LON0) / (LON1 - LON0)) * MAP_WIDTH;
+const yFor = (lat: number) => MAP_HEIGHT - ((lat - LAT0) / (LAT1 - LAT0)) * MAP_HEIGHT;
 
 /** Cropped to the country, with room for the islands and the north-east. */
 const VIEW = { x: -70, y: 40, w: 670, h: 640 };
@@ -95,7 +95,7 @@ const LABEL: Record<string, { dx: number; dy: number; anchor: "start" | "end" }>
   patna: { dx: 18, dy: -4, anchor: "start" },
   kolkata: { dx: -20, dy: 4, anchor: "end" },
   ahmedabad: { dx: -18, dy: 0, anchor: "end" },
-  bhopal: { dx: 18, dy: 2, anchor: "start" },
+  bhopal: { dx: -18, dy: 2, anchor: "end" },
   mumbai: { dx: -18, dy: -6, anchor: "end" },
   pune: { dx: 18, dy: 36, anchor: "start" },
   hyderabad: { dx: 18, dy: -24, anchor: "start" },
@@ -166,9 +166,9 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
         >
           <polygon
             className="map-land"
-            points={OUTLINE.map(([lon, lat]) => `${x(lon).toFixed(1)},${y(lat).toFixed(1)}`).join(
-              " ",
-            )}
+            points={OUTLINE.map(
+              ([lon, lat]) => `${xFor(lon).toFixed(1)},${yFor(lat).toFixed(1)}`,
+            ).join(" ")}
           />
           {/* small markers first, so the named cities and the selection draw on top */}
           {points
@@ -179,7 +179,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                 <g
                   key={p.id}
                   data-city={p.id}
-                  transform={`translate(${x(p.lon)} ${y(p.lat)})`}
+                  transform={`translate(${xFor(p.lon)} ${yFor(p.lat)})`}
                   className={`map-mark${p.id === selected ? " sel" : ""}`}
                   onClick={() => setSelected(p.id)}
                 >
@@ -193,7 +193,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
             .filter((p) => NAMED.has(p.id))
             .map((p) => {
               const cat = categoryOf(p.pm);
-              const L = LABEL[p.id] ?? { dx: 18, dy: 0, anchor: "start" as const };
+              const labelOffset = LABEL[p.id] ?? { dx: 18, dy: 0, anchor: "start" as const };
               return (
                 <g
                   key={p.id}
@@ -203,28 +203,33 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                   onClick={() => setSelected(p.id)}
                 >
                   <circle
-                    cx={x(p.lon)}
-                    cy={y(p.lat)}
+                    cx={xFor(p.lon)}
+                    cy={yFor(p.lat)}
                     r={13}
                     fill={FILL[cat.tone]}
                     className="map-dot"
                     strokeDasharray={p.source === "estimate" ? "5 4" : undefined}
                   />
-                  <text x={x(p.lon)} y={y(p.lat) + 5} textAnchor="middle" className="map-icon">
+                  <text
+                    x={xFor(p.lon)}
+                    y={yFor(p.lat) + 5}
+                    textAnchor="middle"
+                    className="map-icon"
+                  >
                     {cat.icon}
                   </text>
                   <text
-                    x={x(p.lon) + L.dx}
-                    y={y(p.lat) + L.dy}
-                    textAnchor={L.anchor}
+                    x={xFor(p.lon) + labelOffset.dx}
+                    y={yFor(p.lat) + labelOffset.dy}
+                    textAnchor={labelOffset.anchor}
                     className="map-name"
                   >
                     {p.name}
                   </text>
                   <text
-                    x={x(p.lon) + L.dx}
-                    y={y(p.lat) + L.dy + 18}
-                    textAnchor={L.anchor}
+                    x={xFor(p.lon) + labelOffset.dx}
+                    y={yFor(p.lat) + labelOffset.dy + 18}
+                    textAnchor={labelOffset.anchor}
                     className="map-val"
                   >
                     {p.pm} µg/m³{p.source === "estimate" ? ` · ${t("map.est")}` : ""}

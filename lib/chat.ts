@@ -6,10 +6,12 @@ import {
   buildActions,
   categoryOf,
   cigsSoFar,
+  fmtHour,
   outdoorCigs,
   outdoorCigsSoFar,
-  fmtHour,
   planSummary,
+  pmAt,
+  round1,
   simulate,
   type Commute,
   type Cooking,
@@ -18,7 +20,6 @@ import {
   type Plan,
   type Profile,
   type PurifierKind,
-  pmAt,
 } from "./engine";
 
 export const MAX_QUESTION = 400;
@@ -67,34 +68,37 @@ const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null =>
 
 /** Unknown or malformed fields fall back to "not in the plan", so a bad value can never add an action. */
 export function parsePlan(raw: unknown): Plan {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const fields = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   return {
     ...NO_PLAN,
-    purifier: r.purifier === true,
-    purifierKind: oneOf(KINDS, r.purifierKind) ?? undefined,
-    mask: oneOf(MASKS, r.mask) ?? "none",
-    shiftOutdoor: r.shiftOutdoor === true,
-    swapCommute: oneOf(COMMUTES, r.swapCommute),
-    induction: r.induction === true,
-    sealGaps: r.sealGaps === true,
+    purifier: fields.purifier === true,
+    purifierKind: oneOf(KINDS, fields.purifierKind) ?? undefined,
+    mask: oneOf(MASKS, fields.mask) ?? "none",
+    shiftOutdoor: fields.shiftOutdoor === true,
+    swapCommute: oneOf(COMMUTES, fields.swapCommute),
+    induction: fields.induction === true,
+    sealGaps: fields.sealGaps === true,
   };
 }
 
+/** Validates the household choices a client sends. Anything off-list returns null, so no unchecked value reaches the engine. */
 export function parseChoices(raw: unknown): Choices | null {
   if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
-  const city = CITIES.find((c) => c.id === r.city);
-  const home = oneOf(HOMES, r.home),
-    commute = oneOf(COMMUTES, r.commute),
-    cooking = oneOf(COOKINGS, r.cooking);
+  const fields = raw as Record<string, unknown>;
+  const city = CITIES.find((c) => c.id === fields.city);
+  const home = oneOf(HOMES, fields.home),
+    commute = oneOf(COMMUTES, fields.commute),
+    cooking = oneOf(COOKINGS, fields.cooking);
   const km =
-    typeof r.km === "number" && Number.isFinite(r.km) ? Math.min(60, Math.max(0, r.km)) : null;
+    typeof fields.km === "number" && Number.isFinite(fields.km)
+      ? Math.min(60, Math.max(0, fields.km))
+      : null;
   if (!city || !home || !commute || !cooking || km === null) return null;
   return {
     city,
-    plan: parsePlan(r.plan),
-    lang: oneOf(LANGS, r.lang) ?? "en",
-    profile: { home, commute, km, cooking, vulnerable: r.vulnerable === true },
+    plan: parsePlan(fields.plan),
+    lang: oneOf(LANGS, fields.lang) ?? "en",
+    profile: { home, commute, km, cooking, vulnerable: fields.vulnerable === true },
   };
 }
 
@@ -124,20 +128,21 @@ export function buildContext(
       .map((a) => ({
         title: a.title,
         pct: Math.round(a.savedPct * 100),
-        cigs: Math.round(a.savedCigs * 10) / 10,
+        cigs: round1(a.savedCigs),
       })),
     bestPm: pmAt(hourly, best),
     usualPm: pmAt(hourly, OUTDOOR_HOUR),
-    soFar: Math.round(cigsSoFar(hourly, c.profile, c.plan, elapsed) * 10) / 10, // one decimal, as shown
-    outdoorDay: Math.round(outdoorCigs(hourly) * 10) / 10,
-    outdoorSoFar: Math.round(outdoorCigsSoFar(hourly, elapsed) * 10) / 10,
+    soFar: round1(cigsSoFar(hourly, c.profile, c.plan, elapsed)),
+    outdoorDay: round1(outdoorCigs(hourly)),
+    outdoorSoFar: round1(outdoorCigsSoFar(hourly, elapsed)),
   };
 }
 
+/** A trimmed question without angle brackets, or null if it is empty or longer than MAX_QUESTION. */
 export function cleanQuestion(q: unknown): string | null {
   if (typeof q !== "string") return null;
-  const t = q.trim().replace(/[<>]/g, "");
-  return t && t.length <= MAX_QUESTION ? t : null;
+  const text = q.trim().replace(/[<>]/g, "");
+  return text && text.length <= MAX_QUESTION ? text : null;
 }
 
 /** Deterministic answer used when Gemini is unavailable or its reply fails verification. Facts come from the engine. */
@@ -160,6 +165,7 @@ export function offlineAnswer(q: string, c: ChatContext, lang: Lang = "en"): str
   return `Today in ${c.city} the air is "${c.category}" (PM2.5 about ${Math.round(c.pm)} µg/m³). Following your plan (${c.actions.join(", ") || "no actions chosen yet"}) takes your breathing from about ${c.baselineCigs.toFixed(1)} to ${c.planCigs.toFixed(1)} cigarettes' worth a day, saving ${save}. General guidance, not medical advice.`;
 }
 
+/** The model prompt: rules, the engine's facts as data, and the question fenced as untrusted text. */
 export function buildPrompt(question: string, c: ChatContext, lang: Lang = "en"): string {
   return [
     "You are AirWise, a calm, practical assistant that helps families cope with smog.",
@@ -181,17 +187,17 @@ export function buildPrompt(question: string, c: ChatContext, lang: Lang = "en")
 export function offlineAnswerHi(q: string, c: ChatContext): string {
   const text = q.toLowerCase();
   const save = Math.max(0, c.baselineCigs - c.planCigs).toFixed(1);
-  if (/mask|n95|मास्क/.test(text))
+  if (/mask|n95|मास्क/u.test(text))
     return `${c.city} में बाहर हर बार N95 पहनें। कपड़े या सर्जिकल मास्क PM2.5 को बहुत कम रोकते हैं। नाक की क्लिप कसें और गालों के पास खाली जगह न रहने दें।`;
-  if (/window|ventilat|open|खिड़की|हवादार/.test(text))
+  if (/window|ventilat|open|खिड़की|हवादार/u.test(text))
     return `जब हवा सबसे खराब हो तब खिड़कियाँ बंद रखें। आज बाहर PM2.5 सबसे कम ${c.bestHour || "दोपहर के सबसे साफ़ घंटे"} के आसपास है, तभी थोड़ी देर के लिए खोलें।`;
-  if (/purif|filter|hepa|प्यूरीफायर|फ़िल्टर|फिल्टर/.test(text))
+  if (/purif|filter|hepa|प्यूरीफायर|फ़िल्टर|फिल्टर/u.test(text))
     return "जिस कमरे में सबसे ज़्यादा समय बिताते हैं वहाँ दरवाज़ा बंद करके HEPA प्यूरीफायर चलाएँ। कम खर्च में विकल्प: बॉक्स फैन पर MERV 13 फ़िल्टर टेप से लगाएँ।";
-  if (/child|kid|school|baby|asthma|elder|बच्च|बुज़ुर्ग|बुजुर्ग|दमा|अस्थमा/.test(text))
+  if (/child|kid|school|baby|asthma|elder|बच्च|बुज़ुर्ग|बुजुर्ग|दमा|अस्थमा/u.test(text))
     return `बच्चे, बुज़ुर्ग और दमा के मरीज़ अपने शरीर के हिसाब से ज़्यादा हवा साँस में लेते हैं। बाहर का समय कम रखें और सबसे साफ़ घंटे (${c.bestHour || "दोपहर"}) में ही निकलें, और राहत वाली दवाएँ पास रखें। यह सामान्य मार्गदर्शन है, चिकित्सा सलाह नहीं।`;
-  if (/cook|kitchen|chulha|gas|induction|खाना|रसोई|चूल्हा|गैस|इंडक्शन/.test(text))
+  if (/cook|kitchen|chulha|gas|induction|खाना|रसोई|चूल्हा|गैस|इंडक्शन/u.test(text))
     return "खाना पकाना घर के अंदर धुएँ का बड़ा स्रोत है। इंडक्शन से लगभग कोई धुआँ नहीं होता। गैस या लकड़ी पर पकाते समय चिमनी चलाएँ या चूल्हे के पास की खिड़की खोलें, फिर बंद कर दें।";
-  if (/car|commute|metro|bus|bike|travel|यात्रा|मेट्रो|बस|गाड़ी|बाइक/.test(text))
+  if (/car|commute|metro|bus|bike|travel|यात्रा|मेट्रो|बस|गाड़ी|बाइक/u.test(text))
     return "मेट्रो जैसा बंद साधन सबसे खराब धुएँ से बचाता है, और साझा सवारी से प्रति व्यक्ति उत्सर्जन घटता है। आपके रास्ते के लिए सटीक फ़र्क उपायों की सूची में दिखता है।";
   return `आज ${c.city} में हवा "${c.category}" है (PM2.5 लगभग ${Math.round(c.pm)} µg/m³)। आपकी योजना (${c.actions.join(", ") || "अभी कोई उपाय नहीं चुना"}) से आपकी साँस रोज़ लगभग ${c.baselineCigs.toFixed(1)} से ${c.planCigs.toFixed(1)} सिगरेट के बराबर हो जाती है, यानी ${save} की बचत। यह सामान्य मार्गदर्शन है, चिकित्सा सलाह नहीं।`;
 }

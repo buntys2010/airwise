@@ -24,6 +24,7 @@ export const PLAN_IDS = [
 ] as const;
 type PlanId = (typeof PLAN_IDS)[number];
 
+/** The plan as short ids for a share link. Only choices from fixed lists are encoded. */
 export function planToIds(plan: Plan): PlanId[] {
   const ids: PlanId[] = [];
   if (plan.sealGaps) ids.push("seal");
@@ -40,6 +41,7 @@ function purifierKindOf(set: Set<string>): Plan["purifierKind"] {
   return set.has("purifier") ? "hepa" : undefined;
 }
 
+/** A plan from share-link ids. Unknown ids are ignored. */
 export function idsToPlan(ids: string[]): Plan {
   const set = new Set(ids);
   return {
@@ -61,8 +63,9 @@ export function sanitizePlan(plan: Plan, commute: Profile["commute"]): Plan {
     : plan;
 }
 
+/** The query string for a share link: city, household and plan choices, never a figure. */
 export function encodeChoices(c: { city: string; profile: Profile; plan: Plan }): string {
-  const q = new URLSearchParams({
+  const params = new URLSearchParams({
     city: c.city,
     home: c.profile.home,
     commute: c.profile.commute,
@@ -71,8 +74,8 @@ export function encodeChoices(c: { city: string; profile: Profile; plan: Plan })
     vulnerable: c.profile.vulnerable ? "1" : "0",
   });
   const ids = planToIds(c.plan);
-  if (ids.length) q.set("plan", ids.join(","));
-  return q.toString();
+  if (ids.length) params.set("plan", ids.join(","));
+  return params.toString();
 }
 
 const oneOf = <T extends string>(list: readonly T[], v: string | null): T | undefined =>
@@ -80,24 +83,24 @@ const oneOf = <T extends string>(list: readonly T[], v: string | null): T | unde
 
 /** Reads a query string. Anything outside the fixed lists is dropped, so a hand-edited link can only ever choose from valid options. */
 export function decodeChoices(search: string): SharedChoices {
-  const q = new URLSearchParams(search);
+  const params = new URLSearchParams(search);
   const out: SharedChoices = {};
-  const city = CITIES.find((c) => c.id === q.get("city"));
+  const city = CITIES.find((c) => c.id === params.get("city"));
   if (city) out.city = city.id;
   const profile: Partial<Profile> = {};
-  const home = oneOf(HOMES, q.get("home"));
+  const home = oneOf(HOMES, params.get("home"));
   if (home) profile.home = home;
-  const commute = oneOf(COMMUTES, q.get("commute"));
+  const commute = oneOf(COMMUTES, params.get("commute"));
   if (commute) profile.commute = commute;
-  const cooking = oneOf(COOKINGS, q.get("cooking"));
+  const cooking = oneOf(COOKINGS, params.get("cooking"));
   if (cooking) profile.cooking = cooking;
-  const km = Number(q.get("km"));
-  if (q.get("km") !== null && q.get("km") !== "" && Number.isFinite(km))
+  const km = Number(params.get("km"));
+  if (params.get("km") !== null && params.get("km") !== "" && Number.isFinite(km))
     profile.km = Math.min(60, Math.max(0, Math.round(km)));
-  const v = q.get("vulnerable");
-  if (v === "1" || v === "0") profile.vulnerable = v === "1";
+  const vulnerable = params.get("vulnerable");
+  if (vulnerable === "1" || vulnerable === "0") profile.vulnerable = vulnerable === "1";
   if (Object.keys(profile).length) out.profile = profile;
-  const planParam = q.get("plan");
+  const planParam = params.get("plan");
   if (planParam) {
     const plan = idsToPlan(
       planParam
@@ -110,6 +113,7 @@ export function decodeChoices(search: string): SharedChoices {
   return out;
 }
 
+/** A full share link for an origin and the user's choices. */
 export function shareUrl(
   origin: string,
   c: { city: string; profile: Profile; plan: Plan },

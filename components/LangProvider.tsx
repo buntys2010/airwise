@@ -11,7 +11,7 @@ interface Ctx {
 
 const LangContext = createContext<Ctx>({
   lang: "en",
-  setLang: () => {},
+  setLang: () => undefined,
   t: (k, v) => translate("en", k, v),
 });
 const STORE = "airwise.lang";
@@ -45,4 +45,5 @@ export function LangProvider({ children }: Readonly<{ children: React.ReactNode 
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
+/** The current language and its `t` translator. Must be used under LangProvider. */
 export const useLang = () => useContext(LangContext);

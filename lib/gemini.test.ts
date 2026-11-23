@@ -7,27 +7,28 @@ import {
   resetGeminiBudget,
   setLogSink,
 } from "./gemini";
+import { must } from "../test-support/must";
 
 beforeEach(() => resetGeminiBudget());
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.useRealTimers();
-  setLogSink(() => {});
+  setLogSink(() => undefined);
 });
 
 const reply = (text: string) => ({
   ok: true,
-  json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }),
+  json: () => Promise.resolve({ candidates: [{ content: { parts: [{ text }] } }] }),
 });
-const status = (s: number) => ({ ok: false, status: s, json: async () => ({}) });
+const status = (s: number) => ({ ok: false, status: s, json: () => Promise.resolve({}) });
 const opts = { prompt: "hi", maxTokens: 10 };
 
 describe("modelChain", () => {
   it("defaults to a primary model plus lite fallbacks", () => {
-    const c = modelChain({} as NodeJS.ProcessEnv);
-    expect(c[0]).toBe("gemini-2.5-flash");
-    expect(c.length).toBeGreaterThan(1);
+    const chain = modelChain({} as NodeJS.ProcessEnv);
+    expect(chain[0]).toBe("gemini-2.5-flash");
+    expect(chain.length).toBeGreaterThan(1);
   });
   it("honours environment overrides and removes duplicates", () => {
     expect(
@@ -59,10 +60,10 @@ describe("generationConfig", () => {
 describe("generateDetailed: typed failure reasons", () => {
   it("no_key without touching the network", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
-    const f = vi.fn();
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "no_key" });
-    expect(f).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it.each([
     [429, "quota"],
@@ -81,7 +82,7 @@ describe("generateDetailed: typed failure reasons", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ promptFeedback: { blockReason: "SAFETY" } }),
+        json: () => Promise.resolve({ promptFeedback: { blockReason: "SAFETY" } }),
       }),
     );
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "blocked" });
@@ -89,7 +90,7 @@ describe("generateDetailed: typed failure reasons", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ candidates: [{ finishReason: "SAFETY" }] }),
+        json: () => Promise.resolve({ candidates: [{ finishReason: "SAFETY" }] }),
       }),
     );
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "blocked" });
@@ -100,7 +101,7 @@ describe("generateDetailed: typed failure reasons", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ candidates: [{ content: { role: "model" } }] }),
+        json: () => Promise.resolve({ candidates: [{ content: { role: "model" } }] }),
       }),
     );
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "empty" });
@@ -131,40 +132,41 @@ describe("generateDetailed: chain, images, budget", () => {
     vi.stubEnv("GEMINI_API_KEY", "k");
     vi.stubEnv("GEMINI_MODEL", "gemini-2.5-flash");
     vi.stubEnv("GEMINI_FALLBACK_MODELS", "gemini-lite-x");
-    const f = vi
+    const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(status(429))
       .mockResolvedValueOnce(reply("from the lite model"));
-    vi.stubGlobal("fetch", f);
+    vi.stubGlobal("fetch", fetchMock);
     expect(await generateDetailed(opts)).toEqual({
       ok: true,
       text: "from the lite model",
       model: "gemini-lite-x",
     });
     expect(
-      JSON.parse((f.mock.calls[1]![1] as RequestInit).body as string).generationConfig,
+      JSON.parse((must(fetchMock.mock.calls[1])[1] as RequestInit).body as string).generationConfig,
     ).not.toHaveProperty("thinkingConfig");
   });
   it("sends images as inline parts after the text, and keeps the key out of the URL", async () => {
     vi.stubEnv("GEMINI_API_KEY", "secret-key");
-    const f = vi.fn().mockResolvedValue(reply("ok"));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockResolvedValue(reply("ok"));
+    vi.stubGlobal("fetch", fetchMock);
     await generateDetailed({ ...opts, images: [{ mimeType: "image/jpeg", data: "QUJD" }] });
-    const parts = JSON.parse((f.mock.calls[0]![1] as RequestInit).body as string).contents[0].parts;
+    const parts = JSON.parse((must(fetchMock.mock.calls[0])[1] as RequestInit).body as string)
+      .contents[0].parts;
     expect(parts[0]).toEqual({ text: "hi" });
     expect(parts[1]).toEqual({ inlineData: { mimeType: "image/jpeg", data: "QUJD" } });
-    expect(String(f.mock.calls[0]![0])).not.toContain("secret-key");
-    expect((f.mock.calls[0]![1] as RequestInit).headers).toMatchObject({
+    expect(String(must(fetchMock.mock.calls[0])[0])).not.toContain("secret-key");
+    expect((must(fetchMock.mock.calls[0])[1] as RequestInit).headers).toMatchObject({
       "x-goog-api-key": "secret-key",
     });
   });
   it("stops at the global budget and says so", async () => {
     vi.stubEnv("GEMINI_API_KEY", "k");
     vi.stubEnv("GEMINI_BUDGET_PER_MIN", "2");
-    const f = vi.fn().mockResolvedValue(status(503));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockResolvedValue(status(503));
+    vi.stubGlobal("fetch", fetchMock);
     expect(await generateDetailed(opts)).toEqual({ ok: false, reason: "budget" });
-    expect(f).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
   it("gives up on the whole chain when the overall budget is spent, even if each call is slow", async () => {
     vi.useFakeTimers();
@@ -177,15 +179,15 @@ describe("generateDetailed: chain, images, budget", () => {
         .mockImplementation(
           (_u: string, init: RequestInit) =>
             new Promise((_r, rej) =>
-              init.signal!.addEventListener("abort", () =>
+              must(init.signal).addEventListener("abort", () =>
                 rej(Object.assign(new Error("a"), { name: "AbortError" })),
               ),
             ),
         ),
     );
-    const p = generateDetailed({ ...opts, timeoutMs: 8000, budgetMs: 12_000 });
+    const result = generateDetailed({ ...opts, timeoutMs: 8000, budgetMs: 12_000 });
     await vi.advanceTimersByTimeAsync(30_000);
-    expect(await p).toEqual({ ok: false, reason: "timeout" });
+    expect(await result).toEqual({ ok: false, reason: "timeout" });
     expect((fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeLessThanOrEqual(2); // 8 s + 4 s, not 3 x 8 s
   });
 });
@@ -203,7 +205,7 @@ describe("structured log", () => {
       images: [{ mimeType: "image/jpeg", data: "SECRETIMAGEDATA" }],
     });
     expect(lines).toHaveLength(1);
-    const rec = JSON.parse(lines[0]!);
+    const rec = JSON.parse(must(lines[0]));
     expect(rec).toMatchObject({ evt: "gemini", kind: "vision", ok: true, images: 1 });
     expect(lines[0]).not.toContain("private question");
     expect(lines[0]).not.toContain("SECRETIMAGEDATA");

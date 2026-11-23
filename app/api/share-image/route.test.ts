@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "./route";
 
-let n = 0;
-const call = (query = "", ip = `10.8.0.${++n}`) =>
+let callCount = 0;
+const call = (query = "", ip = `10.8.0.${++callCount}`) =>
   GET(
     new Request(`http://localhost/api/share-image?${query}`, {
       headers: { "x-forwarded-for": ip },
@@ -23,17 +23,24 @@ describe("GET /api/share-image", () => {
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
   });
 
-  it("enforces rate limits per client IP", async () => {
-    const testIp = "192.168.100.99";
-    // Send 20 requests (the limit)
-    for (let i = 0; i < 20; i++) {
-      const res = await call("city=delhi", testIp);
-      expect(res.status).toBe(200);
-    }
-    // 21st request should be rate limited with 429
-    const blocked = await call("city=delhi", testIp);
-    expect(blocked.status).toBe(429);
-    const body = await blocked.json();
-    expect(body.error).toContain("Too many requests");
-  });
+  // Each allowed request renders a real image (about 3.5 s on a CI runner), so the default 30 s is not enough for 21 calls.
+  const RATE_LIMIT_TEST_TIMEOUT_MS = 180_000;
+
+  it(
+    "enforces rate limits per client IP",
+    async () => {
+      const testIp = "192.168.100.99";
+      // Send 20 requests (the limit)
+      for (let i = 0; i < 20; i++) {
+        const res = await call("city=delhi", testIp);
+        expect(res.status).toBe(200);
+      }
+      // 21st request should be rate limited with 429
+      const blocked = await call("city=delhi", testIp);
+      expect(blocked.status).toBe(429);
+      const body = await blocked.json();
+      expect(body.error).toContain("Too many requests");
+    },
+    RATE_LIMIT_TEST_TIMEOUT_MS,
+  );
 });

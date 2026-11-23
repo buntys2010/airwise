@@ -272,11 +272,11 @@ function HowSection() {
             induction +8 µg/m³.
           </li>
           <li>
-            <strong>CO₂:</strong> grams per passenger-kilometre by mode, using India's grid for
+            <strong>CO₂:</strong> grams per passenger-kilometre by mode, using India&apos;s grid for
             electric vehicles.
           </li>
         </ul>
-        <p className="dim" style={{ marginTop: 12 }}>
+        <p className="dim u-mt-12">
           These are planning assumptions for comparing choices, not clinical measurements. Full list
           and sources: docs/methodology.md in the project repository.
         </p>
@@ -289,7 +289,7 @@ export default function Guide() {
   return (
     <div className="wrap guide">
       <Header>
-        <Link href="/" className="chip" style={{ textDecoration: "none" }}>
+        <Link href="/" className="chip u-no-underline">
           Open AirWise
         </Link>
       </Header>
@@ -298,8 +298,9 @@ export default function Guide() {
         <section aria-labelledby="g-title" className="g-hero">
           <h1 id="g-title">How to use AirWise</h1>
           <p>
-            AirWise turns today's live air quality into a plan for your family, and shows how much
-            each choice helps. This guide covers every feature and the best way to ask questions.
+            AirWise turns today&apos;s live air quality into a plan for your family, and shows how
+            much each choice helps. This guide covers every feature and the best way to ask
+            questions.
           </p>
           <nav aria-label="On this page" className="g-toc">
             <a href="#start">Start in a minute</a>
@@ -363,11 +364,7 @@ export default function Guide() {
           <div className="panel g-cta">
             <h2 id="g-go">Ready to clear your air?</h2>
             <p className="dim">Your plan takes about a minute to build.</p>
-            <Link
-              href="/"
-              className="btn"
-              style={{ textDecoration: "none", display: "inline-block", marginTop: 14 }}
-            >
+            <Link href="/" className="btn u-no-underline u-inline-block u-mt-14">
               Open AirWise
             </Link>
           </div>

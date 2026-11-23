@@ -9,16 +9,23 @@ import {
   transcriptOf,
 } from "./voice";
 
+/** What a server render sees: there is no window. */
+const NO_WINDOW = undefined;
+
 describe("getRecognitionCtor", () => {
-  class A {}
-  class B {}
+  class A {
+    readonly name = "A";
+  }
+  class B {
+    readonly name = "B";
+  }
   it("prefers the standard name, then the webkit one, else null", () => {
     expect(
       getRecognitionCtor({ SpeechRecognition: A as never, webkitSpeechRecognition: B as never }),
     ).toBe(A);
     expect(getRecognitionCtor({ webkitSpeechRecognition: B as never })).toBe(B);
     expect(getRecognitionCtor({})).toBeNull();
-    expect(getRecognitionCtor(undefined)).toBeNull();
+    expect(getRecognitionCtor(NO_WINDOW)).toBeNull();
   });
 });
 
@@ -70,7 +77,7 @@ describe("speech output", () => {
     };
   }
   it("is only available when both parts exist", () => {
-    expect(canSpeak(undefined)).toBe(false);
+    expect(canSpeak(NO_WINDOW)).toBe(false);
     expect(canSpeak({})).toBe(false);
     expect(canSpeak(fakeWindow().w)).toBe(true);
   });
@@ -91,7 +98,7 @@ describe("speech output", () => {
     stopSpeaking(w);
     expect(order).toEqual(["cancel"]);
     expect(() => stopSpeaking({})).not.toThrow();
-    expect(() => stopSpeaking(undefined)).not.toThrow();
+    expect(() => stopSpeaking(NO_WINDOW)).not.toThrow();
     vi.restoreAllMocks();
   });
 });

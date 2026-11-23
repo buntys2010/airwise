@@ -54,6 +54,7 @@ export const PLAN_SCHEMA = {
   required: ["headline", "steps"],
 };
 
+/** The model prompt for rewording the day's schedule, with the schedule fenced as data. */
 export function buildPlanPrompt(req: PlanRequest, lang: Lang = "en"): string {
   return [
     "You are AirWise. Rewrite the household's clear-air day as a warm, plain-language plan.",
@@ -85,19 +86,19 @@ export function validatePlan(text: string, req: PlanRequest): DayPlan | null {
   } catch {
     return null;
   }
-  const j = json as { headline?: unknown; steps?: unknown };
+  const parsed = json as { headline?: unknown; steps?: unknown };
   if (
-    typeof j.headline !== "string" ||
-    !Array.isArray(j.steps) ||
-    j.steps.length !== req.schedule.length
+    typeof parsed.headline !== "string" ||
+    !Array.isArray(parsed.steps) ||
+    parsed.steps.length !== req.schedule.length
   )
     return null;
-  const steps = j.steps.map((s) => ({
+  const steps = parsed.steps.map((s) => ({
     time: clean((s as { time?: unknown })?.time, 10),
     text: clean((s as { text?: unknown })?.text, 360),
   }));
   if (steps.some((s, i) => !s.text || s.time !== req.schedule[i]?.time)) return null;
-  const plan: DayPlan = { headline: clean(j.headline, 120), steps };
+  const plan: DayPlan = { headline: clean(parsed.headline, 120), steps };
   if (!plan.headline) return null;
   const facts = { context: req.context, schedule: req.schedule };
   const everything = [plan.headline, ...plan.steps.map((s) => s.text)].join("\n");
@@ -135,6 +136,7 @@ export interface CommunityPlan {
   rules: CommunityRule[];
 }
 
+/** The community notice for today's air: the three most useful fixes and the rules for this air level. */
 export function communityPlan(hourly: number[], profile: Profile, nowHour: number): CommunityPlan {
   const tone = categoryOf(pmAt(hourly, nowHour)).tone;
   const best = bestHour(hourly);

@@ -30,12 +30,12 @@ describe("extractNumbers", () => {
 
 describe("allowedNumbers", () => {
   it("collects numbers from values, nested objects and strings, plus honest roundings", () => {
-    const a = allowedNumbers(facts);
-    for (const n of [212.4, 212, 3.74, 3.7, 4, 2, 53, 1.9]) expect(a).toContain(n);
+    const allowed = allowedNumbers(facts);
+    for (const n of [212.4, 212, 3.74, 3.7, 4, 2, 53, 1.9]) expect(allowed).toContain(n);
   });
   it("always allows the names PM2.5, N95 and MERV 13", () => {
-    const a = allowedNumbers({});
-    for (const n of [2.5, 95, 13]) expect(a).toContain(n);
+    const allowed = allowedNumbers({});
+    for (const n of [2.5, 95, 13]) expect(allowed).toContain(n);
   });
 });
 

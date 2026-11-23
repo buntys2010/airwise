@@ -4,6 +4,7 @@ import type { Choices } from "./Chat";
 import { useLang } from "./LangProvider";
 import type { DayPlan as Plan } from "@/lib/plan";
 import type { ScheduleEntry } from "@/lib/schedule";
+import { runInBackground } from "@/lib/background";
 
 interface Result extends Plan {
   source: "gemini" | "offline";
@@ -48,11 +49,11 @@ function usePlanWriter(choices: Choices, active: boolean) {
       if (ac.signal.aborted) return;
       setResult(json);
       doneFor.current = JSON.stringify(c);
-    } catch (e) {
+    } catch (failure) {
       if (ac.signal.aborted) return;
       setError(
-        e instanceof Error
-          ? e.message
+        failure instanceof Error
+          ? failure.message
           : "Could not reach AirWise. Check your connection and try again.",
       );
     } finally {
@@ -61,9 +62,9 @@ function usePlanWriter(choices: Choices, active: boolean) {
   }, []);
 
   useEffect(() => {
-    if (!active || doneFor.current === key) return;
+    if (!active || doneFor.current === key) return undefined;
     const timer = setTimeout(() => {
-      void write(choices);
+      runInBackground(write(choices));
     }, ASK_DELAY_MS);
     return () => clearTimeout(timer);
   }, [active, key, choices, write]);
@@ -117,15 +118,15 @@ export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
       <div className="dayhead">{tag}</div>
       {gemini && result && <p className="dayheadline">{result.headline}</p>}
       {busy && !result ? (
-        <div aria-hidden="true" style={{ display: "grid", gap: 10, marginBottom: 12 }}>
+        <div aria-hidden="true" className="u-skeleton-stack">
           <div className="skeleton" />
           <div className="skeleton" />
           <div className="skeleton" />
         </div>
       ) : null}
       <ol className="day" aria-busy={busy}>
-        {items.map((e, i) => (
-          <li key={`${e.time}-${i}`}>
+        {items.map((e) => (
+          <li key={`${e.time}-${e.text}`}>
             <span className="when">{e.time}</span>
             <div className="panel">
               {e.title ? (
@@ -144,7 +145,7 @@ export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
         <button
           type="button"
           className="btn ghost"
-          onClick={() => void write(choices)}
+          onClick={() => runInBackground(write(choices))}
           disabled={busy}
         >
           {buttonLabel}
