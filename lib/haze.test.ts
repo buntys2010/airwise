@@ -13,15 +13,15 @@ describe("hazeLevel", () => {
     expect(hazeLevel(300, 150, 150)).toBe(1);
     for (const pm of [0, 40, 160, 400, 5000])
       for (const f of [0, 0.3, 1, 3]) {
-        const h = hazeLevel(pm, 100, 100 * f);
-        expect(h).toBeGreaterThanOrEqual(HAZE_MIN);
-        expect(h).toBeLessThanOrEqual(1);
+        const haze = hazeLevel(pm, 100, 100 * f);
+        expect(haze).toBeGreaterThanOrEqual(HAZE_MIN);
+        expect(haze).toBeLessThanOrEqual(1);
       }
   });
   it("thins as exposure falls, in proportion to what was removed", () => {
     const all = [1, 0.75, 0.5, 0.25, 0];
-    const h = all.map((r) => hazeLevel(100, 100, 100 * r));
-    for (let i = 1; i < h.length; i++) expect(h[i]).toBeLessThan(must(h[i - 1]));
+    const levels = all.map((r) => hazeLevel(100, 100, 100 * r));
+    for (let i = 1; i < levels.length; i++) expect(levels[i]).toBeLessThan(must(levels[i - 1]));
   });
   it("applying most fixes makes a clear, visible difference at moderate and high air", () => {
     for (const pm of [38, 71, 157, 250]) {

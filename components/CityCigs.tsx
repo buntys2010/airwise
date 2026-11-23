@@ -18,9 +18,9 @@ function useBurn(target: number) {
     let raf = 0;
     const start = performance.now();
     const tick = () => {
-      const t = Math.min(1, (performance.now() - start) / 1400); // one clock for start and now, whatever the frame callback reports
-      setP(1 - Math.pow(1 - t, 3));
-      if (t < 1) raf = requestAnimationFrame(tick);
+      const progress = Math.min(1, (performance.now() - start) / 1400); // one clock for start and now, whatever the frame callback reports
+      setP(1 - Math.pow(1 - progress, 3));
+      if (progress < 1) raf = requestAnimationFrame(tick);
     };
     setP(0);
     raf = requestAnimationFrame(tick);
@@ -39,8 +39,8 @@ export function CityCigs({
   city,
 }: Readonly<{ day: number; soFar: number; city: string }>) {
   const { t } = useLang();
-  const p = useBurn(soFar);
-  const sticks = sticksFor(day, soFar * p);
+  const burn = useBurn(soFar);
+  const sticks = sticksFor(day, soFar * burn);
   return (
     <div className="citycigs" data-city={city}>
       <CigRow sticks={sticks} tone="base" />

@@ -34,8 +34,8 @@ export function PlanTools({ a }: Readonly<{ a: Airwise }>) {
         setMsg("");
         return;
       }
-    } catch (e) {
-      if ((e as Error).name === "AbortError") return; /* fall through to copy */
+    } catch (error) {
+      if ((error as Error).name === "AbortError") return; /* fall through to copy */
     }
     try {
       await navigator.clipboard.writeText(url);

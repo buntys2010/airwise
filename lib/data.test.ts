@@ -55,11 +55,11 @@ describe("loadAir", () => {
           ),
         ),
     );
-    const r = await loadAir(must(delhi));
-    expect(r.source).toBe("live");
-    expect(r.hourly[0]).toBe(100);
-    expect(r.temp).toBe(12);
-    expect(r.updated).toMatch(/^\d{2}:\d{2}$/);
+    const air = await loadAir(must(delhi));
+    expect(air.source).toBe("live");
+    expect(air.hourly[0]).toBe(100);
+    expect(air.temp).toBe(12);
+    expect(air.updated).toMatch(/^\d{2}:\d{2}$/);
   });
   it("still goes live when only the weather call fails", async () => {
     vi.stubGlobal(
@@ -70,9 +70,9 @@ describe("loadAir", () => {
         return Promise.reject(new Error("weather down"));
       }),
     );
-    const r = await loadAir(must(delhi));
-    expect(r.source).toBe("live");
-    expect(r.temp).toBeNull();
+    const air = await loadAir(must(delhi));
+    expect(air.source).toBe("live");
+    expect(air.temp).toBeNull();
   });
   it("falls back to a labelled estimate on network failure, HTTP error or bad data", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
@@ -83,10 +83,10 @@ describe("loadAir", () => {
     );
     expect((await loadAir(must(delhi))).source).toBe("estimate");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok({ hourly: { pm2_5: [1] } })));
-    const r = await loadAir(must(delhi));
-    expect(r.source).toBe("estimate");
-    expect(r.hourly).toEqual(estimateHourly(must(delhi)));
-    expect(r.updated).toBeNull();
+    const air = await loadAir(must(delhi));
+    expect(air.source).toBe("estimate");
+    expect(air.hourly).toEqual(estimateHourly(must(delhi)));
+    expect(air.updated).toBeNull();
   });
 });
 
@@ -102,9 +102,9 @@ describe("weatherNote", () => {
 
 describe("istClock", () => {
   it("returns India time", () => {
-    const c = istClock(new Date("2026-11-22T04:30:00Z")); // 10:00 IST
-    expect(c.hour).toBe(10);
-    expect(c.label).toBe("10:00");
+    const clock = istClock(new Date("2026-11-22T04:30:00Z")); // 10:00 IST
+    expect(clock.hour).toBe(10);
+    expect(clock.label).toBe("10:00");
   });
 });
 
@@ -112,7 +112,7 @@ describe("getCityAir (server cache)", () => {
   it("caches a live result for ten minutes and de-duplicates concurrent requests", async () => {
     const { getCityAir, resetAirCache } = await import("./data");
     resetAirCache();
-    const f = vi
+    const fetchMock = vi
       .fn()
       .mockImplementation((url: string) =>
         Promise.resolve(
@@ -121,22 +121,22 @@ describe("getCityAir (server cache)", () => {
             : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
         ),
       );
-    vi.stubGlobal("fetch", f);
+    vi.stubGlobal("fetch", fetchMock);
     const [a, b] = await Promise.all([getCityAir(must(delhi)), getCityAir(must(delhi))]);
     expect(a).toBe(b);
-    expect(f).toHaveBeenCalledTimes(2); // one air and one weather call, not four
+    expect(fetchMock).toHaveBeenCalledTimes(2); // one air and one weather call, not four
     await getCityAir(must(delhi));
-    expect(f).toHaveBeenCalledTimes(2); // served from cache
+    expect(fetchMock).toHaveBeenCalledTimes(2); // served from cache
   });
   it("never caches an estimate", async () => {
     const { getCityAir, resetAirCache } = await import("./data");
     resetAirCache();
-    const f = vi.fn().mockRejectedValue(new Error("down"));
-    vi.stubGlobal("fetch", f);
+    const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
+    vi.stubGlobal("fetch", fetchMock);
     expect((await getCityAir(must(delhi))).source).toBe("estimate");
-    const calls = f.mock.calls.length;
+    const calls = fetchMock.mock.calls.length;
     await getCityAir(must(delhi));
-    expect(f.mock.calls.length).toBeGreaterThan(calls);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(calls);
   });
 });
 
@@ -144,20 +144,20 @@ describe("loadMap (batched)", () => {
   it("fetches cities in batches and labels a bad city as an estimate on its own", async () => {
     const { loadMap, MAP_CHUNK } = await import("./data");
     const good = { hourly: { pm2_5: day(50) } };
-    const f = vi.fn().mockImplementation((url: string) => {
-      const n = must(new URL(url).searchParams.get("latitude")).split(",").length;
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const cityCount = must(new URL(url).searchParams.get("latitude")).split(",").length;
       return Promise.resolve(
         ok(
-          Array.from({ length: n }, (_, i) =>
+          Array.from({ length: cityCount }, (_, i) =>
             url.includes("latitude=28.65,") && i === 1 ? { hourly: { pm2_5: [1] } } : good,
           ),
         ),
       );
     });
-    vi.stubGlobal("fetch", f);
+    vi.stubGlobal("fetch", fetchMock);
     const pts = await loadMap(9);
-    expect(f).toHaveBeenCalledTimes(Math.ceil(CITIES.length / MAP_CHUNK));
-    expect(String(must(f.mock.calls[0])[0])).toContain("latitude=28.65,26.85");
+    expect(fetchMock).toHaveBeenCalledTimes(Math.ceil(CITIES.length / MAP_CHUNK));
+    expect(String(must(fetchMock.mock.calls[0])[0])).toContain("latitude=28.65,26.85");
     expect(pts).toHaveLength(CITIES.length);
     expect(pts[0]).toMatchObject({ id: "delhi", source: "live", pm: 59 });
     expect(pts[1]).toMatchObject({ id: "lucknow", source: "estimate" });

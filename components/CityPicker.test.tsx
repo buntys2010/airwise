@@ -60,10 +60,10 @@ describe("CityPicker", () => {
     const { container } = render(<Harness onPick={() => undefined} />);
     for (const open of [false, true]) {
       if (open) fireEvent.focus(box());
-      const r = await axe.run(container, {
+      const results = await axe.run(container, {
         rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
       });
-      expect(r.violations.map((v) => v.id)).toEqual([]);
+      expect(results.violations.map((v) => v.id)).toEqual([]);
     }
   });
 });

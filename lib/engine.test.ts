@@ -33,9 +33,9 @@ describe("aqiFromPm", () => {
   it("is monotonic and capped at 500", () => {
     let prev = -1;
     for (let pm = 0; pm <= 600; pm += 7) {
-      const a = aqiFromPm(pm);
-      expect(a).toBeGreaterThanOrEqual(prev);
-      prev = a;
+      const aqi = aqiFromPm(pm);
+      expect(aqi).toBeGreaterThanOrEqual(prev);
+      prev = aqi;
     }
     expect(aqiFromPm(9999)).toBe(500);
     expect(aqiFromPm(-5)).toBe(0);
@@ -62,10 +62,10 @@ describe("estimateHourly", () => {
 
 describe("bestHour", () => {
   it("picks the cleanest hour between 10 am and 4 pm", () => {
-    const h = bestHour(hourly);
-    expect(h).toBeGreaterThanOrEqual(10);
-    expect(h).toBeLessThanOrEqual(16);
-    for (let i = 10; i <= 16; i++) expect(hourly[h]).toBeLessThanOrEqual(must(hourly[i]));
+    const best = bestHour(hourly);
+    expect(best).toBeGreaterThanOrEqual(10);
+    expect(best).toBeLessThanOrEqual(16);
+    for (let i = 10; i <= 16; i++) expect(hourly[best]).toBeLessThanOrEqual(must(hourly[i]));
   });
 });
 
@@ -113,23 +113,23 @@ describe("simulate", () => {
     expect(clean.cigs).toBeLessThan(base.cigs);
   });
   it("handles zero commute distance without NaN", () => {
-    const s = simulate(hourly, { ...family, km: 0 }, NO_PLAN);
-    expect(Number.isFinite(s.meanPm)).toBe(true);
-    expect(s.co2Kg).toBe(0);
+    const sim = simulate(hourly, { ...family, km: 0 }, NO_PLAN);
+    expect(Number.isFinite(sim.meanPm)).toBe(true);
+    expect(sim.co2Kg).toBe(0);
   });
 });
 
 describe("buildActions", () => {
   it("marks already-clean choices as not applicable", () => {
-    const a = buildActions(hourly, {
+    const actions = buildActions(hourly, {
       ...family,
       commute: "metro",
       cooking: "induction",
       home: "sealed",
     });
-    expect(a.find((x) => x.id === "swap")?.applicable).toBe(false);
-    expect(a.find((x) => x.id === "induction")?.applicable).toBe(false);
-    expect(a.find((x) => x.id === "sealGaps")?.applicable).toBe(false);
+    expect(actions.find((x) => x.id === "swap")?.applicable).toBe(false);
+    expect(actions.find((x) => x.id === "induction")?.applicable).toBe(false);
+    expect(actions.find((x) => x.id === "sealGaps")?.applicable).toBe(false);
   });
   it("every action explains its maths", () => {
     for (const a of buildActions(hourly, family)) {
@@ -166,10 +166,10 @@ describe("simulate().perHour", () => {
     vulnerable: true,
   };
   it("has 24 non-negative hours that add up to the whole day, so the pieces are consistent", () => {
-    const s = simulate(hourly, profile, NO_PLAN);
-    expect(s.perHour).toHaveLength(24);
-    expect(s.perHour.every((v) => v >= 0)).toBe(true);
-    expect(s.perHour.reduce((a, b) => a + b, 0) / 24 / 22).toBeCloseTo(s.cigs, 9);
+    const sim = simulate(hourly, profile, NO_PLAN);
+    expect(sim.perHour).toHaveLength(24);
+    expect(sim.perHour.every((v) => v >= 0)).toBe(true);
+    expect(sim.perHour.reduce((a, b) => a + b, 0) / 24 / 22).toBeCloseTo(sim.cigs, 9);
   });
 });
 
@@ -193,16 +193,16 @@ describe("cigsSoFar", () => {
   it("never decreases as the day goes on, including through fractions of an hour", () => {
     let prev = -1;
     for (let t = 0; t <= 24; t += 0.25) {
-      const v = cigsSoFar(hourly, profile, NO_PLAN, t);
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
+      const cigarettes = cigsSoFar(hourly, profile, NO_PLAN, t);
+      expect(cigarettes).toBeGreaterThanOrEqual(prev);
+      prev = cigarettes;
     }
   });
   it("interpolates inside an hour", () => {
-    const a = cigsSoFar(hourly, profile, NO_PLAN, 7),
-      b = cigsSoFar(hourly, profile, NO_PLAN, 8),
+    const cigarettes = cigsSoFar(hourly, profile, NO_PLAN, 7),
+      atEight = cigsSoFar(hourly, profile, NO_PLAN, 8),
       mid = cigsSoFar(hourly, profile, NO_PLAN, 7.5);
-    expect(mid).toBeCloseTo((a + b) / 2, 9);
+    expect(mid).toBeCloseTo((cigarettes + atEight) / 2, 9);
   });
   it("every action lowers it, at any hour that has any exposure", () => {
     for (const hour of [8, 12, 18, 24]) {
@@ -249,10 +249,10 @@ describe("shifting outdoor time", () => {
   it("never raises exposure, for any home or cooking fuel: cooking smoke does not depend on the outdoor slot", () => {
     for (const home of ["sealed", "typical", "leaky"] as const) {
       for (const cooking of ["wood", "lpg", "induction"] as const) {
-        const p: Profile = { home, commute: "bike", km: 8, cooking, vulnerable: true };
-        expect(simulate(hourly, p, { ...NO_PLAN, shiftOutdoor: true }).meanPm).toBeLessThanOrEqual(
-          simulate(hourly, p, NO_PLAN).meanPm + 1e-9,
-        );
+        const profile: Profile = { home, commute: "bike", km: 8, cooking, vulnerable: true };
+        expect(
+          simulate(hourly, profile, { ...NO_PLAN, shiftOutdoor: true }).meanPm,
+        ).toBeLessThanOrEqual(simulate(hourly, profile, NO_PLAN).meanPm + 1e-9);
       }
     }
   });

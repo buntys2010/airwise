@@ -27,13 +27,13 @@ const STOVE = hot("gas_stove", "Gas stove", "induction");
 const PURIFIER = hot("purifier_seen", "Air purifier", "purifier");
 
 function stubVision(reply: unknown, status = 200) {
-  const f = vi.fn().mockImplementation((url: string) => {
+  const fetchMock = vi.fn().mockImplementation((url: string) => {
     if (String(url).startsWith("/api/vision"))
       return Promise.resolve({ ok: status === 200, status, json: () => Promise.resolve(reply) });
     return Promise.reject(new Error("offline")); // air feed falls back to the labelled estimate
   });
-  vi.stubGlobal("fetch", f);
-  return f;
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 const pick = (type = "image/jpeg") => {
   const input = screen.getByLabelText("Choose a photo of your room") as HTMLInputElement;
@@ -163,11 +163,11 @@ describe("photo of your room: only visible evidence becomes a hotspot", () => {
 
   it("sends only the downscaled photo to the server", async () => {
     stubVision({ status: "none" });
-    const f = vi.mocked(fetch);
+    const fetchMock = vi.mocked(fetch);
     render(<Page />);
     pick();
     await screen.findByText(/Nothing from our list was visible/);
-    const call = must(f.mock.calls.find((c) => String(c[0]).startsWith("/api/vision")));
+    const call = must(fetchMock.mock.calls.find((c) => String(c[0]).startsWith("/api/vision")));
     expect(JSON.parse(must(call[1]).body as string)).toEqual({
       image: "data:image/jpeg;base64,QUJD",
     });
@@ -227,11 +227,11 @@ describe("photo reader problems always lead to the questions", () => {
 
   it("explains a photo the browser cannot decode (for example HEIC) without calling the server", async () => {
     prepare.mockRejectedValue(new Error("decode"));
-    const f = stubVision({ status: "ok", hotspots: [] });
+    const fetchMock = stubVision({ status: "ok", hotspots: [] });
     render(<Page />);
     pick();
     expect(await screen.findByText(/This photo format cannot be read here/)).toBeTruthy();
-    expect(f.mock.calls.some((c) => String(c[0]).startsWith("/api/vision"))).toBe(false);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/vision"))).toBe(false);
     expect(screen.getByText("Sample room")).toBeTruthy();
   });
 

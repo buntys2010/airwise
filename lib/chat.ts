@@ -68,35 +68,37 @@ const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null =>
 
 /** Unknown or malformed fields fall back to "not in the plan", so a bad value can never add an action. */
 export function parsePlan(raw: unknown): Plan {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const fields = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   return {
     ...NO_PLAN,
-    purifier: r.purifier === true,
-    purifierKind: oneOf(KINDS, r.purifierKind) ?? undefined,
-    mask: oneOf(MASKS, r.mask) ?? "none",
-    shiftOutdoor: r.shiftOutdoor === true,
-    swapCommute: oneOf(COMMUTES, r.swapCommute),
-    induction: r.induction === true,
-    sealGaps: r.sealGaps === true,
+    purifier: fields.purifier === true,
+    purifierKind: oneOf(KINDS, fields.purifierKind) ?? undefined,
+    mask: oneOf(MASKS, fields.mask) ?? "none",
+    shiftOutdoor: fields.shiftOutdoor === true,
+    swapCommute: oneOf(COMMUTES, fields.swapCommute),
+    induction: fields.induction === true,
+    sealGaps: fields.sealGaps === true,
   };
 }
 
 /** Validates the household choices a client sends. Anything off-list returns null, so no unchecked value reaches the engine. */
 export function parseChoices(raw: unknown): Choices | null {
   if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
-  const city = CITIES.find((c) => c.id === r.city);
-  const home = oneOf(HOMES, r.home),
-    commute = oneOf(COMMUTES, r.commute),
-    cooking = oneOf(COOKINGS, r.cooking);
+  const fields = raw as Record<string, unknown>;
+  const city = CITIES.find((c) => c.id === fields.city);
+  const home = oneOf(HOMES, fields.home),
+    commute = oneOf(COMMUTES, fields.commute),
+    cooking = oneOf(COOKINGS, fields.cooking);
   const km =
-    typeof r.km === "number" && Number.isFinite(r.km) ? Math.min(60, Math.max(0, r.km)) : null;
+    typeof fields.km === "number" && Number.isFinite(fields.km)
+      ? Math.min(60, Math.max(0, fields.km))
+      : null;
   if (!city || !home || !commute || !cooking || km === null) return null;
   return {
     city,
-    plan: parsePlan(r.plan),
-    lang: oneOf(LANGS, r.lang) ?? "en",
-    profile: { home, commute, km, cooking, vulnerable: r.vulnerable === true },
+    plan: parsePlan(fields.plan),
+    lang: oneOf(LANGS, fields.lang) ?? "en",
+    profile: { home, commute, km, cooking, vulnerable: fields.vulnerable === true },
   };
 }
 
@@ -139,8 +141,8 @@ export function buildContext(
 /** A trimmed question without angle brackets, or null if it is empty or longer than MAX_QUESTION. */
 export function cleanQuestion(q: unknown): string | null {
   if (typeof q !== "string") return null;
-  const t = q.trim().replace(/[<>]/g, "");
-  return t && t.length <= MAX_QUESTION ? t : null;
+  const text = q.trim().replace(/[<>]/g, "");
+  return text && text.length <= MAX_QUESTION ? text : null;
 }
 
 /** Deterministic answer used when Gemini is unavailable or its reply fails verification. Facts come from the engine. */

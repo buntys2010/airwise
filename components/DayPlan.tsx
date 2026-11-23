@@ -49,11 +49,11 @@ function usePlanWriter(choices: Choices, active: boolean) {
       if (ac.signal.aborted) return;
       setResult(json);
       doneFor.current = JSON.stringify(c);
-    } catch (e) {
+    } catch (failure) {
       if (ac.signal.aborted) return;
       setError(
-        e instanceof Error
-          ? e.message
+        failure instanceof Error
+          ? failure.message
           : "Could not reach AirWise. Check your connection and try again.",
       );
     } finally {
@@ -125,7 +125,7 @@ export function DayPlan({ schedule, choices, active = true }: Readonly<Props>) {
         </div>
       ) : null}
       <ol className="day" aria-busy={busy}>
-        {items.map((e, i) => (
+        {items.map((e) => (
           <li key={`${e.time}-${e.text}`}>
             <span className="when">{e.time}</span>
             <div className="panel">

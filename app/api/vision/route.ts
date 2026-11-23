@@ -33,7 +33,7 @@ export const POST = withObservability("vision", async (req: Request) => {
   const hit = findings.get(key);
   if (hit) return json({ ...hit, source: "gemini", cached: true });
 
-  const r = await generateDetailed({
+  const generated = await generateDetailed({
     prompt: VISION_PROMPT,
     maxTokens: 600,
     temperature: 0.1,
@@ -43,11 +43,15 @@ export const POST = withObservability("vision", async (req: Request) => {
     timeoutMs: 20_000,
     kind: "vision",
   });
-  if (!r.ok)
-    return json({ status: "unavailable", reason: r.reason, reasonText: REASON_TEXT[r.reason] });
+  if (!generated.ok)
+    return json({
+      status: "unavailable",
+      reason: generated.reason,
+      reasonText: REASON_TEXT[generated.reason],
+    });
 
   // The model's reply is untrusted: only enum kinds, in-image boxes and sane confidences survive validation.
-  const outcome = validateVision(r.text);
+  const outcome = validateVision(generated.text);
   if (outcome.status !== "unreadable") findings.set(key, outcome);
-  return json({ ...outcome, source: "gemini", model: r.model });
+  return json({ ...outcome, source: "gemini", model: generated.model });
 });

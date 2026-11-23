@@ -22,8 +22,8 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
     [],
   );
 
-  const q = encodeChoices({ city: a.cityId, profile: a.profile, plan: a.plan });
-  const imageUrl = `/api/share-image?${q}&size=card`;
+  const query = encodeChoices({ city: a.cityId, profile: a.profile, plan: a.plan });
+  const imageUrl = `/api/share-image?${query}&size=card`;
   const say = (m: string) => {
     setToast(m);
     if (timer.current) clearTimeout(timer.current);
@@ -60,8 +60,8 @@ export function ShareCard({ a }: Readonly<{ a: Airwise }>) {
           return;
         }
       }
-    } catch (e) {
-      if ((e as Error).name === "AbortError") {
+    } catch (error) {
+      if ((error as Error).name === "AbortError") {
         setToast("");
         return;
       }

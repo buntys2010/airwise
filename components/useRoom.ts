@@ -149,10 +149,10 @@ export function useRoom(a: Airwise) {
         applyFindings(mergeFindings(result.found, {}), {});
         setPhase(result.found.length ? "photo" : "checklist");
         setMessage(result.message);
-      } catch (e) {
-        if ((e as Error).name === "AbortError") return;
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
         setPhase(urlRef.current ? "checklist" : "sample");
-        setMessage({ key: failureKey(e) });
+        setMessage({ key: failureKey(error) });
       } finally {
         if (pendingUrl) URL.revokeObjectURL(pendingUrl);
       }

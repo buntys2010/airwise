@@ -58,8 +58,8 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
           tabIndex={-1}
           aria-label="Choose a photo of your room"
           onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) runInBackground(room.pickFile(f));
+            const file = e.target.files?.[0];
+            if (file) runInBackground(room.pickFile(file));
             e.target.value = "";
           }}
         />
@@ -75,7 +75,7 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
           </p>
           <p className="qintro">{t("check.intro")}</p>
           {QUESTIONS.map((q) => {
-            const s = room.questions[q];
+            const answer = room.questions[q];
             return (
               <fieldset key={q} className="question">
                 <legend>{t(QUESTION_KEY[q])}</legend>
@@ -85,7 +85,7 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
                       <input
                         type="radio"
                         name={`${id}-${q}`}
-                        checked={s.value === v}
+                        checked={answer.value === v}
                         onChange={() => room.answer(q, v)}
                       />
                       <span>{t(v ? "check.yes" : "check.no")}</span>
@@ -93,7 +93,9 @@ export function PhotoPicker({ room }: Readonly<{ room: Room }>) {
                   ))}
                 </div>
                 <p className="qnote">
-                  {s.source === "photo" || s.source === "none" ? sourceNote[s.source] : ""}
+                  {answer.source === "photo" || answer.source === "none"
+                    ? sourceNote[answer.source]
+                    : ""}
                 </p>
               </fieldset>
             );

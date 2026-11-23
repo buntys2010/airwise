@@ -84,9 +84,9 @@ function useLiveAir(city: City) {
           if (ctrl.signal.aborted) return;
           setAir(r);
           setStatus(r.source);
-          const c = istClock();
-          setNowHour(c.hour);
-          setElapsed(c.elapsed);
+          const clock = istClock();
+          setNowHour(clock.hour);
+          setElapsed(clock.elapsed);
         })
         .finally(() => {
           clearTimeout(timeout);
@@ -175,11 +175,11 @@ export function useAirwise(lang: Lang = "en") {
   }, []);
   /** Changing the household resets the plan, but only when something actually changed: an unchanged profile keeps the fixes already ticked. */
   const updateProfile = useCallback((next: Profile | ((cur: Profile) => Profile)) => {
-    const p = typeof next === "function" ? next(profileRef.current) : next;
-    if (sameProfile(p, profileRef.current)) return;
+    const nextProfile = typeof next === "function" ? next(profileRef.current) : next;
+    if (sameProfile(nextProfile, profileRef.current)) return;
     touched.current = true;
-    profileRef.current = p;
-    setProfileRaw(p);
+    profileRef.current = nextProfile;
+    setProfileRaw(nextProfile);
     setPlan(NO_PLAN);
   }, []);
   const setProfile = updateProfile;

@@ -179,8 +179,8 @@ export function Chat({ choices, prefill = "", onCamera }: Readonly<Props>) {
       setAnswer(reply.answer);
       setNote(noteFor(reply));
       voice.readOut(reply.answer);
-    } catch (e) {
-      if (isLatest()) setError(errorMessage(e, t));
+    } catch (failure) {
+      if (isLatest()) setError(errorMessage(failure, t));
     } finally {
       clearTimeout(timer);
       if (isLatest()) setBusy(false);

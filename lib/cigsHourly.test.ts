@@ -23,9 +23,9 @@ describe("cigarettes so far today", () => {
     expect(cigsSoFar(sim, -1)).toBe(0);
     let prev = 0;
     for (let h = 0; h < 24; h++) {
-      const v = cigsSoFar(sim, h);
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
+      const cigarettes = cigsSoFar(sim, h);
+      expect(cigarettes).toBeGreaterThanOrEqual(prev);
+      prev = cigarettes;
     }
   });
   it("a plan lowers the day's figure and the part so far", () => {
@@ -37,13 +37,13 @@ describe("cigarettes so far today", () => {
 
 describe("sticksFor", () => {
   it("draws a partial last stick", () => {
-    const s = sticksFor(2.4, 0);
-    expect(s.map((x) => Number(x.total.toFixed(2)))).toEqual([1, 1, 0.4]);
+    const sticks = sticksFor(2.4, 0);
+    expect(sticks.map((x) => Number(x.total.toFixed(2)))).toEqual([1, 1, 0.4]);
   });
   it("burns from the first stick onward and never past the total", () => {
-    const s = sticksFor(2.4, 1.5);
-    expect(s.map((x) => Number(x.burned.toFixed(2)))).toEqual([1, 0.5, 0]);
-    expect(s.map((x) => x.id)).toEqual([1, 2, 3]);
+    const sticks = sticksFor(2.4, 1.5);
+    expect(sticks.map((x) => Number(x.burned.toFixed(2)))).toEqual([1, 0.5, 0]);
+    expect(sticks.map((x) => x.id)).toEqual([1, 2, 3]);
     expect(sticksFor(0.3, 9)[0]).toEqual({ id: 1, total: 0.3, burned: 0.3 });
   });
   it("always draws at least one stick", () => {

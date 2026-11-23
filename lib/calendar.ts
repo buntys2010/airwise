@@ -22,14 +22,14 @@ export function foldLine(line: string): string {
   let bytes = 0;
   const limit = 75;
   for (const ch of line) {
-    const b = enc.encode(ch).length;
-    if (bytes + b > limit) {
+    const byteLength = enc.encode(ch).length;
+    if (bytes + byteLength > limit) {
       out.push(cur);
       cur = " ";
       bytes = 1;
     }
     cur += ch;
-    bytes += b;
+    bytes += byteLength;
   }
   out.push(cur);
   return out.join("\r\n");

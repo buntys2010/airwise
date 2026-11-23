@@ -32,8 +32,8 @@ beforeEach(() => {
   revoked.length = 0;
   vi.stubGlobal("Image", FakeImage);
   vi.stubGlobal("FileReader", FakeReader);
-  let n = 0;
-  URL.createObjectURL = () => `blob:${++n}`;
+  let callCount = 0;
+  URL.createObjectURL = () => `blob:${++callCount}`;
   URL.revokeObjectURL = (u: string) => {
     revoked.push(u);
   };

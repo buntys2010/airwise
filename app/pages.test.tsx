@@ -26,15 +26,17 @@ const points = (overrides: Record<string, unknown> = {}) =>
     ...(overrides[c.id] as object | undefined),
   }));
 function stubFetch(map: () => unknown | Promise<unknown>) {
-  const f = vi.fn().mockImplementation(async (url: string) => {
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => {
     if (String(url).startsWith("/api/map")) {
-      const r = await map();
-      return r instanceof Error ? Promise.reject(r) : { ok: true, json: () => Promise.resolve(r) };
+      const payload = await map();
+      return payload instanceof Error
+        ? Promise.reject(payload)
+        : { ok: true, json: () => Promise.resolve(payload) };
     }
     throw new Error("offline");
   });
-  vi.stubGlobal("fetch", f);
-  return f;
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 const wrap = (el: React.ReactElement) => render(<LangProvider>{el}</LangProvider>);
 const noViolations = async (container: HTMLElement) => {
@@ -84,12 +86,12 @@ describe("every main navigation link goes somewhere", () => {
 
 describe("/map", () => {
   it("shows a loading state, then the map and an equivalent table from one request", async () => {
-    const f = stubFetch(() => ({ points: points(), time: "16:00", live: 6 }));
+    const fetchMock = stubFetch(() => ({ points: points(), time: "16:00", live: 6 }));
     wrap(<MapPage />);
     expect(screen.getByText("Loading the map…")).toBeTruthy();
     const img = await screen.findByRole("img", { name: /Schematic map of India/ });
     expect(img).toBeTruthy();
-    expect(f.mock.calls.filter((c) => String(c[0]).startsWith("/api/map"))).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter((c) => String(c[0]).startsWith("/api/map"))).toHaveLength(1);
     const table = await screen.findByRole("table", {}, { timeout: 5000 });
     expect(within(table).getAllByRole("row")).toHaveLength(CITIES.length + 1);
     for (const c of CITIES)

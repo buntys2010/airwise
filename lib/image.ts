@@ -61,10 +61,10 @@ export async function prepareImage(file: Blob): Promise<Prepared> {
     );
     if (!blob) throw new Error("encode");
     const dataUrl = await new Promise<string>((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(typeof r.result === "string" ? r.result : "");
-      r.onerror = () => rej(new Error("read"));
-      r.readAsDataURL(blob);
+      const reader = new FileReader();
+      reader.onload = () => res(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => rej(new Error("read"));
+      reader.readAsDataURL(blob);
     });
     return { dataUrl, objectUrl: URL.createObjectURL(blob) };
   } finally {
@@ -79,10 +79,10 @@ export function parseDataUrl(
   value: unknown,
 ): { mimeType: string; data: string } | "bad_type" | "too_large" {
   if (typeof value !== "string") return "bad_type";
-  const m = DATA_URL.exec(value);
-  if (!m) return "bad_type";
+  const match = DATA_URL.exec(value);
+  if (!match) return "bad_type";
   // Strict base64 length alignment: standard base64 must align to 4 characters
-  const [, mimeType, data] = m;
+  const [, mimeType, data] = match;
   if (!mimeType || !data || data.length % 4 !== 0 || data.length < 4) return "bad_type";
   const decoded = Math.floor((data.length * 3) / 4);
   if (decoded > MAX_UPLOAD_BYTES) return "too_large";

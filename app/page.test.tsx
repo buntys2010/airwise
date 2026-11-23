@@ -30,7 +30,7 @@ function stubFetch(
     chat?: (body: Record<string, unknown>) => Promise<unknown> | unknown;
   } = {},
 ) {
-  const f = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
     if (String(url).startsWith("/api/chat")) {
       const result = await (opts.chat ?? (() => ({ answer: "Wear an N95.", verified: true })))(
         JSON.parse(init?.body as string),
@@ -48,8 +48,8 @@ function stubFetch(
         ),
     };
   });
-  vi.stubGlobal("fetch", f);
-  return f;
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 beforeEach(() => {
   localStorage.clear();
@@ -107,10 +107,10 @@ describe("AirWise home", () => {
   it("has three keyboard-reachable hotspot buttons and a matching text list of fixes", () => {
     render(<Page />);
     for (const n of [1, 2, 3]) {
-      const m = marker(n);
-      expect(m.tagName).toBe("BUTTON");
-      expect(m.getAttribute("aria-pressed")).toBe("false");
-      expect(m.getAttribute("tabindex")).not.toBe("-1");
+      const markerEl = marker(n);
+      expect(markerEl.tagName).toBe("BUTTON");
+      expect(markerEl.getAttribute("aria-pressed")).toBe("false");
+      expect(markerEl.getAttribute("tabindex")).not.toBe("-1");
     }
     const list = screen.getByRole("list", { name: "Fixes found in your room" });
     expect(list.querySelectorAll(":scope > li")).toHaveLength(3);
@@ -153,7 +153,7 @@ describe("AirWise home", () => {
 
 describe("chat on the home screen", () => {
   it("sends only choices from fixed lists, never numbers, and shows the verified label", async () => {
-    const f = stubFetch({ chat: () => ({ answer: "Wear an N95.", verified: true }) });
+    const fetchMock = stubFetch({ chat: () => ({ answer: "Wear an N95.", verified: true }) });
     render(<Page />);
     fireEvent.click(marker(2));
     fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
@@ -163,7 +163,7 @@ describe("chat on the home screen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByText("Wear an N95.")).toBeTruthy();
     expect(screen.getByText(/Answered by Gemini, with every number checked/)).toBeTruthy();
-    const call = must(f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")));
+    const call = must(fetchMock.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")));
     const body = JSON.parse(call[1].body as string);
     expect(Object.keys(body).sort()).toEqual(["choices", "question"]);
     expect(body.choices).toMatchObject({
@@ -201,8 +201,10 @@ describe("chat on the home screen", () => {
     const slow = new Promise((r) => {
       release = r;
     });
-    let n = 0;
-    stubFetch({ chat: () => (++n === 1 ? slow : { answer: "Second answer.", verified: true }) });
+    let callCount = 0;
+    stubFetch({
+      chat: () => (++callCount === 1 ? slow : { answer: "Second answer.", verified: true }),
+    });
     render(<Page />);
     fireEvent.click(screen.getByRole("button", { name: /Co-pilot/ }));
     const input = screen.getByLabelText(/Ask AirWise a question/);
@@ -254,7 +256,7 @@ describe("wording of the dial", () => {
 
 describe("user journey: household pills, stage dock and share pass", () => {
   it("ProfilePills render as radio groups, and one tap updates the household the chat sends", async () => {
-    const f = stubFetch({ chat: () => ({ answer: "Ok.", verified: true }) });
+    const fetchMock = stubFetch({ chat: () => ({ answer: "Ok.", verified: true }) });
     render(<Page />);
     const wood = screen.getByRole("radio", { name: /Wood or coal/ });
     expect(wood.getAttribute("aria-checked")).toBe("false");
@@ -274,10 +276,11 @@ describe("user journey: household pills, stage dock and share pass", () => {
     fireEvent.change(screen.getByLabelText(/Ask AirWise a question/), { target: { value: "ok?" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() =>
-      expect(f.mock.calls.some((c) => String(c[0]).startsWith("/api/chat"))).toBe(true),
+      expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/chat"))).toBe(true),
     );
     const body = JSON.parse(
-      must(f.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")))[1].body as string,
+      must(fetchMock.mock.calls.find((c) => String(c[0]).startsWith("/api/chat")))[1]
+        .body as string,
     );
     expect(body.choices).toMatchObject({ cooking: "induction", vulnerable: false });
   });

@@ -21,9 +21,9 @@ export default function MapPage() {
     fetch("/api/map", { signal: ctrl.signal })
       .then(async (r) => {
         if (!r.ok) throw new Error("map");
-        const j = (await r.json()) as MapReply;
-        if (!Array.isArray(j.points) || j.points.length === 0) throw new Error("map");
-        setData(j);
+        const reply = (await r.json()) as MapReply;
+        if (!Array.isArray(reply.points) || reply.points.length === 0) throw new Error("map");
+        setData(reply);
       })
       .catch((e: Error) => {
         if (e.name !== "AbortError") setError(true);

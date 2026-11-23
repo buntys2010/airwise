@@ -22,12 +22,12 @@ export interface Stick {
 
 /** One stick per whole cigarette (the last may be partial). `value` is the day's figure and `sofar` the part already used up. */
 export function sticksFor(value: number, sofar: number): Stick[] {
-  const v = Math.max(0, value);
-  const n = Math.max(1, Math.ceil(v - 1e-9));
+  const figure = Math.max(0, value);
+  const stickCount = Math.max(1, Math.ceil(figure - 1e-9));
   const sticks: Stick[] = [];
-  for (let i = 0; i < n; i++) {
-    const total = Math.min(1, Math.max(0, v - i));
-    const burned = Math.min(total, Math.max(0, Math.min(sofar, v) - i));
+  for (let i = 0; i < stickCount; i++) {
+    const total = Math.min(1, Math.max(0, figure - i));
+    const burned = Math.min(total, Math.max(0, Math.min(sofar, figure) - i));
     sticks.push({ id: i + 1, total, burned });
   }
   return sticks;

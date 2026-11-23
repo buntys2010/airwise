@@ -36,15 +36,15 @@ export function withObservability(
     try {
       res = await handler(req);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error(String(err));
+      const failure = err instanceof Error ? err : new Error(String(err));
       sink(
         JSON.stringify({
           evt: "error",
           route,
           method: req.method,
           id,
-          name: e.name,
-          message: e.message.slice(0, 300),
+          name: failure.name,
+          message: failure.message.slice(0, 300),
         }),
       );
       res = NextResponse.json(

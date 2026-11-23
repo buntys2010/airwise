@@ -18,34 +18,36 @@ const check = (ok, label, extra = "") => {
 };
 
 try {
-  const r = await fetch(`${base}/api/health`);
-  const j = await r.json();
+  const response = await fetch(`${base}/api/health`);
+  const payload = await response.json();
   check(
-    r.status === 200 && j.status === "ok" && Boolean(r.headers.get("x-request-id")),
+    response.status === 200 &&
+      payload.status === "ok" &&
+      Boolean(response.headers.get("x-request-id")),
     "GET /api/health",
-    `(${r.status})`,
+    `(${response.status})`,
   );
-} catch (e) {
-  check(false, "GET /api/health", String(e));
+} catch (error) {
+  check(false, "GET /api/health", String(error));
 }
 for (const p of pages) {
   try {
-    const r = await fetch(base + p);
-    check(r.status === 200, `GET ${p}`, `(${r.status})`);
-  } catch (e) {
-    check(false, `GET ${p}`, String(e));
+    const response = await fetch(base + p);
+    check(response.status === 200, `GET ${p}`, `(${response.status})`);
+  } catch (error) {
+    check(false, `GET ${p}`, String(error));
   }
 }
 try {
-  const r = await fetch(`${base}/api/map`);
-  const j = await r.json();
+  const response = await fetch(`${base}/api/map`);
+  const payload = await response.json();
   check(
-    r.status === 200 && Array.isArray(j.points) && j.points.length >= 100,
+    response.status === 200 && Array.isArray(payload.points) && payload.points.length >= 100,
     "GET /api/map returns every city",
-    `(${j.points?.length} cities, ${j.live} live)`,
+    `(${payload.points?.length} cities, ${payload.live} live)`,
   );
-} catch (e) {
-  check(false, "GET /api/map", String(e));
+} catch (error) {
+  check(false, "GET /api/map", String(error));
 }
 try {
   const choices = {
@@ -58,19 +60,19 @@ try {
     plan: {},
     lang: "en",
   };
-  const r = await fetch(`${base}/api/chat`, {
+  const response = await fetch(`${base}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ question: "Do I need a mask?", choices }),
   });
-  const j = await r.json();
+  const payload = await response.json();
   check(
-    r.status === 200 && typeof j.answer === "string" && j.answer.length > 0,
+    response.status === 200 && typeof payload.answer === "string" && payload.answer.length > 0,
     "POST /api/chat answers",
-    `(source: ${j.source}, verified: ${j.verified}${j.reason ? `, reason: ${j.reason}` : ""}${j.rejected ? ", guard rejected the model reply" : ""})`,
+    `(source: ${payload.source}, verified: ${payload.verified}${payload.reason ? `, reason: ${payload.reason}` : ""}${payload.rejected ? ", guard rejected the model reply" : ""})`,
   );
-} catch (e) {
-  check(false, "POST /api/chat", String(e));
+} catch (error) {
+  check(false, "POST /api/chat", String(error));
 }
 
 process.exit(failed ? 1 : 0);

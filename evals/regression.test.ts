@@ -14,19 +14,19 @@ describe("the eval set catches a weakened guard", () => {
     expect(failed(verify)).toEqual([]);
   });
   it("a guard that accepts everything fails every rejection case", () => {
-    const f = failed(() => ({ ok: true }));
-    expect(f.length).toBeGreaterThanOrEqual(12);
-    expect(f.some((r) => r.category === "guard: numbers")).toBe(true);
-    expect(f.some((r) => r.category === "guard: claims")).toBe(true);
-    expect(f.some((r) => r.category === "guard: Hindi")).toBe(true);
+    const results = failed(() => ({ ok: true }));
+    expect(results.length).toBeGreaterThanOrEqual(12);
+    expect(results.some((r) => r.category === "guard: numbers")).toBe(true);
+    expect(results.some((r) => r.category === "guard: claims")).toBe(true);
+    expect(results.some((r) => r.category === "guard: Hindi")).toBe(true);
   });
   it("a guard that checks numbers but not attributions is caught by the claims cases", () => {
-    const f = failed((text, facts) => ({ ok: ungroundedNumbers(text, facts).length === 0 }));
-    expect(f.filter((r) => r.category === "guard: claims").length).toBeGreaterThanOrEqual(5);
+    const results = failed((text, facts) => ({ ok: ungroundedNumbers(text, facts).length === 0 }));
+    expect(results.filter((r) => r.category === "guard: claims").length).toBeGreaterThanOrEqual(5);
   });
   it("a guard that rejects everything fails every acceptance case", () => {
-    const f = failed(() => ({ ok: false }));
-    expect(f.length).toBeGreaterThanOrEqual(8);
+    const results = failed(() => ({ ok: false }));
+    expect(results.length).toBeGreaterThanOrEqual(8);
   });
   it("a numeric check that ignores Devanagari digits is caught by the Hindi cases", () => {
     const asciiOnly: Verifier = (text, facts) => ({
@@ -34,12 +34,12 @@ describe("the eval set catches a weakened guard", () => {
         ungroundedNumbers(text.replace(/[०-९]/gu, ""), facts).length === 0 &&
         verify(text.replace(/[०-९]/gu, ""), facts).ok,
     });
-    const f = failed(asciiOnly);
-    expect(f.some((r) => r.id === "hin-03")).toBe(true); // an invented number written in Devanagari slips through
+    const results = failed(asciiOnly);
+    expect(results.some((r) => r.id === "hin-03")).toBe(true); // an invented number written in Devanagari slips through
   });
   it("summarise counts pass and fail per category", () => {
-    const s = summarise(runCases(() => ({ ok: true })));
-    expect(s.passed).toBeLessThan(s.total);
-    expect(Object.keys(s.byCategory)).toHaveLength(6);
+    const summary = summarise(runCases(() => ({ ok: true })));
+    expect(summary.passed).toBeLessThan(summary.total);
+    expect(Object.keys(summary.byCategory)).toHaveLength(6);
   });
 });

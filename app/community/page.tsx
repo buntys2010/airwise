@@ -23,32 +23,32 @@ const COOK_OPTIONS: { v: Cooking; en: string; hi: string }[] = [
 /** One printable page for a building, school or workplace. Every figure comes from the engine and live air; the link shares choices only. */
 export default function CommunityPage() {
   const { lang, t } = useLang();
-  const a = useAirwise(lang);
+  const airwise = useAirwise(lang);
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
   const plan = useMemo(
-    () => communityPlan(a.hourly, a.profile, a.nowHour),
-    [a.hourly, a.profile, a.nowHour],
+    () => communityPlan(airwise.hourly, airwise.profile, airwise.nowHour),
+    [airwise.hourly, airwise.profile, airwise.nowHour],
   );
   const level = t(CATEGORY_KEY[plan.tone]);
   const title = name.trim()
     ? t("comm.title", { name: name.trim() })
-    : t("comm.titleCity", { city: a.city.name });
+    : t("comm.titleCity", { city: airwise.city.name });
 
   async function share() {
-    const q = new URLSearchParams({
-      city: a.cityId,
-      home: a.profile.home,
-      cooking: a.profile.cooking,
+    const params = new URLSearchParams({
+      city: airwise.cityId,
+      home: airwise.profile.home,
+      cooking: airwise.profile.cooking,
     });
-    const url = `${window.location.origin}/community?${q.toString()}`;
+    const url = `${window.location.origin}/community?${params.toString()}`;
     try {
       if (typeof navigator.share === "function") {
         await navigator.share({ title, url });
         return;
       }
-    } catch (e) {
-      if ((e as Error).name === "AbortError") return;
+    } catch (error) {
+      if ((error as Error).name === "AbortError") return;
     }
     try {
       await navigator.clipboard.writeText(url);
@@ -88,7 +88,7 @@ export default function CommunityPage() {
               <span className="qhead" aria-hidden="true">
                 {t("strip.city")}
               </span>
-              <CityPicker value={a.cityId} onChange={a.setCityId} />
+              <CityPicker value={airwise.cityId} onChange={airwise.setCityId} />
             </div>
             <fieldset>
               <legend>{t("comm.home")}</legend>
@@ -99,8 +99,8 @@ export default function CommunityPage() {
                       type="radio"
                       name="chome"
                       value={o.v}
-                      checked={a.profile.home === o.v}
-                      onChange={() => a.setProfile({ ...a.profile, home: o.v })}
+                      checked={airwise.profile.home === o.v}
+                      onChange={() => airwise.setProfile({ ...airwise.profile, home: o.v })}
                     />
                     <span>{lang === "hi" ? o.hi : o.en}</span>
                   </label>
@@ -116,8 +116,8 @@ export default function CommunityPage() {
                       type="radio"
                       name="ccook"
                       value={o.v}
-                      checked={a.profile.cooking === o.v}
-                      onChange={() => a.setProfile({ ...a.profile, cooking: o.v })}
+                      checked={airwise.profile.cooking === o.v}
+                      onChange={() => airwise.setProfile({ ...airwise.profile, cooking: o.v })}
                     />
                     <span>{lang === "hi" ? o.hi : o.en}</span>
                   </label>
@@ -131,7 +131,7 @@ export default function CommunityPage() {
           <article id="community-plan" className="notice">
             <h2 id="h-notice">{title}</h2>
             <p className="u-notice-line">
-              <strong>{t("comm.now", { city: a.city.name, level, pm: plan.nowPm })}</strong>
+              <strong>{t("comm.now", { city: airwise.city.name, level, pm: plan.nowPm })}</strong>
             </p>
             <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
 

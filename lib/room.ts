@@ -171,11 +171,13 @@ function validBox(raw: unknown): BBox | null {
 
 /** One raw finding from the model as a hotspot, or null if it breaks any rule. */
 function validFinding(raw: unknown): { kind: VisionKind; box: BBox; conf: number } | null {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const kind = VISION_KINDS.find((k) => k === r.kind);
-  const box = validBox(r.bbox);
+  const fields = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const kind = VISION_KINDS.find((k) => k === fields.kind);
+  const box = validBox(fields.bbox);
   const conf =
-    typeof r.confidence === "number" && Number.isFinite(r.confidence) ? r.confidence : -1;
+    typeof fields.confidence === "number" && Number.isFinite(fields.confidence)
+      ? fields.confidence
+      : -1;
   if (!kind || !box || conf < MIN_CONFIDENCE || conf > 1) return null;
   return { kind, box, conf };
 }
@@ -188,17 +190,17 @@ export function validateVision(text: string): VisionOutcome {
   } catch {
     return { status: "unreadable" };
   }
-  const j = json as { is_room?: unknown; findings?: unknown };
-  if (typeof j?.is_room !== "boolean" || !Array.isArray(j.findings))
+  const parsed = json as { is_room?: unknown; findings?: unknown };
+  if (typeof parsed?.is_room !== "boolean" || !Array.isArray(parsed.findings))
     return { status: "unreadable" };
-  if (!j.is_room) return { status: "not_room" };
+  if (!parsed.is_room) return { status: "not_room" };
   const seen = new Set<VisionKind>();
   const hotspots: Hotspot[] = [];
-  for (const raw of j.findings.slice(0, 12)) {
-    const f = validFinding(raw);
-    if (!f || seen.has(f.kind)) continue;
-    seen.add(f.kind);
-    hotspots.push(hotspotFor(f.kind, f.box, f.conf));
+  for (const raw of parsed.findings.slice(0, 12)) {
+    const finding = validFinding(raw);
+    if (!finding || seen.has(finding.kind)) continue;
+    seen.add(finding.kind);
+    hotspots.push(hotspotFor(finding.kind, finding.box, finding.conf));
   }
   hotspots.sort((a, b) => FINDING_KINDS.indexOf(a.kind) - FINDING_KINDS.indexOf(b.kind));
   return hotspots.length ? { status: "ok", hotspots } : { status: "none" };

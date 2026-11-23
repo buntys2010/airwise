@@ -65,7 +65,7 @@ function stubFetch(
     verified: true,
   }),
 ) {
-  const f = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+  const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
     if (String(url).startsWith("/api/chat"))
       return Promise.resolve({
         ok: true,
@@ -73,8 +73,8 @@ function stubFetch(
       });
     return Promise.reject(new Error("offline"));
   });
-  vi.stubGlobal("fetch", f);
-  return f;
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 const renderPage = () =>
   render(
@@ -148,7 +148,7 @@ describe("language toggle", () => {
   });
 
   it("sends the language with the chat question, and shows the answer in that language", async () => {
-    const f = stubFetch(() => ({ answer: "N95 पहनें।", verified: true }));
+    const fetchMock = stubFetch(() => ({ answer: "N95 पहनें।", verified: true }));
     renderPage();
     copilot();
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
@@ -157,7 +157,7 @@ describe("language toggle", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "भेजें" }));
     expect(await screen.findByText("N95 पहनें।")).toBeTruthy();
-    expect(JSON.parse(must(chatCalls(f)[0])[1].body as string).choices.lang).toBe("hi");
+    expect(JSON.parse(must(chatCalls(fetchMock)[0])[1].body as string).choices.lang).toBe("hi");
     expect(screen.getByText(/Gemini का जवाब, हर संख्या आपकी योजना से जाँची गई/u)).toBeTruthy();
     expect(must(document.querySelector(".answer")).getAttribute("lang")).toBe("hi");
   });
@@ -180,7 +180,7 @@ describe("language toggle", () => {
 
 describe("voice", () => {
   it("is hidden entirely in a browser without speech support, and typing still works", async () => {
-    const f = stubFetch();
+    const fetchMock = stubFetch();
     renderPage();
     copilot();
     expect(screen.queryByRole("button", { name: "Speak your question" })).toBeNull();
@@ -190,12 +190,12 @@ describe("voice", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(await screen.findByText("Wear an N95.")).toBeTruthy();
-    expect(chatCalls(f)).toHaveLength(1);
+    expect(chatCalls(fetchMock)).toHaveLength(1);
   });
 
   it("puts the transcript in the box for checking and never sends by itself", async () => {
     enableVoice();
-    const f = stubFetch();
+    const fetchMock = stubFetch();
     renderPage();
     copilot();
     fireEvent.click(await screen.findByRole("button", { name: "Speak your question" }));
@@ -207,13 +207,15 @@ describe("voice", () => {
       "do I need a mask",
     );
     expect(screen.getByText("Check the words, then press Send.")).toBeTruthy();
-    expect(chatCalls(f)).toHaveLength(0); // explicit Send only
+    expect(chatCalls(fetchMock)).toHaveLength(0); // explicit Send only
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), {
       target: { value: "do I need an N95" },
     }); // editable
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByText("Wear an N95.");
-    expect(JSON.parse(must(chatCalls(f)[0])[1].body as string).question).toBe("do I need an N95");
+    expect(JSON.parse(must(chatCalls(fetchMock)[0])[1].body as string).question).toBe(
+      "do I need an N95",
+    );
   });
 
   it("announces listening, and the button reflects it", async () => {

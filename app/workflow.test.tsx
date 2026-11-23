@@ -16,7 +16,7 @@ function stubFetch(
     verified: true,
   }),
 ) {
-  const f = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+  const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
     if (String(url).startsWith("/api/chat"))
       return Promise.resolve({
         ok: true,
@@ -24,8 +24,8 @@ function stubFetch(
       });
     return Promise.reject(new Error("offline"));
   });
-  vi.stubGlobal("fetch", f);
-  return f;
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 const renderPage = () =>
   render(

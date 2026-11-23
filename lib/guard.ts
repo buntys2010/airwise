@@ -67,8 +67,8 @@ const ATTRIBUTIONS: RegExp[] = [
 
 /** Phrases in `text` that cite studies, experts or population statistics the app never supplied. */
 export function unsupportedClaims(text: string): string[] {
-  const t = normaliseDigits(text);
-  return ATTRIBUTIONS.map((re) => re.exec(t)?.[0]).filter((m): m is string => Boolean(m));
+  const normalised = normaliseDigits(text);
+  return ATTRIBUTIONS.map((re) => re.exec(normalised)?.[0]).filter((m): m is string => Boolean(m));
 }
 
 export interface Verdict {

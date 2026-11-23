@@ -62,8 +62,9 @@ export function parseHourly(json: unknown): number[] | null {
 export function parseWeather(json: unknown): { temp: number | null; wind: number | null } {
   const cur = (json as { current?: { temperature_2m?: unknown; wind_speed_10m?: unknown } } | null)
     ?.current;
-  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
-  return { temp: n(cur?.temperature_2m), wind: n(cur?.wind_speed_10m) };
+  const roundedOrNull = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null;
+  return { temp: roundedOrNull(cur?.temperature_2m), wind: roundedOrNull(cur?.wind_speed_10m) };
 }
 
 /**
@@ -79,10 +80,10 @@ export async function loadAir(city: City, signal?: AbortSignal): Promise<AirResu
     updated: null,
   };
   try {
-    const q = `latitude=${city.lat}&longitude=${city.lon}&timezone=Asia%2FKolkata`;
+    const query = `latitude=${city.lat}&longitude=${city.lon}&timezone=Asia%2FKolkata`;
     const [airRes, wxRes] = await Promise.all([
-      fetch(`${AIR_URL}?${q}&hourly=pm2_5&forecast_days=1`, { signal }),
-      fetch(`${WEATHER_URL}?${q}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh`, {
+      fetch(`${AIR_URL}?${query}&hourly=pm2_5&forecast_days=1`, { signal }),
+      fetch(`${WEATHER_URL}?${query}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh`, {
         signal,
       }).catch(() => null),
     ]);
@@ -123,14 +124,14 @@ export function getCityAir(city: City): Promise<AirResult> {
   if (hit) return Promise.resolve(hit);
   const pending = inflight.get(city.id);
   if (pending) return pending;
-  const p = loadAir(city, AbortSignal.timeout(AIR_TIMEOUT_MS))
+  const request = loadAir(city, AbortSignal.timeout(AIR_TIMEOUT_MS))
     .then((r) => {
       if (r.source === "live") airCache.set(city.id, r);
       return r;
     })
     .finally(() => inflight.delete(city.id));
-  inflight.set(city.id, p);
-  return p;
+  inflight.set(city.id, request);
+  return request;
 }
 /** Test hook: forget cached city air so each test starts clean. */
 export const resetAirCache = () => airCache.clear();

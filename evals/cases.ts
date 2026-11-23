@@ -62,10 +62,12 @@ const vis = (id: string, text: string, expectStatus: string, kinds?: string[]): 
   category: "vision validation",
   expect: `status ${expectStatus}${kinds ? ` with ${kinds.join(", ")}` : ""}`,
   run: () => {
-    const o = validateVision(text);
+    const outcome = validateVision(text);
     return (
-      o.status === expectStatus &&
-      (!kinds || (o.status === "ok" && o.hotspots.map((h) => h.kind).join(",") === kinds.join(",")))
+      outcome.status === expectStatus &&
+      (!kinds ||
+        (outcome.status === "ok" &&
+          outcome.hotspots.map((h) => h.kind).join(",") === kinds.join(",")))
     );
   },
 });
@@ -180,14 +182,14 @@ export const CASES: Case[] = [
     category: "shared links",
     expect: "valid choices decode",
     run: () => {
-      const d = decodeChoices(
+      const shared = decodeChoices(
         "city=delhi&home=sealed&commute=metro&km=12&cooking=induction&vulnerable=0",
       );
       return (
-        d.city === "delhi" &&
-        d.profile?.home === "sealed" &&
-        d.profile.km === 12 &&
-        d.profile.vulnerable === false
+        shared.city === "delhi" &&
+        shared.profile?.home === "sealed" &&
+        shared.profile.km === 12 &&
+        shared.profile.vulnerable === false
       );
     },
   },
@@ -196,8 +198,8 @@ export const CASES: Case[] = [
     category: "shared links",
     expect: "unknown city and values are dropped",
     run: () => {
-      const d = decodeChoices("city=atlantis&home=castle&commute=teleport");
-      return d.city === undefined && d.profile === undefined;
+      const shared = decodeChoices("city=atlantis&home=castle&commute=teleport");
+      return shared.city === undefined && shared.profile === undefined;
     },
   },
   {
@@ -220,8 +222,8 @@ export const CASES: Case[] = [
     category: "shared links",
     expect: "unknown plan ids are dropped",
     run: () => {
-      const p = decodeChoices("plan=hack,seal,<script>").plan;
-      return p?.sealGaps === true && p.induction === false;
+      const sharedPlan = decodeChoices("plan=hack,seal,<script>").plan;
+      return sharedPlan?.sealGaps === true && sharedPlan.induction === false;
     },
   },
   {
@@ -303,9 +305,9 @@ export function summarise(results: CaseResult[]): {
 } {
   const byCategory: Record<string, { total: number; passed: number }> = {};
   for (const r of results) {
-    const b = (byCategory[r.category] ??= { total: 0, passed: 0 });
-    b.total++;
-    if (r.passed) b.passed++;
+    const tally = (byCategory[r.category] ??= { total: 0, passed: 0 });
+    tally.total++;
+    if (r.passed) tally.passed++;
   }
   return { total: results.length, passed: results.filter((r) => r.passed).length, byCategory };
 }

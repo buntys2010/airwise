@@ -110,12 +110,14 @@ export const pmAt = (hourly: readonly number[], hour: number): number => hourly[
 
 /** US-EPA style AQI from PM2.5 (µg/m³), piecewise linear. */
 export function aqiFromPm(pm: number): number {
-  const x = Math.max(0, pm);
+  const clamped = Math.max(0, pm);
   for (let i = 1; i < BREAKS.length; i++) {
-    const a = BREAKS[i - 1];
-    const b = BREAKS[i];
-    if (a && b && x <= b.pm) {
-      return Math.round(a.aqi + ((x - a.pm) * (b.aqi - a.aqi)) / (b.pm - a.pm));
+    const lower = BREAKS[i - 1];
+    const upper = BREAKS[i];
+    if (lower && upper && clamped <= upper.pm) {
+      return Math.round(
+        lower.aqi + ((clamped - lower.pm) * (upper.aqi - lower.aqi)) / (upper.pm - lower.pm),
+      );
     }
   }
   return 500;
@@ -258,11 +260,14 @@ export function simulate(hourly: number[], p: Profile, plan: Plan): Sim {
 
 /** Sum of a per-hour series up to `hoursElapsed` (may be fractional: 16.5 counts hour 16 for half). Out-of-range or non-finite input is clamped. */
 function sumUntil(series: number[], hoursElapsed: number): number {
-  const t = Math.min(series.length, Math.max(0, Number.isFinite(hoursElapsed) ? hoursElapsed : 0));
-  const whole = Math.floor(t);
+  const clamped = Math.min(
+    series.length,
+    Math.max(0, Number.isFinite(hoursElapsed) ? hoursElapsed : 0),
+  );
+  const whole = Math.floor(clamped);
   let sum = 0;
   for (let h = 0; h < whole; h++) sum += pmAt(series, h);
-  if (whole < series.length) sum += pmAt(series, whole) * (t - whole);
+  if (whole < series.length) sum += pmAt(series, whole) * (clamped - whole);
   return sum;
 }
 
@@ -446,12 +451,12 @@ const ACTION_BUILDERS: ActionBuilder[] = [
 export function buildActions(hourly: number[], p: Profile): ActionResult[] {
   const base = simulate(hourly, p, NO_PLAN);
   const solo = (plan: Plan): Saving => {
-    const s = simulate(hourly, p, plan);
+    const simulated = simulate(hourly, p, plan);
     return {
-      savedPm: base.meanPm - s.meanPm,
-      savedPct: base.meanPm > 0 ? (base.meanPm - s.meanPm) / base.meanPm : 0,
-      savedCigs: base.cigs - s.cigs,
-      savedCo2Kg: base.co2Kg - s.co2Kg,
+      savedPm: base.meanPm - simulated.meanPm,
+      savedPct: base.meanPm > 0 ? (base.meanPm - simulated.meanPm) / base.meanPm : 0,
+      savedCigs: base.cigs - simulated.cigs,
+      savedCo2Kg: base.co2Kg - simulated.co2Kg,
     };
   };
   const ctx: ActionContext = { hourly, p, base, best: bestHour(hourly), solo };

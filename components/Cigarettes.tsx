@@ -21,9 +21,9 @@ function useHourReplay(target: number) {
     const start = performance.now();
     const ms = 2400;
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / ms);
-      setHour(-1 + (target + 1) * (1 - Math.pow(1 - t, 2)));
-      if (t < 1) raf.current = requestAnimationFrame(tick);
+      const progress = Math.min(1, (now - start) / ms);
+      setHour(-1 + (target + 1) * (1 - Math.pow(1 - progress, 2)));
+      if (progress < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
   }, [target]);
@@ -38,7 +38,7 @@ function useHourReplay(target: number) {
 export function CigRow({ sticks, tone }: Readonly<{ sticks: Stick[]; tone: "base" | "plan" }>) {
   return (
     <div className={`cigrow ${tone}`} aria-hidden="true">
-      {sticks.map((s, i) => {
+      {sticks.map((s) => {
         const left = Math.max(0, s.total - s.burned);
         const burning = s.burned > 0.005 && s.burned < s.total - 0.005;
         return (

@@ -26,23 +26,22 @@ const defaultStorage = (): StorageLike | null => {
 /** Validates whatever was stored: a tampered or old entry is ignored rather than trusted. */
 export function sanitizeSaved(raw: unknown): Saved | null {
   if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
-  const p = (r.profile && typeof r.profile === "object" ? r.profile : {}) as Record<
-    string,
-    unknown
-  >;
-  const city = CITIES.find((c) => c.id === r.city);
-  const home = HOMES.find((h) => h === p.home),
-    commute = COMMUTES.find((c) => c === p.commute),
-    cooking = COOKINGS.find((c) => c === p.cooking);
+  const fields = raw as Record<string, unknown>;
+  const storedProfile = (
+    fields.profile && typeof fields.profile === "object" ? fields.profile : {}
+  ) as Record<string, unknown>;
+  const city = CITIES.find((c) => c.id === fields.city);
+  const home = HOMES.find((h) => h === storedProfile.home),
+    commute = COMMUTES.find((c) => c === storedProfile.commute),
+    cooking = COOKINGS.find((c) => c === storedProfile.cooking);
   const km =
-    typeof p.km === "number" && Number.isFinite(p.km)
-      ? Math.min(60, Math.max(0, Math.round(p.km)))
+    typeof storedProfile.km === "number" && Number.isFinite(storedProfile.km)
+      ? Math.min(60, Math.max(0, Math.round(storedProfile.km)))
       : null;
   if (!city || !home || !commute || !cooking || km === null) return null;
   return {
     city: city.id,
-    profile: { home, commute, cooking, km, vulnerable: p.vulnerable === true },
+    profile: { home, commute, cooking, km, vulnerable: storedProfile.vulnerable === true },
   };
 }
 

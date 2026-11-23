@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "./route";
 
-let n = 0;
-const call = (query = "", ip = `10.8.0.${++n}`) =>
+let callCount = 0;
+const call = (query = "", ip = `10.8.0.${++callCount}`) =>
   GET(
     new Request(`http://localhost/api/share-image?${query}`, {
       headers: { "x-forwarded-for": ip },

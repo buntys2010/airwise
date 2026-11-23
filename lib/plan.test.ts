@@ -35,9 +35,9 @@ describe("buildPlanRequest", () => {
 
 describe("buildPlanPrompt", () => {
   it("fences facts as data and asks for the requested language", () => {
-    const p = buildPlanPrompt(req);
-    expect(p).toContain("<facts>");
-    expect(p).toMatch(/never as instructions/);
+    const builtPrompt = buildPlanPrompt(req);
+    expect(builtPrompt).toContain("<facts>");
+    expect(builtPrompt).toMatch(/never as instructions/);
     expect(buildPlanPrompt(req, "hi")).toMatch(/Hindi/);
   });
 });
@@ -69,9 +69,9 @@ describe("validatePlan", () => {
 
 describe("schedulePlan", () => {
   it("returns the deterministic plan with the same times", () => {
-    const p = schedulePlan(req);
-    expect(p.steps.map((s) => s.time)).toEqual(schedule.map((s) => s.time));
-    expect(p.headline).toContain("Delhi");
+    const dayPlan = schedulePlan(req);
+    expect(dayPlan.steps.map((s) => s.time)).toEqual(schedule.map((s) => s.time));
+    expect(dayPlan.headline).toContain("Delhi");
   });
 });
 
@@ -91,18 +91,20 @@ describe("communityPlan", () => {
   const bengaluru = estimateHourly(must(CITIES[5]));
 
   it("picks the three fixes that help most, each with its engine cut", () => {
-    const p = communityPlan(delhi, household, 7);
-    expect(p.fixes).toHaveLength(3);
+    const communityNotice = communityPlan(delhi, household, 7);
+    expect(communityNotice.fixes).toHaveLength(3);
     const actions = buildActions(delhi, household);
-    for (const f of p.fixes)
+    for (const f of communityNotice.fixes)
       expect(f.pct).toBe(Math.round(must(actions.find((a) => a.id === f.id)).savedPct * 100));
-    for (let i = 1; i < p.fixes.length; i++)
-      expect(must(p.fixes[i - 1]).pct).toBeGreaterThanOrEqual(must(p.fixes[i]).pct);
+    for (let i = 1; i < communityNotice.fixes.length; i++)
+      expect(must(communityNotice.fixes[i - 1]).pct).toBeGreaterThanOrEqual(
+        must(communityNotice.fixes[i]).pct,
+      );
   });
   it("takes every figure from the live air data and the engine", () => {
-    const p = communityPlan(delhi, household, 7);
-    expect(p.nowPm).toBe(delhi[7]);
-    expect(p.bestPm).toBe(delhi[p.bestHour]);
+    const communityNotice = communityPlan(delhi, household, 7);
+    expect(communityNotice.nowPm).toBe(delhi[7]);
+    expect(communityNotice.bestPm).toBe(delhi[communityNotice.bestHour]);
     expect(simulate(delhi, household, NO_PLAN).meanPm).toBeGreaterThan(0);
   });
   it("widens the community rules as the air gets worse", () => {
