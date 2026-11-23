@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { scrollNeeded } from "./focus";
 
 const bar = { top: 780, bottom: 844, left: 0, right: 390 };
@@ -6,7 +7,8 @@ const bar = { top: 780, bottom: 844, left: 0, right: 390 };
 describe("scrollNeeded", () => {
   it("is zero when the control is clear of the bar", () => {
     expect(scrollNeeded({ top: 100, bottom: 150, left: 10, right: 200 }, bar)).toBe(0);
-    expect(scrollNeeded({ top: 700, bottom: 780, left: 10, right: 200 }, bar)).toBe(0); // touching, not overlapping
+    // touching, not overlapping
+    expect(scrollNeeded({ top: 700, bottom: 780, left: 10, right: 200 }, bar)).toBe(0);
   });
   it("scrolls just enough to clear the bar, plus a margin, when the control is under it", () => {
     expect(scrollNeeded({ top: 790, bottom: 834, left: 10, right: 200 }, bar)).toBe(834 - 780 + 16);

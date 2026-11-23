@@ -8,7 +8,11 @@ interface Props {
   onTabChange: (tab: ActiveTab) => void;
 }
 
-const TABS: { id: ActiveTab; icon: string; key: "dock.room" | "dock.plan" | "dock.copilot" | "dock.share" }[] = [
+const TABS: {
+  id: ActiveTab;
+  icon: string;
+  key: "dock.room" | "dock.plan" | "dock.copilot" | "dock.share";
+}[] = [
   { id: "room", icon: "🛋️", key: "dock.room" },
   { id: "plan", icon: "📅", key: "dock.plan" },
   { id: "copilot", icon: "💬", key: "dock.copilot" },
@@ -16,12 +20,18 @@ const TABS: { id: ActiveTab; icon: string; key: "dock.room" | "dock.plan" | "doc
 ];
 
 /** The four stages of the home screen, as a floating bar that stays within thumb reach. */
-export function BottomDock({ activeTab, onTabChange }: Props) {
+export function BottomDock({ activeTab, onTabChange }: Readonly<Props>) {
   const { t } = useLang();
   return (
     <nav className="dock" aria-label={t("dock.label")}>
       {TABS.map((tab) => (
-        <button key={tab.id} type="button" className="dockbtn" aria-pressed={activeTab === tab.id} onClick={() => onTabChange(tab.id)}>
+        <button
+          key={tab.id}
+          type="button"
+          className="dockbtn"
+          aria-pressed={activeTab === tab.id}
+          onClick={() => onTabChange(tab.id)}
+        >
           <span aria-hidden="true">{tab.icon}</span>
           <span>{t(tab.key)}</span>
         </button>

@@ -1,10 +1,14 @@
 /**
- * Browser voice helpers (Web Speech API). Everything is feature-detected: where a browser has no speech support the
- * controls are simply not shown and typing keeps working. Speech recognition in Chrome sends audio to the browser vendor's
+ * Browser voice helpers (Web Speech API). Everything is feature-detected: where a browser has no
+ * speech support the
+ * controls are simply not shown and typing keeps working. Speech recognition in Chrome sends audio
+ * to the browser vendor's
  * service; AirWise itself never receives or stores audio, only the text the user chooses to send.
  */
 
-export interface RecognitionResultEvent { results: ArrayLike<ArrayLike<{ transcript: string }>> }
+export interface RecognitionResultEvent {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
 
 export interface RecognitionLike {
   lang: string;
@@ -21,7 +25,10 @@ export interface RecognitionLike {
 
 export type RecognitionCtor = new () => RecognitionLike;
 
-export function getRecognitionCtor(w: { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor } | undefined): RecognitionCtor | null {
+/** The browser's speech-recognition constructor (standard or webkit-prefixed), or null where unsupported. */
+export function getRecognitionCtor(
+  w: { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor } | undefined,
+): RecognitionCtor | null {
   return w?.SpeechRecognition ?? w?.webkitSpeechRecognition ?? null;
 }
 
@@ -34,28 +41,45 @@ export function mapVoiceError(code: string): VoiceProblem {
   return "other";
 }
 
-export const VOICE_PROBLEM_KEY = { blocked: "voice.blocked", nospeech: "voice.nospeech", other: "voice.error" } as const;
+export const VOICE_PROBLEM_KEY = {
+  blocked: "voice.blocked",
+  nospeech: "voice.nospeech",
+  other: "voice.error",
+} as const;
 
 /** First transcript of the first result, trimmed and capped to the chat limit. */
 export function transcriptOf(e: RecognitionResultEvent, max = 400): string {
   return (e.results?.[0]?.[0]?.transcript ?? "").trim().slice(0, max);
 }
 
-interface SynthWindow { speechSynthesis?: { speak(u: unknown): void; cancel(): void }; SpeechSynthesisUtterance?: new (text: string) => { lang: string } }
+interface SynthWindow {
+  speechSynthesis?: { speak(u: unknown): void; cancel(): void };
+  SpeechSynthesisUtterance?: new (text: string) => { lang: string };
+}
 
+/** Whether the browser can read text aloud. */
 export function canSpeak(w: SynthWindow | undefined): boolean {
   return Boolean(w?.speechSynthesis && w.SpeechSynthesisUtterance);
 }
 
 /** Reads text aloud, replacing anything already being read. No-op where speech output is unsupported. */
-export function speak(text: string, lang: string, w: SynthWindow | undefined = typeof window === "undefined" ? undefined : (window as unknown as SynthWindow)): void {
-  if (!w || !canSpeak(w) || !text.trim()) return;
-  w.speechSynthesis!.cancel();
-  const u = new w.SpeechSynthesisUtterance!(text);
-  u.lang = lang;
-  w.speechSynthesis!.speak(u);
+export function speak(
+  text: string,
+  lang: string,
+  w: SynthWindow | undefined = typeof window === "undefined" ? undefined : window,
+): void {
+  const synth = w?.speechSynthesis;
+  const Utterance = w?.SpeechSynthesisUtterance;
+  if (!synth || !Utterance || !text.trim()) return;
+  synth.cancel();
+  const utterance = new Utterance(text);
+  utterance.lang = lang;
+  synth.speak(utterance);
 }
 
-export function stopSpeaking(w: SynthWindow | undefined = typeof window === "undefined" ? undefined : (window as unknown as SynthWindow)): void {
+/** Stops any speech being read aloud. */
+export function stopSpeaking(
+  w: SynthWindow | undefined = typeof window === "undefined" ? undefined : window,
+): void {
   w?.speechSynthesis?.cancel();
 }

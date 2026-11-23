@@ -22,7 +22,7 @@ Most entries show a city's AQI and add a chatbot. AirWise measures **you**, and 
 ## What it does
 | The brief asks for | Where it lives |
 |---|---|
-| Low-emission daily routines | Commute swap, outdoor time moved to the cleanest hour (`lib/engine.ts`, `buildActions`) |
+| Low-emission daily routines | Commute swap, outdoor time moved to the cleanest hour (`lib/engine/actions.ts`, `buildActions`) |
 | Indoor air quality hacks | Seal gaps, purifier or box-fan filter, cooking ventilation or induction; photo of your room |
 | Sustainable alternatives | Metro/bus/cycle swaps, induction cooking, with CO₂ per day |
 | Tailored to location and lifestyle | Searchable city picker, home type, commute, cooking fuel, vulnerable member |
@@ -32,10 +32,10 @@ Most entries show a city's AQI and add a chatbot. AirWise measures **you**, and 
 | Community | `/community` printable building notice; `/map` live air for every city |
 
 ## Approach and logic
-1. **Numbers come from code, words come from the AI.** `lib/engine.ts` is a pure, deterministic model of a person's day (indoor, commute, outdoor, cooking). Gemini explains; it never computes. The server recomputes all facts from the client's *choices only*, never trusting numbers from the browser.
+1. **Numbers come from code, words come from the AI.** `lib/engine/` is a pure, deterministic model of a person's day (indoor, commute, outdoor, cooking). Gemini explains; it never computes. The server recomputes all facts from the client's *choices only*, never trusting numbers from the browser.
 2. **Each action is measured against doing nothing**, then combined in the same model.
-3. **The cigarette equivalent** uses one stated rule of thumb: about 22 µg/m³ of PM2.5 averaged over a day counts as one cigarette (`CIGARETTE_PM` in `lib/engine.ts`). It makes dose understandable; it is not a clinical claim.
-4. **Live by default, honest when offline.** `lib/data.ts` fetches hourly PM2.5 from Open-Meteo for the chosen city only on the home page; the map fetches all cities in 3 batched requests with a 10-minute server cache. A failed request labels only its own cities as estimates. The feed is gridded (about 10 km), so nearby cities can share a value, and the pages say so.
+3. **The cigarette equivalent** uses one stated rule of thumb: about 22 µg/m³ of PM2.5 averaged over a day counts as one cigarette (`CIGARETTE_PM` in `lib/engine/model.ts`). It makes dose understandable; it is not a clinical claim.
+4. **Live by default, honest when offline.** `lib/air/` fetches hourly PM2.5 from Open-Meteo for the chosen city only on the home page; the map fetches all cities in 3 batched requests with a 10-minute server cache. A failed request labels only its own cities as estimates. The feed is gridded (about 10 km), so nearby cities can share a value, and the pages say so.
 5. **Photo of your room.** The model is asked only for what is visible (a gap by a window, a gas stove, a purifier). Absence is never inferred. Photos are downscaled and stripped of location data in the browser, sent once for analysis and not stored. **Accuracy:** tested on one drawn sample (all three items found) and two real photos (correctly reported nothing visible). That is not a measured detection rate on real rooms, and we do not claim one. See [`docs/methodology.md`](docs/methodology.md).
 
 ## How to run
@@ -46,13 +46,13 @@ npm run dev                     # http://localhost:3000
 npm run check                   # the proof card below
 npm run e2e                     # Playwright in a real browser
 ```
-Other scripts: `npm test`, `npm run lint` (type-check), `npm run eval`, `npm run build`, `npm run smoke`. Node 22 (`.nvmrc`; `engines` allows 20.9 and up).
+Other scripts: `npm test`, `npm run lint` (ESLint with complexity limits, then the type-check), `npm run coverage` (tests with a coverage floor), `npm run eval`, `npm run build`, `npm run smoke`. Node 22 (`.nvmrc`; `engines` allows 20.9 and up).
 
 ## Proof (output of `npm run check` on this commit)
 ```
 AirWise proof card
   Type-check     pass
-  Tests          471 passed, 0 failed, in 41 files
+  Tests          516 passed, 0 failed, in 51 files
   Accessibility  10 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
   First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB

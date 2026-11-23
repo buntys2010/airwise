@@ -1,0 +1,32 @@
+version = 1
+
+# Tests are still analysed; the pattern marks them as tests for the coverage and documentation metrics.
+test_patterns = ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"]
+
+exclude_patterns = [
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/build/**",
+  "**/.next/**",
+  "**/coverage/**",
+  "**/out/**",
+]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+  [analyzers.meta]
+  plugins = ["react"]
+  environment = ["nodejs", "browser", "vitest"]
+  # The code is ES modules (import/export), as tsconfig.json says ("module": "esnext").
+  module_system = "es-modules"
+  dialect = "typescript"
+  style_guide = "airbnb"
+  # The project's own CI caps cyclomatic and cognitive complexity at 15 (eslint.config.mjs),
+  # which is the top of DeepSource's "medium" band; "high" flags only functions above that cap.
+  cyclomatic_complexity_threshold = "high"
+
+[[analyzers]]
+name = "secrets"
+enabled = true

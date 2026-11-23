@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { CITIES } from "../lib/data";
+import { CITIES } from "../lib/cities";
 import { COMMUTES, COOKINGS, HOMES } from "../lib/chat";
 import { PLAN_IDS } from "../lib/share";
 import { getCityAir, scoreActions, type Result } from "./tools";
@@ -15,8 +15,15 @@ const server = new McpServer({ name: "airwise", version: "0.1.0" });
 
 const reply = (r: Result<unknown>) =>
   r.ok
-    ? { content: [{ type: "text" as const, text: JSON.stringify(r.data) }], structuredContent: r.data as Record<string, unknown> }
-    : { isError: true, content: [{ type: "text" as const, text: JSON.stringify({ error: r.error }) }], structuredContent: { error: r.error } as Record<string, unknown> };
+    ? {
+        content: [{ type: "text" as const, text: JSON.stringify(r.data) }],
+        structuredContent: r.data as Record<string, unknown>,
+      }
+    : {
+        isError: true,
+        content: [{ type: "text" as const, text: JSON.stringify({ error: r.error }) }],
+        structuredContent: { error: r.error } as Record<string, unknown>,
+      };
 
 server.registerTool(
   "get_city_air",
@@ -44,9 +51,20 @@ server.registerTool(
       home: z.string().describe(`How leaky the home is: ${HOMES.join(", ")}.`),
       commute: z.string().describe(`Main way of travelling: ${COMMUTES.join(", ")}.`),
       cooking: z.string().describe(`Cooking fuel: ${COOKINGS.join(", ")}.`),
-      km: z.number().optional().describe("One-way commute distance in kilometres, 0 to 60. Default 8."),
-      vulnerable: z.boolean().optional().describe("True if a child, older adult or someone with asthma or a heart condition lives in the home."),
-      actions: z.array(z.string()).optional().describe(`Fixes to switch on, any of: ${PLAN_IDS.join(", ")}. Leave out for none.`),
+      km: z
+        .number()
+        .optional()
+        .describe("One-way commute distance in kilometres, 0 to 60. Default 8."),
+      vulnerable: z
+        .boolean()
+        .optional()
+        .describe(
+          "True if a child, older adult or someone with asthma or a heart condition lives in the home.",
+        ),
+      actions: z
+        .array(z.string())
+        .optional()
+        .describe(`Fixes to switch on, any of: ${PLAN_IDS.join(", ")}. Leave out for none.`),
     },
     annotations: { readOnlyHint: true, openWorldHint: true },
   },

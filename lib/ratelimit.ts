@@ -1,17 +1,26 @@
 /**
- * Small in-memory limiters. Enough to blunt abuse on one or two instances (see docs/deploy.md for the max-instances cap);
+ * Small in-memory limiters. Enough to blunt abuse on one or two instances (see docs/deploy.md for
+ * the max-instances cap);
  * use the platform WAF or a shared store if the app is scaled out.
  */
 
-/** Sliding-window limiter per key. Stale keys are evicted by age, so a flood of new keys cannot wipe an attacker's own counter. */
+const lastOf = (times: number[]): number => times.at(-1) ?? 0;
+
+/**
+ * Sliding-window limiter per key. Stale keys are evicted by age, so a flood of new keys cannot wipe
+ * an attacker's own counter.
+ */
 export function createLimiter(limit: number, windowMs: number, maxKeys = 2000) {
   const hits = new Map<string, number[]>();
 
   function evict(now: number) {
-    for (const [k, times] of hits) if (now - times[times.length - 1] >= windowMs) hits.delete(k);
-    // Still over the cap: drop the least active keys first (fewest hits, then oldest), so one-off flood keys go before a busy or blocked client.
+    for (const [k, times] of hits) if (now - lastOf(times) >= windowMs) hits.delete(k);
+    // Still over the cap: drop the least active keys first (fewest hits, then oldest), so one-off
+    // flood keys go before a busy or blocked client.
     if (hits.size > maxKeys) {
-      const order = [...hits.entries()].sort((a, b) => a[1].length - b[1].length || a[1][a[1].length - 1] - b[1][b[1].length - 1]);
+      const order = [...hits.entries()].sort(
+        (a, b) => a[1].length - b[1].length || lastOf(a[1]) - lastOf(b[1]),
+      );
       for (const [k] of order.slice(0, hits.size - maxKeys)) hits.delete(k);
     }
   }
@@ -26,7 +35,10 @@ export function createLimiter(limit: number, windowMs: number, maxKeys = 2000) {
   };
 }
 
-/** A global call budget (for example Gemini requests a minute) shared by every client. The limit is read on each call. */
+/**
+ * A global call budget (for example Gemini requests a minute) shared by every client. The limit is
+ * read on each call.
+ */
 export function createBudget(getLimit: () => number, windowMs: number) {
   let stamps: number[] = [];
   return {
@@ -38,14 +50,16 @@ export function createBudget(getLimit: () => number, windowMs: number) {
       stamps.push(now);
       return true;
     },
-    reset() { stamps = []; },
+    reset() {
+      stamps = [];
+    },
   };
 }
 
 const IP_RE = /^[0-9a-fA-F:.[\]%_-]{1,64}$/;
 
 /** Validates and bounds an IP address string to prevent memory bloat and injection in key lookups. */
-export function sanitizeIp(ip: string | undefined | null): string {
+function sanitizeIp(ip: string | undefined | null): string {
   if (!ip) return "local";
   const trimmed = ip.trim();
   if (trimmed.length > 64) return "invalid";
@@ -59,7 +73,11 @@ export function sanitizeIp(ip: string | undefined | null): string {
  */
 export function clientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
-  const last = xff?.split(",").map((s) => s.trim()).filter(Boolean).pop();
+  const last = xff
+    ?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .pop();
   const raw = last || req.headers.get("x-real-ip")?.trim();
   return sanitizeIp(raw);
 }

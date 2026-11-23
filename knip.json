@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreDependencies": ["@modelcontextprotocol/sdk", "zod"],
+  "entry": ["evals/**/*.ts", "mcp/server.ts", "mcp/smoke.mjs", "scripts/*.mjs"],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "lib/**/*.ts",
+    "mcp/**/*.ts",
+    "scripts/**/*.mjs"
+  ]
+}
