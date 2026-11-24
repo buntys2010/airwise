@@ -1,3 +1,4 @@
+/** Device-only save of the profile and city in localStorage, safe when storage is blocked. */
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
 import { CITIES } from "./cities";
 import type { Profile } from "./engine/model";
@@ -13,7 +14,9 @@ export interface Saved {
   profile: Profile;
 }
 
+/** The localStorage key. The version suffix lets a future format change start clean. */
 export const STORE_KEY = "airwise.saved.v1";
+/** What reading the saved choices found. */
 export type StoreState = "saved" | "blocked" | "empty";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;

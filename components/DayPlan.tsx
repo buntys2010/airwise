@@ -1,3 +1,4 @@
+/** The clear-air day: the calculated schedule at once, with Gemini's rewrite replacing it when it arrives. */
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 

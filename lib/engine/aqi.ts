@@ -1,5 +1,6 @@
 /** AQI bands: PM2.5 to AQI, and the tone and icon of each band. The words live in lib/i18n. */
 
+/** An AQI band: a tone for styling and an icon. The wording lives in lib/i18n. */
 export interface Category {
   tone: "good" | "moderate" | "sensitive" | "unhealthy" | "severe" | "hazardous";
   icon: string;
@@ -81,4 +82,5 @@ export function categoryOf(pm: number): Category {
   return CATEGORY_BANDS.find((band) => aqi <= band.maxAqi)?.category ?? HAZARDOUS;
 }
 
+/** The band's name as a code, used to pick colours and translations. */
 export type Tone = Category["tone"];

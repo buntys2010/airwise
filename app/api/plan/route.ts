@@ -1,3 +1,7 @@
+/**
+ * POST /api/plan: a day plan built from the engine's schedule, optionally rephrased by Gemini
+ * under the guard.
+ */
 import { istClock } from "@/lib/air/live";
 import { getCityAir } from "@/lib/air/server";
 import { createCache } from "@/lib/cache";
@@ -24,6 +28,10 @@ export const maxDuration = 30;
 const limited = createLimiter(6, 60_000);
 const verifiedPlans = createCache<DayPlan>(10 * 60_000, 100);
 
+/**
+ * Builds the day plan: the schedule comes from the engine, Gemini only rephrases it, and the guard
+ * rejects invented numbers.
+ */
 export const POST = withObservability("plan", async (req: Request) => {
   const parsed = await readGuarded(req, { limited, maxBytes: 3_000 });
   if (!parsed.ok) return parsed.res;

@@ -1,3 +1,4 @@
+/** The Hindi dictionary. Written without a native review, so a Hindi reader should check it. */
 import type { Key } from "./en";
 
 /** The Hindi dictionary, typed against the English keys so a missing key fails the build. */

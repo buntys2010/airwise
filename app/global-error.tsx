@@ -1,4 +1,5 @@
 "use client";
+import { BRAND } from "@/lib/palette";
 
 /**
  * Last resort when the root layout itself fails. It replaces the layout, so it cannot rely on the
@@ -16,8 +17,8 @@ export default function GlobalError({
         style={{
           margin: 0,
           padding: "64px 16px",
-          background: "#12222a",
-          color: "#f4f8f9",
+          background: BRAND.ink,
+          color: BRAND.onInk,
           fontFamily: "system-ui, sans-serif",
         }}
       >

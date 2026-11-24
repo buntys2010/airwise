@@ -1,3 +1,4 @@
+/** Shared route helpers: JSON responses and size-capped, rate-limited body reading. */
 import { NextResponse } from "next/server";
 
 import { clientIp } from "./ratelimit";
@@ -6,6 +7,7 @@ import { clientIp } from "./ratelimit";
 export const json = (body: unknown, status = 200, headers?: Record<string, string>) =>
   NextResponse.json(body, { status, headers });
 
+/** A parsed body, or the error response to send back. */
 export type Parsed = { ok: true; body: unknown } | { ok: false; res: Response };
 
 /** Reads a body stream as text, giving up (null) as soon as it passes `maxBytes`. */

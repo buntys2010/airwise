@@ -1,5 +1,6 @@
 /** The guide's text: the quick start, every feature, prompt ideas, tips and plain-language terms. */
 
+/** Plain-language terms, as [term, meaning] pairs. */
 export const TERMS: [string, string][] = [
   [
     "PM2.5",
@@ -23,6 +24,7 @@ export const TERMS: [string, string][] = [
   ],
 ];
 
+/** Tips for asking better questions, as [title, advice] pairs. */
 export const TIPS: [string, string][] = [
   [
     "Set up your household first",
@@ -42,6 +44,7 @@ export const TIPS: [string, string][] = [
   ],
 ];
 
+/** Example questions, grouped by topic. */
 export const PROMPTS: { group: string; items: string[] }[] = [
   {
     group: "Masks and going out",
@@ -77,6 +80,7 @@ export const PROMPTS: { group: string; items: string[] }[] = [
   },
 ];
 
+/** Every feature with what it shows and how to use it. */
 export const FEATURES: { name: string; what: string; how: string }[] = [
   {
     name: "Live air badge",
@@ -170,6 +174,7 @@ export const FEATURES: { name: string; what: string; how: string }[] = [
   },
 ];
 
+/** The quick start, in order, as [title, instruction] pairs. */
 export const STEPS: [string, string][] = [
   [
     "Pick your city",

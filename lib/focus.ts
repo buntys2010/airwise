@@ -1,3 +1,4 @@
+/** A box in viewport pixels, as returned by getBoundingClientRect. */
 export interface Rect {
   top: number;
   bottom: number;

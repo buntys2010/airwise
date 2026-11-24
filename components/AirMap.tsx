@@ -1,3 +1,4 @@
+/** The India map of city air, loaded lazily because it is the heaviest component. */
 "use client";
 import { lazy, Suspense, useState } from "react";
 
@@ -5,6 +6,7 @@ import type { MapPoint } from "@/lib/air/server";
 import { CITIES } from "@/lib/cities";
 import { aqiFromPm, categoryOf, type Tone } from "@/lib/engine/aqi";
 import { CATEGORY_KEY } from "@/lib/i18n";
+import { BRAND, TONE_COLOUR } from "@/lib/palette";
 
 import { useLang } from "./LangProvider";
 
@@ -80,15 +82,6 @@ const yFor = (lat: number) => MAP_HEIGHT - ((lat - LAT0) / (LAT1 - LAT0)) * MAP_
 /** Cropped to the country, with room for the islands and the north-east. */
 const VIEW = { x: -70, y: 40, w: 670, h: 640 };
 
-const FILL: Record<Tone, string> = {
-  good: "#45d1b7",
-  moderate: "#e9d758",
-  sensitive: "#ffae4a",
-  unhealthy: "#ff7a4d",
-  severe: "#e0508a",
-  hazardous: "#a56bff",
-};
-
 /**
  * Where the twelve named cities' labels sit, relative to their dots. Hand-placed so none overlap
  * (checked in a real browser).
@@ -111,7 +104,7 @@ const NAMED = new Set(CITIES.filter((c) => c.label).map((c) => c.id));
 
 /** A small marker whose SHAPE says the level, so colour is never the only signal. */
 function Shape({ tone, r }: Readonly<{ tone: Tone; r: number }>) {
-  const common = { fill: FILL[tone], className: "map-pt" };
+  const common = { fill: TONE_COLOUR[tone], className: "map-pt" };
   switch (tone) {
     case "good":
       return <circle r={r} {...common} />;
@@ -134,7 +127,7 @@ function Shape({ tone, r }: Readonly<{ tone: Tone; r: number }>) {
           <circle r={r * 1.1} {...common} />
           <path
             d={`M${-r * 0.6} ${-r * 0.6} L${r * 0.6} ${r * 0.6} M${r * 0.6} ${-r * 0.6} L${-r * 0.6} ${r * 0.6}`}
-            stroke="#12222a"
+            stroke={BRAND.ink}
             strokeWidth={1.6}
           />
         </g>
@@ -213,7 +206,7 @@ export function AirMap({ points, time }: Readonly<{ points: MapPoint[]; time: st
                     cx={xFor(p.lon)}
                     cy={yFor(p.lat)}
                     r={13}
-                    fill={FILL[category.tone]}
+                    fill={TONE_COLOUR[category.tone]}
                     className="map-dot"
                     strokeDasharray={p.source === "estimate" ? "5 4" : undefined}
                   />

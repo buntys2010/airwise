@@ -1,3 +1,4 @@
+/** Voice input and read-aloud for the chat; the transcript is shown for checking before it is sent. */
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 

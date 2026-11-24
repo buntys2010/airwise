@@ -1,9 +1,11 @@
+/** The top bar: navigation, the language switch and the live-air badge. */
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import type { Key } from "@/lib/i18n";
+import { BRAND } from "@/lib/palette";
 
 import { useLang } from "./LangProvider";
 
@@ -24,10 +26,10 @@ function Brand() {
   return (
     <Link href="/" className="brand" aria-label="AirWise">
       <svg viewBox="0 0 32 32" aria-hidden="true">
-        <circle cx="16" cy="16" r="14" fill="#12222a" />
+        <circle cx="16" cy="16" r="14" fill={BRAND.ink} />
         <path
           d="M7 14c3-3 5 3 9 0s5-3 9 0M7 20c3-3 5 3 9 0s5-3 9 0"
-          stroke="#45d1b7"
+          stroke={BRAND.mark}
           strokeWidth="2.4"
           fill="none"
           strokeLinecap="round"
@@ -38,6 +40,7 @@ function Brand() {
   );
 }
 
+/** The pages in the top bar, in order. The label is a translation key. */
 export const NAV: { href: string; key: Key }[] = [
   { href: "/", key: "nav.plan" },
   { href: "/community", key: "nav.community" },

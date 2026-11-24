@@ -6,10 +6,12 @@
  * service; AirWise itself never receives or stores audio, only the text the user chooses to send.
  */
 
+/** The part of the browser's recognition result this app reads. */
 export interface RecognitionResultEvent {
   results: ArrayLike<ArrayLike<{ transcript: string }>>;
 }
 
+/** The subset of SpeechRecognition used, so tests can fake it. */
 export interface RecognitionLike {
   lang: string;
   interimResults: boolean;
@@ -23,6 +25,7 @@ export interface RecognitionLike {
   onend: (() => void) | null;
 }
 
+/** A constructor for a recognition object. */
 export type RecognitionCtor = new () => RecognitionLike;
 
 /** The browser's speech-recognition constructor (standard or webkit-prefixed), or null where unsupported. */
@@ -32,6 +35,7 @@ export function getRecognitionCtor(
   return w?.SpeechRecognition ?? w?.webkitSpeechRecognition ?? null;
 }
 
+/** What went wrong with voice input, in the three ways a user can act on. */
 export type VoiceProblem = "blocked" | "nospeech" | "other";
 
 /** Maps the browser's error codes to the three things a user can act on. */
@@ -41,6 +45,7 @@ export function mapVoiceError(code: string): VoiceProblem {
   return "other";
 }
 
+/** The translation key for each voice problem. */
 export const VOICE_PROBLEM_KEY = {
   blocked: "voice.blocked",
   nospeech: "voice.nospeech",

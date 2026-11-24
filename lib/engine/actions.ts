@@ -19,6 +19,7 @@ import {
   simulate,
 } from "./model";
 
+/** One recommended fix with its cost and the exposure it removes, ready to show. */
 export interface ActionResult {
   id: keyof Plan | "mask-n95" | "mask-cloth" | "swap";
   title: string;

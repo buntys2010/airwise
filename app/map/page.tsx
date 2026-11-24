@@ -1,3 +1,4 @@
+/** The map page: every city's air on one map and in a sortable table. */
 "use client";
 import { useEffect, useState } from "react";
 

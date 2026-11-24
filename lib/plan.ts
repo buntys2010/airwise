@@ -1,3 +1,7 @@
+/**
+ * The day plan and community plan: the prompt for Gemini, the shape it must answer in, and the
+ * offline rules.
+ */
 import { buildContext, type ChatContext, type Choices } from "./chat";
 import { buildActions } from "./engine/actions";
 import { categoryOf, type Tone } from "./engine/aqi";
@@ -7,11 +11,13 @@ import { asRecord } from "./json";
 import { type Lang } from "./lang";
 import { buildSchedule, type ScheduleEntry } from "./schedule";
 
+/** The day plan as shown: a headline and timed steps. */
 export interface DayPlan {
   headline: string;
   steps: { time: string; text: string }[];
 }
 
+/** What is sent to Gemini: the grounded context and the schedule it may rephrase. */
 export interface PlanRequest {
   context: ChatContext;
   schedule: Pick<ScheduleEntry, "time" | "title" | "detail">[];
@@ -45,6 +51,7 @@ export function buildPlanRequest(
   };
 }
 
+/** The shape Gemini must reply in, so the answer can be parsed and checked. */
 export const PLAN_SCHEMA = {
   type: "OBJECT",
   properties: {
@@ -134,6 +141,7 @@ type CommunityRule =
   | "rule.indoorPlay"
   | "rule.maskStock";
 
+/** The rules and fixes a community or school can adopt for today's air. */
 export interface CommunityPlan {
   tone: Tone;
   nowPm: number;

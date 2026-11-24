@@ -6,6 +6,7 @@
 /** A plain object with string keys: not null, not an array. */
 export type JsonRecord = Record<string, unknown>;
 
+/** Narrows unknown JSON to a plain object (not null, not an array). */
 export const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 

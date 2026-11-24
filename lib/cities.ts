@@ -41,6 +41,7 @@ export const ZONE_LEVELS: Record<Zone, { peak: number; trough: number }> = {
   island: { peak: 30, trough: 14 },
 };
 
+/** A city with its coordinates and the typical daily range used when the live feed is down. */
 export interface City {
   id: string;
   name: string;
@@ -87,6 +88,7 @@ const cityRow = ([id, name, state, lat, lon, zone]: Place, extra: Extra = {}): C
   trough: extra.trough ?? ZONE_LEVELS[zone].trough,
 });
 
+/** Every supported city. The first six have measured monitoring areas; the rest use regional estimates. */
 export const CITIES: City[] = [
   // The first six keep their original monitoring areas and estimate levels.
   cityRow(["delhi", "Delhi", "Delhi", 28.65, 77.31, "igp"], {

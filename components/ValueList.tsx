@@ -1,3 +1,4 @@
+/** The product catalogue ranked by how much exposure each rupee removes for this household. */
 "use client";
 import { englishIn } from "@/lib/i18n";
 import { priceRange, type RankedProduct } from "@/lib/room";

@@ -1,3 +1,4 @@
+/** The chat panel: asks a question with the household's choices and shows the checked answer. */
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -7,6 +8,7 @@ import type { Key } from "@/lib/i18n";
 import { useLang } from "./LangProvider";
 import { useVoice } from "./useVoice";
 
+/** The household choices sent with a question. Shape is checked on the server. */
 export type Choices = Record<string, unknown>;
 
 interface Props {

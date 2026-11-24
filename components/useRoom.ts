@@ -1,3 +1,4 @@
+/** The room check's state machine: sample, reading, photo and checklist. */
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -16,6 +17,7 @@ import {
 
 import type { Airwise } from "./useAirwise";
 
+/** The room check's steps: sample photo, reading it, the user's own photo, then the checklist. */
 export type Phase = "sample" | "reading" | "photo" | "checklist";
 
 /** A status line: a translation key with values, or text that came from the server (shown as is). */
@@ -190,4 +192,5 @@ export function useRoom(a: Airwise) {
   };
 }
 
+/** Everything the room panel needs, as returned by useRoom. */
 export type Room = ReturnType<typeof useRoom>;

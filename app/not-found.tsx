@@ -1,3 +1,4 @@
+/** The 404 page, with a way back to the planner. */
 import Link from "next/link";
 
 export default function NotFound() {

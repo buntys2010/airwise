@@ -1,3 +1,4 @@
+/** POST /api/vision: reads a room photo for window gaps, a stove or a purifier, then discards the photo. */
 import { createHash } from "node:crypto";
 
 import { createCache } from "@/lib/cache";
@@ -18,6 +19,10 @@ const limited = createLimiter(4, 60_000);
 /** Findings are cached by the hash of the downscaled photo, never the photo itself. */
 const findings = createCache<VisionOutcome>(30 * 60_000, 50);
 
+/**
+ * Reads a room photo for the three things that change indoor air; the photo is never stored, and
+ * the findings are cached.
+ */
 export const POST = withObservability("vision", async (req: Request) => {
   // Decoded photo is capped at 1.5 MB (parseDataUrl); base64 plus JSON framing stays under this.
   const parsed = await readGuarded(req, {

@@ -1,3 +1,4 @@
+/** The root layout: fonts, language provider, top bar and the focus guard. */
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
@@ -6,6 +7,7 @@ import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import { Sky } from "@/components/Chrome";
 import { FocusGuard } from "@/components/FocusGuard";
 import { LangProvider } from "@/components/LangProvider";
+import { BRAND } from "@/lib/palette";
 
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
   description:
     "Show AirWise your room, or tell it how your family lives. Get a clear-air plan built on live air quality, and see exactly how much each fix cuts your exposure.",
 };
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#12222a" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: BRAND.ink };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

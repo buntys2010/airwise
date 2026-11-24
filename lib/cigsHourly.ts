@@ -1,3 +1,4 @@
+/** Turns a day's exposure into cigarette sticks, partly burned by the chosen hour. */
 import { CIGARETTE_PM, type Sim } from "./engine/model";
 
 /**
@@ -12,6 +13,7 @@ export function cigsSoFar(sim: Pick<Sim, "perHour">, hour: number): number {
   return sum / 24 / CIGARETTE_PM;
 }
 
+/** One cigarette in the picture, with how much of it the day's air has burned. */
 export interface Stick {
   /** Which cigarette this is, counting from 1. Stable for a given day's figure, so it works as a list key. */
   id: number;

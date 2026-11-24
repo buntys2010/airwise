@@ -4,14 +4,19 @@
  * The LLM never computes numbers: it only explains what this module returns.
  */
 
+/** How well sealed the home is. */
 export type Home = "sealed" | "typical" | "leaky";
 
+/** How the household travels, which sets speed and exposure. */
 export type Commute = "walk" | "cycle" | "bike" | "car" | "ev" | "bus" | "metro";
 
+/** The cooking fuel, which sets indoor smoke. */
 export type Cooking = "wood" | "lpg" | "induction";
 
+/** The mask worn outdoors. */
 export type Mask = "none" | "cloth" | "n95";
 
+/** Who the model is computing for. */
 export interface Profile {
   home: Home;
   commute: Commute;
@@ -20,6 +25,7 @@ export interface Profile {
   vulnerable: boolean; // child, older adult, asthma/heart condition in the household
 }
 
+/** The fixes switched on. Simulated against NO_PLAN to get the saving. */
 export interface Plan {
   purifier: boolean;
   /** Which kind of purifier, when one is in the plan. Defaults to HEPA. */
@@ -31,6 +37,7 @@ export interface Plan {
   sealGaps: boolean;
 }
 
+/** A plan with every fix off: the baseline each saving is measured against. */
 export const NO_PLAN: Plan = {
   purifier: false,
   mask: "none",
@@ -43,6 +50,7 @@ export const NO_PLAN: Plan = {
 /** Share of outdoor PM2.5 that reaches indoor air. */
 export const INFILTRATION: Record<Home, number> = { sealed: 0.35, typical: 0.6, leaky: 0.85 };
 
+/** The kind of purifier in the plan. */
 export type PurifierKind = "hepa" | "boxfan";
 
 /**
@@ -51,6 +59,7 @@ export type PurifierKind = "hepa" | "boxfan";
  */
 const PURIFIER_FACTORS: Record<PurifierKind, number> = { hepa: 0.4, boxfan: 0.6 };
 
+/** Indoor PM2.5 left with a HEPA unit running. */
 export const PURIFIER_FACTOR = PURIFIER_FACTORS.hepa;
 
 /** Share of outdoor PM2.5 a mask filters, adjusted for how well it fits. */
@@ -67,6 +76,7 @@ export const COMMUTE_EXPOSURE: Record<Commute, number> = {
   metro: 0.5,
 };
 
+/** Commutes with no enclosure, so the traveller breathes ambient air. */
 export const OPEN_MODES: Commute[] = ["walk", "cycle", "bike", "bus"];
 
 const SPEED_KMH: Record<Commute, number> = {
@@ -115,6 +125,7 @@ export const round1 = (n: number): number => Math.round(n * 10) / 10;
  */
 export const pmAt = (hourly: readonly number[], hour: number): number => hourly[hour] ?? 0;
 
+/** The result of simulating one day for a profile and plan. */
 export interface Sim {
   meanPm: number; // time-weighted personal exposure, µg/m³
   cigs: number;

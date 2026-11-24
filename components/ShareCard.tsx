@@ -1,3 +1,4 @@
+/** The shareable card and its download and share buttons. */
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";

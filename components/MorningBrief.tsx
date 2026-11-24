@@ -1,3 +1,4 @@
+/** "Today, in one look": the air, the cleanest hour and the first fix, computed on every open. */
 "use client";
 import { fmtHour } from "@/lib/engine/actions";
 import { pmAt } from "@/lib/engine/model";

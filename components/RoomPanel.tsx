@@ -1,3 +1,7 @@
+/**
+ * The room check: a photo or sample, the findings marked on it, and the questions the photo could
+ * not answer.
+ */
 "use client";
 import type { Key } from "@/lib/i18n";
 import type { Hotspot } from "@/lib/room";

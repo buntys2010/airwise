@@ -1,3 +1,4 @@
+/** A sortable table of every city's current PM2.5. */
 "use client";
 import { useMemo, useState } from "react";
 

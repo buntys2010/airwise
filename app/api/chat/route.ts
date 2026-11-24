@@ -1,3 +1,7 @@
+/**
+ * POST /api/chat: answers a question from the user's choices and live air, checked by the
+ * grounding guard.
+ */
 import { istClock } from "@/lib/air/live";
 import { getCityAir } from "@/lib/air/server";
 import { createCache } from "@/lib/cache";
@@ -31,6 +35,10 @@ const PER_CALL_MS = 6_000;
 /** Verified answers only, for 10 minutes: the same question about the same air costs no model call. */
 const verifiedAnswers = createCache<string>(10 * 60_000);
 
+/**
+ * Answers a chat question: rate limited, body capped, numbers recomputed on the server, reply
+ * checked by the grounding guard.
+ */
 export const POST = withObservability("chat", async (req: Request) => {
   const started = Date.now();
   const parsed = await readGuarded(req, {

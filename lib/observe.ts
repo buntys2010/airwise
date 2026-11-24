@@ -1,3 +1,4 @@
+/** Route wrapper: a safe request id, one structured log line per request, and a 500 instead of a crash. */
 import { NextResponse } from "next/server";
 
 import { logLine } from "./log";

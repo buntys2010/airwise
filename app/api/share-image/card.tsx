@@ -1,4 +1,9 @@
+/**
+ * The share card's layout for the image renderer (inline styles only, because that renderer
+ * supports no stylesheet).
+ */
 import { sticksFor } from "@/lib/cigsHourly";
+import { CARD } from "@/lib/palette";
 
 /**
  * The share image, drawn with plain flex boxes (the image renderer has no SVG filters or grid).
@@ -20,8 +25,6 @@ export interface CardData {
   fixes: string[];
 }
 
-const MUTED = "#b4c8d1";
-const ACCENT = "#28c7a8";
 const f1 = (n: number) => n.toFixed(1);
 
 /** Pixel sizes for the two layouts: the 1080x1350 card and the 1200x630 link preview. */
@@ -42,7 +45,7 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
           display: "flex",
           width: w * 0.16,
           height: 26,
-          background: "#e1a94f",
+          background: CARD.ember,
           borderRadius: "13px 3px 3px 13px",
         }}
       />
@@ -61,7 +64,7 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
             display: "flex",
             width: Math.round(labelWidth * left),
             height: 22,
-            background: "#f4f8f9",
+            background: CARD.paper,
           }}
         />
         {burned > 0.01 && (
@@ -70,7 +73,7 @@ function Stick({ total, burned, w }: Readonly<{ total: number; burned: number; w
               display: "flex",
               width: Math.round(labelWidth * burned),
               height: 22,
-              background: "#6b7c84",
+              background: CARD.ash,
               borderRadius: "3px 11px 11px 3px",
             }}
           />
@@ -100,7 +103,7 @@ function Header({ d }: Readonly<{ d: CardData }>) {
           width: og ? 38 : 48,
           height: og ? 38 : 48,
           borderRadius: 99,
-          background: ACCENT,
+          background: CARD.accent,
           marginRight: 14,
         }}
       />
@@ -110,7 +113,7 @@ function Header({ d }: Readonly<{ d: CardData }>) {
           display: "flex",
           marginLeft: "auto",
           fontSize: og ? 24 : 30,
-          color: MUTED,
+          color: CARD.muted,
           fontWeight: 700,
         }}
       >{`${d.cityName} · AQI ${d.aqi} · ${d.level}`}</div>
@@ -122,7 +125,7 @@ function Headline({ d }: Readonly<{ d: CardData }>) {
   const { og } = d;
   return (
     <div style={{ display: "flex", flexDirection: "column", marginTop: og ? 8 : 28 }}>
-      <div style={{ display: "flex", fontSize: og ? 26 : 34, color: MUTED, fontWeight: 700 }}>
+      <div style={{ display: "flex", fontSize: og ? 26 : 34, color: CARD.muted, fontWeight: 700 }}>
         Cigarettes equivalent a day
       </div>
       <div style={{ display: "flex", alignItems: "flex-end" }}>
@@ -132,7 +135,7 @@ function Headline({ d }: Readonly<{ d: CardData }>) {
             fontSize: og ? 150 : 230,
             fontWeight: 800,
             lineHeight: 1,
-            color: "#ffffff",
+            color: CARD.white,
           }}
         >
           {f1(d.baseCigs)}
@@ -147,10 +150,20 @@ function Headline({ d }: Readonly<{ d: CardData }>) {
             }}
           >
             <div
-              style={{ display: "flex", fontSize: og ? 34 : 46, color: ACCENT, fontWeight: 800 }}
+              style={{
+                display: "flex",
+                fontSize: og ? 34 : 46,
+                color: CARD.accent,
+                fontWeight: 800,
+              }}
             >{`down to ${f1(d.planCigs)}`}</div>
             <div
-              style={{ display: "flex", fontSize: og ? 26 : 34, color: ACCENT, fontWeight: 700 }}
+              style={{
+                display: "flex",
+                fontSize: og ? 26 : 34,
+                color: CARD.accent,
+                fontWeight: 700,
+              }}
             >{`${d.pct}% less with this plan`}</div>
           </div>
         )}
@@ -168,7 +181,7 @@ function Comparison({ d }: Readonly<{ d: CardData }>) {
         style={{
           display: "flex",
           fontSize: 28,
-          color: MUTED,
+          color: CARD.muted,
           fontWeight: 700,
           marginBottom: 12,
           flexShrink: 0,
@@ -183,7 +196,7 @@ function Comparison({ d }: Readonly<{ d: CardData }>) {
             style={{
               display: "flex",
               fontSize: 28,
-              color: MUTED,
+              color: CARD.muted,
               fontWeight: 700,
               marginTop: 18,
               marginBottom: 12,
@@ -224,11 +237,11 @@ function Footer({ og }: Readonly<{ og: boolean }>) {
         display: "flex",
         flexDirection: "column",
         marginTop: 24,
-        color: MUTED,
+        color: CARD.muted,
         fontSize: og ? 20 : 26,
       }}
     >
-      <div style={{ display: "flex", color: "#f1f7f9", fontWeight: 800, fontSize: og ? 26 : 34 }}>
+      <div style={{ display: "flex", color: CARD.text, fontWeight: 800, fontSize: og ? 26 : 34 }}>
         Numbers from code. Words from AI.
       </div>
       <div style={{ display: "flex", marginTop: 6 }}>
@@ -259,11 +272,13 @@ function OgSticks({ d }: Readonly<{ d: CardData }>) {
   );
 }
 
+/** Pixel size of the card, so the route and the image element agree. */
 export function cardSize(og: boolean) {
   const { W, H } = sizes(og);
   return { width: W, height: H };
 }
 
+/** The share card drawn for the image renderer, which supports only inline styles and a subset of CSS. */
 export function ShareCardImage({ d }: Readonly<{ d: CardData }>) {
   const { og } = d;
   const { W, H, pad } = sizes(og);
@@ -275,8 +290,8 @@ export function ShareCardImage({ d }: Readonly<{ d: CardData }>) {
         width: W,
         height: H,
         padding: pad,
-        background: "linear-gradient(160deg, #1f3a47 0%, #0f1f27 60%)",
-        color: "#f1f7f9",
+        background: CARD.background,
+        color: CARD.text,
         fontFamily: "sans-serif",
       }}
     >
