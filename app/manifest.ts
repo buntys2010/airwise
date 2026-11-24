@@ -8,7 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "AirWise: a clear-air plan for smog days",
     short_name: "AirWise",
-    description: "Show AirWise your room or tell it how your family lives. Get a clear-air plan built on live air quality.",
+    description:
+      "Show AirWise your room or tell it how your family lives. Get a clear-air plan built on live air quality.",
     start_url: "/",
     scope: "/",
     display: "standalone",

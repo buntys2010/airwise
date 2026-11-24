@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { scrollNeeded } from "./focus";
 
 const bar = { top: 780, bottom: 844, left: 0, right: 390 };

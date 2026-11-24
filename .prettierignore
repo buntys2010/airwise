@@ -1,0 +1,8 @@
+.next
+.vercel
+node_modules
+mcp
+package-lock.json
+tsconfig.tsbuildinfo
+*.css
+**/*.md

@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { NO_PLAN, fullPlan, type Profile } from "./engine";
+
+import { fullPlan, NO_PLAN, type Profile } from "./engine";
 import { decodeChoices, encodeChoices, idsToPlan, planToIds, shareUrl } from "./share";
 
 const profile: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg", vulnerable: true };
 
 describe("encodeChoices", () => {
   it("carries only choices: city, four household answers and the switched-on fixes", () => {
-    const q = new URLSearchParams(encodeChoices({ city: "lucknow", profile, plan: { ...NO_PLAN, sealGaps: true, purifier: true } }));
+    const q = new URLSearchParams(
+      encodeChoices({ city: "lucknow", profile, plan: { ...NO_PLAN, sealGaps: true, purifier: true } }),
+    );
     expect([...q.keys()].sort()).toEqual(["city", "commute", "cooking", "home", "km", "plan", "vulnerable"]);
     expect(q.get("plan")).toBe("seal,purifier");
     expect(q.get("vulnerable")).toBe("1");
@@ -16,11 +19,17 @@ describe("encodeChoices", () => {
     expect(text).not.toMatch(/cig|pm|pct|percent|exposure|saved|aqi/i);
   });
   it("leaves the plan out when nothing is switched on", () => {
-    expect(new URLSearchParams(encodeChoices({ city: "delhi", profile, plan: NO_PLAN })).has("plan")).toBe(false);
+    expect(new URLSearchParams(encodeChoices({ city: "delhi", profile, plan: NO_PLAN })).has("plan")).toBe(
+      false,
+    );
   });
   it("builds a full link on the given origin", () => {
-    expect(shareUrl("https://airwise.example", { city: "pune", profile, plan: NO_PLAN })).toMatch(/^https:\/\/airwise\.example\/\?city=pune&home=leaky/);
-    expect(shareUrl("https://airwise.example\r\nInjected: header", { city: "pune", profile, plan: NO_PLAN })).toMatch(/^https:\/\/airwise\.exampleInjected: header\/\?city=pune/);
+    expect(shareUrl("https://airwise.example", { city: "pune", profile, plan: NO_PLAN })).toMatch(
+      /^https:\/\/airwise\.example\/\?city=pune&home=leaky/,
+    );
+    expect(
+      shareUrl("https://airwise.example\r\nInjected: header", { city: "pune", profile, plan: NO_PLAN }),
+    ).toMatch(/^https:\/\/airwise\.exampleInjected: header\/\?city=pune/);
   });
 });
 
@@ -33,7 +42,9 @@ describe("decodeChoices", () => {
     expect(planToIds(back.plan!).sort()).toEqual(planToIds(plan).sort());
   });
   it("drops anything outside the fixed lists, so a hand-edited link can only choose valid options", () => {
-    const back = decodeChoices("city=atlantis&home=castle&commute=teleport&cooking=magic&km=far&vulnerable=maybe&plan=hack,<script>");
+    const back = decodeChoices(
+      "city=atlantis&home=castle&commute=teleport&cooking=magic&km=far&vulnerable=maybe&plan=hack,<script>",
+    );
     expect(back.city).toBeUndefined();
     expect(back.profile).toBeUndefined();
     expect(back.plan).toEqual(idsToPlan([]));
@@ -57,7 +68,8 @@ describe("decodeChoices", () => {
 
 describe("plan ids", () => {
   it("round-trip each action", () => {
-    for (const ids of [["seal"], ["purifier"], ["boxfan"], ["n95"], ["shift"], ["swap"], ["induction"]]) expect(planToIds(idsToPlan(ids))).toEqual(ids);
+    for (const ids of [["seal"], ["purifier"], ["boxfan"], ["n95"], ["shift"], ["swap"], ["induction"]])
+      expect(planToIds(idsToPlan(ids))).toEqual(ids);
   });
   it("a swap in a link means the metro, the same default the engine's full plan uses", () => {
     expect(idsToPlan(["swap"]).swapCommute).toBe("metro");

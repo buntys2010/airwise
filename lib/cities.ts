@@ -8,13 +8,21 @@
  *
  * `unsure: true` marks a position or choice of reference point that should be double-checked (see docs/CITIES.md).
  */
-export type Zone = "igp" | "north" | "central" | "east" | "west" | "coast" | "south" | "hills" | "northeast" | "island";
+export type Zone =
+  "igp" | "north" | "central" | "east" | "west" | "coast" | "south" | "hills" | "northeast" | "island";
 
 /** Typical winter pre-dawn peak and mid-afternoon low, PM2.5 in ug/m3, by region. Rough, for the offline estimate only. */
 export const ZONE_LEVELS: Record<Zone, { peak: number; trough: number }> = {
-  igp: { peak: 310, trough: 150 }, north: { peak: 240, trough: 115 }, central: { peak: 170, trough: 85 }, east: { peak: 190, trough: 95 },
-  west: { peak: 120, trough: 60 }, coast: { peak: 95, trough: 45 }, south: { peak: 70, trough: 32 }, hills: { peak: 95, trough: 40 },
-  northeast: { peak: 110, trough: 50 }, island: { peak: 30, trough: 14 },
+  igp: { peak: 310, trough: 150 },
+  north: { peak: 240, trough: 115 },
+  central: { peak: 170, trough: 85 },
+  east: { peak: 190, trough: 95 },
+  west: { peak: 120, trough: 60 },
+  coast: { peak: 95, trough: 45 },
+  south: { peak: 70, trough: 32 },
+  hills: { peak: 95, trough: 40 },
+  northeast: { peak: 110, trough: 50 },
+  island: { peak: 30, trough: 14 },
 };
 
 export interface City {
@@ -36,20 +44,79 @@ export interface City {
   unsure?: boolean;
 }
 
-interface Extra { aka?: string[]; area?: string; peak?: number; trough?: number; label?: boolean; unsure?: boolean }
-const c = (id: string, name: string, state: string, lat: number, lon: number, zone: Zone, x: Extra = {}): City => ({
-  id, name, state, lat, lon, zone, area: x.area ?? state, aka: x.aka, label: x.label, unsure: x.unsure,
-  peak: x.peak ?? ZONE_LEVELS[zone].peak, trough: x.trough ?? ZONE_LEVELS[zone].trough,
+interface Extra {
+  aka?: string[];
+  area?: string;
+  peak?: number;
+  trough?: number;
+  label?: boolean;
+  unsure?: boolean;
+}
+const c = (
+  id: string,
+  name: string,
+  state: string,
+  lat: number,
+  lon: number,
+  zone: Zone,
+  x: Extra = {},
+  // eslint-disable-next-line max-params -- positional rows keep the city table one line per city
+): City => ({
+  id,
+  name,
+  state,
+  lat,
+  lon,
+  zone,
+  area: x.area ?? state,
+  aka: x.aka,
+  label: x.label,
+  unsure: x.unsure,
+  peak: x.peak ?? ZONE_LEVELS[zone].peak,
+  trough: x.trough ?? ZONE_LEVELS[zone].trough,
 });
 
 export const CITIES: City[] = [
   // The first six keep their original monitoring areas and estimate levels.
-  c("delhi", "Delhi", "Delhi", 28.65, 77.31, "igp", { area: "Anand Vihar", peak: 360, trough: 185, label: true }),
-  c("lucknow", "Lucknow", "Uttar Pradesh", 26.85, 80.99, "igp", { area: "Gomti Nagar", peak: 295, trough: 150, label: true }),
-  c("kolkata", "Kolkata", "West Bengal", 22.52, 88.36, "east", { aka: ["Calcutta"], area: "Ballygunge", peak: 205, trough: 96, label: true }),
-  c("mumbai", "Mumbai", "Maharashtra", 19.07, 72.87, "west", { aka: ["Bombay"], area: "Bandra Kurla", peak: 118, trough: 58, label: true }),
-  c("pune", "Pune", "Maharashtra", 18.53, 73.85, "west", { area: "Shivajinagar", peak: 98, trough: 46, label: true }),
-  c("bengaluru", "Bengaluru", "Karnataka", 12.92, 77.62, "south", { aka: ["Bangalore"], area: "Silk Board", peak: 52, trough: 24, label: true }),
+  c("delhi", "Delhi", "Delhi", 28.65, 77.31, "igp", {
+    area: "Anand Vihar",
+    peak: 360,
+    trough: 185,
+    label: true,
+  }),
+  c("lucknow", "Lucknow", "Uttar Pradesh", 26.85, 80.99, "igp", {
+    area: "Gomti Nagar",
+    peak: 295,
+    trough: 150,
+    label: true,
+  }),
+  c("kolkata", "Kolkata", "West Bengal", 22.52, 88.36, "east", {
+    aka: ["Calcutta"],
+    area: "Ballygunge",
+    peak: 205,
+    trough: 96,
+    label: true,
+  }),
+  c("mumbai", "Mumbai", "Maharashtra", 19.07, 72.87, "west", {
+    aka: ["Bombay"],
+    area: "Bandra Kurla",
+    peak: 118,
+    trough: 58,
+    label: true,
+  }),
+  c("pune", "Pune", "Maharashtra", 18.53, 73.85, "west", {
+    area: "Shivajinagar",
+    peak: 98,
+    trough: 46,
+    label: true,
+  }),
+  c("bengaluru", "Bengaluru", "Karnataka", 12.92, 77.62, "south", {
+    aka: ["Bangalore"],
+    area: "Silk Board",
+    peak: 52,
+    trough: 24,
+    label: true,
+  }),
 
   // State and union-territory capitals, and the largest cities, in rough north-to-south order within each group.
   c("chennai", "Chennai", "Tamil Nadu", 13.08, 80.27, "coast", { aka: ["Madras"], label: true }),
@@ -179,14 +246,22 @@ export const CITIES: City[] = [
 /** India's bounding box, for a sanity check on every position. */
 export const INDIA_BOUNDS = { latMin: 6, latMax: 37.2, lonMin: 68, lonMax: 97.6 };
 
-const squash = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+const squash = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 /** City search: matches the name, any other name (Bombay, Madras...) or the state, ignoring case and punctuation. */
 export function searchCities(query: string, list: City[] = CITIES): City[] {
   const q = squash(query);
   if (!q) return list;
   const score = (cty: City): number => {
-    const name = squash(cty.name), aka = (cty.aka ?? []).map(squash), state = squash(cty.state);
+    const name = squash(cty.name),
+      aka = (cty.aka ?? []).map(squash),
+      state = squash(cty.state);
     if (name === q || aka.includes(q)) return 0;
     if (name.startsWith(q) || aka.some((a) => a.startsWith(q))) return 1;
     if (name.includes(q) || aka.some((a) => a.includes(q))) return 2;
@@ -194,5 +269,9 @@ export function searchCities(query: string, list: City[] = CITIES): City[] {
     if (state.includes(q)) return 4;
     return 99;
   };
-  return list.map((cty) => ({ cty, s: score(cty) })).filter((x) => x.s < 99).sort((a, b) => a.s - b.s || a.cty.name.localeCompare(b.cty.name)).map((x) => x.cty);
+  return list
+    .map((cty) => ({ cty, s: score(cty) }))
+    .filter((x) => x.s < 99)
+    .sort((a, b) => a.s - b.s || a.cty.name.localeCompare(b.cty.name))
+    .map((x) => x.cty);
 }

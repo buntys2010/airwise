@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { Home } from "@/components/Home";
 
 type Params = Promise<Record<string, string | string[] | undefined>>;
@@ -8,16 +9,28 @@ const KEYS = ["city", "home", "commute", "km", "cooking", "vulnerable", "plan"];
 export async function generateMetadata({ searchParams }: { searchParams: Params }): Promise<Metadata> {
   const sp = await searchParams;
   const q = new URLSearchParams();
-  for (const k of KEYS) { const v = sp[k]; if (typeof v === "string") q.set(k, v.slice(0, 80)); }
+  for (const k of KEYS) {
+    const v = sp[k];
+    if (typeof v === "string") q.set(k, v.slice(0, 80));
+  }
   q.set("size", "og");
   const image = `/api/share-image?${q.toString()}`;
   const title = "My AirWise clean-air plan";
-  const description = "Cigarettes equivalent of today's smog at home, and how much each fix cuts. Numbers from code, words from AI.";
+  const description =
+    "Cigarettes equivalent of today's smog at home, and how much each fix cuts. Numbers from code, words from AI.";
   return {
-    title, description,
-    openGraph: { title, description, type: "website", images: [{ url: image, width: 1200, height: 630, alt: "AirWise clean-air plan card" }] },
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: [{ url: image, width: 1200, height: 630, alt: "AirWise clean-air plan card" }],
+    },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
-export default function Page() { return <Home />; }
+export default function Page() {
+  return <Home />;
+}

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { createCache } from "./cache";
 
 afterEach(() => vi.useRealTimers());
@@ -22,7 +23,9 @@ describe("createCache", () => {
   });
   it("evicts the oldest entries beyond the cap", () => {
     const c = createCache<number>(1000, 2);
-    c.set("a", 1); c.set("b", 2); c.set("c", 3);
+    c.set("a", 1);
+    c.set("b", 2);
+    c.set("c", 3);
     expect(c.get("a")).toBeUndefined();
     expect(c.get("b")).toBe(2);
     expect(c.get("c")).toBe(3);

@@ -26,18 +26,31 @@ export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED
   const violations = [];
   const entries = Object.entries(parsed.pages);
   if (entries.length === 0) violations.push("no pages found in the build output");
-  for (const [route, kb] of entries) if (kb > pageKb) violations.push(`${route} is ${kb} kB, over the ${pageKb} kB page budget`);
+  for (const [route, kb] of entries)
+    if (kb > pageKb) violations.push(`${route} is ${kb} kB, over the ${pageKb} kB page budget`);
   if (parsed.shared === null) violations.push("shared JS size not found in the build output");
-  else if (parsed.shared > sharedKb) violations.push(`shared JS is ${parsed.shared} kB, over the ${sharedKb} kB budget`);
+  else if (parsed.shared > sharedKb)
+    violations.push(`shared JS is ${parsed.shared} kB, over the ${sharedKb} kB budget`);
   const worst = entries.sort((a, b) => b[1] - a[1])[0] ?? null;
-  return { ok: violations.length === 0, violations, worst: worst ? { route: worst[0], kb: worst[1] } : null, home: parsed.pages["/"] ?? null, shared: parsed.shared };
+  return {
+    ok: violations.length === 0,
+    violations,
+    worst: worst ? { route: worst[0], kb: worst[1] } : null,
+    home: parsed.pages["/"] ?? null,
+    shared: parsed.shared,
+  };
 }
 
 if (process.argv[1] && process.argv[1].endsWith("budget.mjs")) {
   const file = process.argv[2];
-  if (!file) { console.error("usage: node scripts/budget.mjs build.log"); process.exit(2); }
+  if (!file) {
+    console.error("usage: node scripts/budget.mjs build.log");
+    process.exit(2);
+  }
   const result = checkBudget(parseBuildLog(readFileSync(file, "utf8")));
-  console.log(`First-load JS: home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`);
+  console.log(
+    `First-load JS: home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`,
+  );
   for (const v of result.violations) console.error("FAIL " + v);
   process.exit(result.ok ? 0 : 1);
 }

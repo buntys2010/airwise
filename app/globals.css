@@ -497,6 +497,7 @@ section[id^="stage-"] { scroll-margin-top: 14px; }
 .rowbtn { font-family: var(--font-display); }
 .rowbtn[aria-pressed="true"] { color: var(--breath); }
 .maptable small { display: block; color: var(--on-ink-dim); font-weight: 500; font-size: 0.82rem; }
+.maptable thead th { color: var(--on-ink-dim); }
 .maptable tr.sel { background: var(--ink-3); }
 @media (max-width: 420px) { .maptable small { font-size: 0.78rem; } }
 

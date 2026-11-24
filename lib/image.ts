@@ -18,12 +18,24 @@ export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: n
 export type PickCheck = { ok: true } | { ok: false; message: string };
 
 export function checkPick(file: { type: string; size: number }): PickCheck {
-  if (!ACCEPTED_TYPES.includes(file.type)) return { ok: false, message: "This photo format cannot be read here. Use a JPEG, PNG or WebP photo, or answer the three questions below." };
-  if (file.size > MAX_PICK_BYTES) return { ok: false, message: "That photo is very large. Try a smaller one, or answer the three questions below." };
+  if (!ACCEPTED_TYPES.includes(file.type))
+    return {
+      ok: false,
+      message:
+        "This photo format cannot be read here. Use a JPEG, PNG or WebP photo, or answer the three questions below.",
+    };
+  if (file.size > MAX_PICK_BYTES)
+    return {
+      ok: false,
+      message: "That photo is very large. Try a smaller one, or answer the three questions below.",
+    };
   return { ok: true };
 }
 
-export interface Prepared { dataUrl: string; objectUrl: string }
+export interface Prepared {
+  dataUrl: string;
+  objectUrl: string;
+}
 
 /** Decodes, shrinks to MAX_EDGE and re-encodes as JPEG. Throws if the browser cannot decode the file (for example HEIC). */
 export async function prepareImage(file: Blob): Promise<Prepared> {
@@ -37,13 +49,19 @@ export async function prepareImage(file: Blob): Promise<Prepared> {
     });
     const { w, h } = fitSize(img.naturalWidth, img.naturalHeight);
     const canvas = document.createElement("canvas");
-    canvas.width = w; canvas.height = h;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("canvas");
     ctx.drawImage(img, 0, 0, w, h);
     const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", JPEG_QUALITY));
     if (!blob) throw new Error("encode");
-    const dataUrl = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error("read")); r.readAsDataURL(blob); });
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(typeof r.result === "string" ? r.result : "");
+      r.onerror = () => rej(new Error("read"));
+      r.readAsDataURL(blob);
+    });
     return { dataUrl, objectUrl: URL.createObjectURL(blob) };
   } finally {
     URL.revokeObjectURL(url);

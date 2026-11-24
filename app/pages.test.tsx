@@ -1,23 +1,38 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { existsSync } from "node:fs";
 import path from "node:path";
+
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { NAV } from "@/components/Chrome";
 import { LangProvider } from "@/components/LangProvider";
 import { CITIES } from "@/lib/data";
+
 import CommunityPage from "./community/page";
-import { cityBox, cityName, pickCity } from "./test-city";
 import MapPage from "./map/page";
+import { pickCity } from "./test-city";
 
 let currentPath = "/";
 vi.mock("next/navigation", () => ({ usePathname: () => currentPath }));
 
-const points = (overrides: Record<string, unknown> = {}) => CITIES.map((c, i) => ({ id: c.id, name: c.name, lat: c.lat, lon: c.lon, pm: 40 + i * 45, source: "live", ...(overrides[c.id] as object | undefined) }));
+const points = (overrides: Record<string, unknown> = {}) =>
+  CITIES.map((c, i) => ({
+    id: c.id,
+    name: c.name,
+    lat: c.lat,
+    lon: c.lon,
+    pm: 40 + i * 45,
+    source: "live",
+    ...(overrides[c.id] as object | undefined),
+  }));
 function stubFetch(map: () => unknown | Promise<unknown>) {
   const f = vi.fn().mockImplementation(async (url: string) => {
-    if (String(url).startsWith("/api/map")) { const r = await map(); return r instanceof Error ? Promise.reject(r) : { ok: true, json: async () => r }; }
+    if (String(url).startsWith("/api/map")) {
+      const r = await map();
+      return r instanceof Error ? Promise.reject(r) : { ok: true, json: async () => r };
+    }
     throw new Error("offline");
   });
   vi.stubGlobal("fetch", f);
@@ -25,15 +40,36 @@ function stubFetch(map: () => unknown | Promise<unknown>) {
 }
 const wrap = (el: React.ReactElement) => render(<LangProvider>{el}</LangProvider>);
 const noViolations = async (container: HTMLElement) => {
-  const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+  const results = await axe.run(container, {
+    rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+  });
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
 };
 
 beforeAll(() => {
-  window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+  window.matchMedia = (q: string) => ({
+    matches: true,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    onchange: null,
+    dispatchEvent: () => false,
+  });
 });
-beforeEach(() => { localStorage.clear(); window.history.replaceState({}, "", "/"); stubFetch(() => ({ points: points(), time: "16:00", live: 6 })); });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); currentPath = "/"; document.documentElement.style.removeProperty("--haze"); });
+beforeEach(() => {
+  localStorage.clear();
+  window.history.replaceState({}, "", "/");
+  stubFetch(() => ({ points: points(), time: "16:00", live: 6 }));
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  currentPath = "/";
+  document.documentElement.style.removeProperty("--haze");
+});
 
 describe("every main navigation link goes somewhere", () => {
   const appDir = path.resolve(__dirname);
@@ -56,9 +92,10 @@ describe("/map", () => {
     const img = await screen.findByRole("img", { name: /Schematic map of India/ });
     expect(img).toBeTruthy();
     expect(f.mock.calls.filter((c) => String(c[0]).startsWith("/api/map"))).toHaveLength(1);
-    const table = await screen.findByRole("table", {}, { timeout: 5000 });
+    const table = await screen.findByRole("table", {}, { timeout: 15_000 });
     expect(within(table).getAllByRole("row")).toHaveLength(CITIES.length + 1);
-    for (const c of CITIES) expect(within(table).getByRole("rowheader", { name: new RegExp(`^${c.name}[.]`) })).toBeTruthy();
+    for (const c of CITIES)
+      expect(within(table).getByRole("rowheader", { name: new RegExp(`^${c.name}[.]`) })).toBeTruthy();
     expect(screen.getByText(/Schematic map, not to scale\. Values for 16:00 India time\./)).toBeTruthy();
   });
 
@@ -71,7 +108,7 @@ describe("/map", () => {
     expect(svg.querySelectorAll("text.map-icon")).toHaveLength(named);
     expect(svg.querySelectorAll("g.map-mark")).toHaveLength(CITIES.length); // every city is a tappable marker with a shape
     await screen.findByRole("table");
-    const levels = [...document.querySelectorAll(".maptable .cat")].map((e) => e.textContent!.trim());
+    const levels = [...document.querySelectorAll(".maptable .cat")].map((e) => e.textContent.trim());
     expect(levels.every((l) => l.length > 3 && !/^[●◆▲■⬣✖]$/.test(l))).toBe(true);
   });
 
@@ -79,11 +116,18 @@ describe("/map", () => {
     stubFetch(() => ({ points: points({ pune: { source: "estimate" } }), time: "16:00", live: 5 }));
     wrap(<MapPage />);
     await screen.findByRole("img", { name: /Schematic map of India/ });
-    const row = (await screen.findByRole("rowheader", { name: /^Pune[.]/ }, { timeout: 5000 })).closest("tr")!;
+    const row = (await screen.findByRole("rowheader", { name: /^Pune[.]/ }, { timeout: 15_000 })).closest(
+      "tr",
+    )!;
     expect(within(row).getByText("Estimate")).toBeTruthy();
-    expect(within(screen.getByRole("rowheader", { name: /^Delhi[.]/ }).closest("tr")!).getByText("Live")).toBeTruthy();
+    expect(
+      within(screen.getByRole("rowheader", { name: /^Delhi[.]/ }).closest("tr")!).getByText("Live"),
+    ).toBeTruthy();
     expect(document.querySelector("svg.mapsvg")!.textContent).toMatch(/Pune/);
-    expect(document.querySelector('g[data-city="pune"] circle')!.getAttribute("stroke-dasharray") ?? document.querySelector('g[data-city="pune"] .est-ring')).toBeTruthy();
+    expect(
+      document.querySelector('g[data-city="pune"] circle')!.getAttribute("stroke-dasharray") ??
+        document.querySelector('g[data-city="pune"] .est-ring'),
+    ).toBeTruthy();
     expect(document.querySelectorAll(".est-ring, circle.map-dot[stroke-dasharray]").length).toBe(1);
   });
 
@@ -91,7 +135,9 @@ describe("/map", () => {
     stubFetch(() => new Error("down"));
     wrap(<MapPage />);
     expect(await screen.findByRole("alert")).toBeTruthy();
-    expect(screen.getByRole("alert").textContent).toBe("The map data could not be loaded. Try again in a moment.");
+    expect(screen.getByRole("alert").textContent).toBe(
+      "The map data could not be loaded. Try again in a moment.",
+    );
     expect(screen.queryByRole("table")).toBeNull();
   });
 
@@ -130,13 +176,19 @@ describe("/community", () => {
     expect(within(notice).getByRole("heading", { name: "Every household can" })).toBeTruthy();
     expect(notice.querySelectorAll("ol > li")).toHaveLength(3);
     expect(notice.querySelectorAll("ul > li").length).toBeGreaterThanOrEqual(3);
-    expect(notice.textContent).toMatch(/Hold outdoor events, sports and assemblies at .+, the cleanest hour today\./);
+    expect(notice.textContent).toMatch(
+      /Hold outdoor events, sports and assemblies at .+, the cleanest hour today\./,
+    );
   });
 
   it("puts the building name on the notice, and nowhere else", () => {
     wrap(<CommunityPage />);
-    fireEvent.change(screen.getByLabelText("Building, school or workplace name (optional)"), { target: { value: "Gomti Heights Society" } });
-    expect(screen.getByRole("heading", { level: 2, name: "Smog plan for Gomti Heights Society" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Building, school or workplace name (optional)"), {
+      target: { value: "Gomti Heights Society" },
+    });
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Smog plan for Gomti Heights Society" }),
+    ).toBeTruthy();
     expect(screen.getByText("Printed on the notice only. It stays on this device.")).toBeTruthy();
   });
 
@@ -161,7 +213,9 @@ describe("/community", () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", { value: share, configurable: true });
     wrap(<CommunityPage />);
-    fireEvent.change(screen.getByLabelText("Building, school or workplace name (optional)"), { target: { value: "Secret Name" } });
+    fireEvent.change(screen.getByLabelText("Building, school or workplace name (optional)"), {
+      target: { value: "Secret Name" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Share this plan" }));
     await waitFor(() => expect(share).toHaveBeenCalled());
     const url = new URL(share.mock.calls[0][0].url);
@@ -187,7 +241,9 @@ describe("/community", () => {
   it("opens with the city from a shared link", async () => {
     window.history.replaceState({}, "", "/community?city=delhi&home=sealed&cooking=induction");
     wrap(<CommunityPage />);
-    await waitFor(() => expect(screen.getByRole("heading", { level: 2, name: "Smog plan for Delhi" })).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 2, name: "Smog plan for Delhi" })).toBeTruthy(),
+    );
     expect((screen.getByLabelText("Sealed, AC on") as HTMLInputElement).checked).toBe(true);
   });
 

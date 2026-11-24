@@ -1,26 +1,49 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { LangProvider } from "@/components/LangProvider";
+
 import Page from "./page";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
 class FakeRec {
   static last: FakeRec | null = null;
-  lang = ""; interimResults = true; continuous = true; maxAlternatives = 0;
+  lang = "";
+  interimResults = true;
+  continuous = true;
+  maxAlternatives = 0;
   onresult: ((e: { results: { transcript: string }[][] }) => void) | null = null;
   onerror: ((e: { error: string }) => void) | null = null;
   onend: (() => void) | null = null;
-  start = vi.fn(); stop = vi.fn(() => this.onend?.()); abort = vi.fn();
-  constructor() { FakeRec.last = this; }
-  say(text: string) { this.onresult?.({ results: [[{ transcript: text }]] }); this.onend?.(); }
-  fail(code: string) { this.onerror?.({ error: code }); this.onend?.(); }
+  start = vi.fn();
+  stop = vi.fn(() => this.onend?.());
+  abort = vi.fn();
+  constructor() {
+    FakeRec.last = this;
+  }
+  say(text: string) {
+    this.onresult?.({ results: [[{ transcript: text }]] });
+    this.onend?.();
+  }
+  fail(code: string) {
+    this.onerror?.({ error: code });
+    this.onend?.();
+  }
 }
 const spoken: { text: string; lang: string }[] = [];
-const synth = { speak: vi.fn((u: { text: string; lang: string }) => { spoken.push(u); }), cancel: vi.fn() };
-class Utterance { lang = ""; constructor(public text: string) {} }
+const synth = {
+  speak: vi.fn((u: { text: string; lang: string }) => {
+    spoken.push(u);
+  }),
+  cancel: vi.fn(),
+};
+class Utterance {
+  lang = "";
+  constructor(public text: string) {}
+}
 
 function enableVoice() {
   (window as unknown as Record<string, unknown>).SpeechRecognition = FakeRec;
@@ -28,27 +51,65 @@ function enableVoice() {
   (window as unknown as Record<string, unknown>).SpeechSynthesisUtterance = Utterance;
 }
 function disableVoice() {
-  for (const k of ["SpeechRecognition", "webkitSpeechRecognition", "speechSynthesis", "SpeechSynthesisUtterance"]) delete (window as unknown as Record<string, unknown>)[k];
+  for (const k of [
+    "SpeechRecognition",
+    "webkitSpeechRecognition",
+    "speechSynthesis",
+    "SpeechSynthesisUtterance",
+  ])
+    delete (window as unknown as Record<string, unknown>)[k];
 }
 
-function stubFetch(chat: (body: Record<string, unknown>) => unknown = () => ({ answer: "Wear an N95.", verified: true })) {
+function stubFetch(
+  chat: (body: Record<string, unknown>) => unknown = () => ({ answer: "Wear an N95.", verified: true }),
+) {
   const f = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
-    if (String(url).startsWith("/api/chat")) return { ok: true, json: async () => chat(JSON.parse(init?.body as string)) };
+    if (String(url).startsWith("/api/chat"))
+      return { ok: true, json: async () => chat(JSON.parse(init?.body as string)) };
     throw new Error("offline");
   });
   vi.stubGlobal("fetch", f);
   return f;
 }
-const renderPage = () => render(<LangProvider><Page /></LangProvider>);
+const renderPage = () =>
+  render(
+    <LangProvider>
+      <Page />
+    </LangProvider>,
+  );
 /** Chat and voice live in the Co-pilot stage; the other stages stay mounted but hidden. */
 const copilot = () => fireEvent.click(screen.getByRole("button", { name: /Co-pilot|सहायक/ }));
-const chatCalls = (f: ReturnType<typeof vi.fn>) => f.mock.calls.filter((c) => String(c[0]).startsWith("/api/chat"));
+const chatCalls = (f: ReturnType<typeof vi.fn>) =>
+  f.mock.calls.filter((c) => String(c[0]).startsWith("/api/chat"));
 
 beforeAll(() => {
-  window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+  window.matchMedia = (q: string) => ({
+    matches: true,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    onchange: null,
+    dispatchEvent: () => false,
+  });
 });
-beforeEach(() => { localStorage.clear(); spoken.length = 0; synth.speak.mockClear(); synth.cancel.mockClear(); FakeRec.last = null; stubFetch(); disableVoice(); });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); disableVoice(); document.documentElement.lang = "en"; document.documentElement.style.removeProperty("--haze"); });
+beforeEach(() => {
+  localStorage.clear();
+  spoken.length = 0;
+  synth.speak.mockClear();
+  synth.cancel.mockClear();
+  FakeRec.last = null;
+  stubFetch();
+  disableVoice();
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  disableVoice();
+  document.documentElement.lang = "en";
+  document.documentElement.style.removeProperty("--haze");
+});
 
 describe("language toggle", () => {
   it("switches the interface to Hindi, updates <html lang>, and remembers the choice", () => {
@@ -67,7 +128,7 @@ describe("language toggle", () => {
     localStorage.setItem("airwise.lang", "hi");
     renderPage();
     await waitFor(() => expect(document.documentElement.lang).toBe("hi"));
-    fireEvent.click(screen.getByRole("button", { name: "English" }));
+    fireEvent.click(screen.getByRole("button", { name: /English/ }));
     expect(document.documentElement.lang).toBe("en");
     expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/^Today's air is/);
   });
@@ -103,7 +164,9 @@ describe("language toggle", () => {
   it("has no automated accessibility violations in Hindi", async () => {
     const { container } = renderPage();
     fireEvent.click(screen.getByRole("button", { name: "हिन्दी" }));
-    const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+    });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 });
@@ -131,10 +194,14 @@ describe("voice", () => {
     expect(FakeRec.last!.lang).toBe("en-IN");
     expect(FakeRec.last!.continuous).toBe(false);
     act(() => FakeRec.last!.say("do I need a mask"));
-    expect((screen.getByLabelText("Ask AirWise a question") as HTMLInputElement).value).toBe("do I need a mask");
+    expect((screen.getByLabelText("Ask AirWise a question") as HTMLInputElement).value).toBe(
+      "do I need a mask",
+    );
     expect(screen.getByText("Check the words, then press Send.")).toBeTruthy();
     expect(chatCalls(f)).toHaveLength(0); // explicit Send only
-    fireEvent.change(screen.getByLabelText("Ask AirWise a question"), { target: { value: "do I need an N95" } }); // editable
+    fireEvent.change(screen.getByLabelText("Ask AirWise a question"), {
+      target: { value: "do I need an N95" },
+    }); // editable
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByText("Wear an N95.");
     expect(JSON.parse(chatCalls(f)[0][1].body as string).question).toBe("do I need an N95");
@@ -180,7 +247,11 @@ describe("voice", () => {
 
   it("handles a recogniser that throws on start", async () => {
     enableVoice();
-    class Broken extends FakeRec { start = vi.fn(() => { throw new Error("busy"); }); }
+    class Broken extends FakeRec {
+      start = vi.fn(() => {
+        throw new Error("busy");
+      });
+    }
     (window as unknown as Record<string, unknown>).SpeechRecognition = Broken;
     renderPage();
     copilot();
@@ -192,7 +263,7 @@ describe("voice", () => {
     enableVoice();
     renderPage();
     copilot();
-    const toggle = await screen.findByLabelText("Read answers aloud") as HTMLInputElement;
+    const toggle = (await screen.findByLabelText("Read answers aloud")) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), { target: { value: "one" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
@@ -214,7 +285,9 @@ describe("voice", () => {
     const { container } = renderPage();
     copilot();
     await screen.findByRole("button", { name: "Speak your question" });
-    const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+    });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 });

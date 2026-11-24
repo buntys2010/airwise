@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildReminderIcs, foldLine, icsEscape } from "./calendar";
 
 const now = new Date("2026-11-22T12:00:00Z");
@@ -31,7 +32,9 @@ describe("buildReminderIcs", () => {
     expect(all.at(-1)).toBe("END:VCALENDAR");
     expect(ics.endsWith("\r\n")).toBe(true);
     expect(ics.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/);
-    expect(all.filter((l) => l.startsWith("BEGIN:")).length).toBe(all.filter((l) => l.startsWith("END:")).length);
+    expect(all.filter((l) => l.startsWith("BEGIN:")).length).toBe(
+      all.filter((l) => l.startsWith("END:")).length,
+    );
     expect(all).toContain("BEGIN:VEVENT");
     expect(all).toContain("VERSION:2.0");
   });
@@ -54,7 +57,11 @@ describe("buildReminderIcs", () => {
     expect(all).toContain("DTSTAMP:20261122T120000Z");
   });
   it("cannot be broken by a hostile URL or title", () => {
-    const evil = buildReminderIcs({ url: "https://x.test/?a=1\r\nEND:VCALENDAR\r\nBEGIN:EVIL", title: "x\r\nEND:VEVENT", now });
+    const evil = buildReminderIcs({
+      url: "https://x.test/?a=1\r\nEND:VCALENDAR\r\nBEGIN:EVIL",
+      title: "x\r\nEND:VEVENT",
+      now,
+    });
     expect(lines(evil).filter((l) => l === "END:VCALENDAR")).toHaveLength(1);
     expect(lines(evil).filter((l) => l === "END:VEVENT")).toHaveLength(1);
     expect(lines(evil).some((l) => l.startsWith("BEGIN:EVIL"))).toBe(false);

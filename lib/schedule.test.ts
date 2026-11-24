@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { CITIES, estimateHourly } from "./data";
 import { bestHour, type Profile } from "./engine";
 import { isGrounded } from "./guard";
@@ -30,7 +31,11 @@ describe("buildSchedule", () => {
   });
   it("mentions extra care when someone is sensitive", () => {
     const best = bestHour(hourly);
-    expect(buildSchedule(hourly, family).find((e) => e.hour === best)!.detail).toMatch(/child or older adult/);
-    expect(buildSchedule(hourly, { ...family, vulnerable: false }).find((e) => e.hour === best)!.detail).not.toMatch(/child or older adult/);
+    expect(buildSchedule(hourly, family).find((e) => e.hour === best)!.detail).toMatch(
+      /child or older adult/,
+    );
+    expect(
+      buildSchedule(hourly, { ...family, vulnerable: false }).find((e) => e.hour === best)!.detail,
+    ).not.toMatch(/child or older adult/);
   });
 });

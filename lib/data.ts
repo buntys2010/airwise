@@ -1,7 +1,5 @@
 import { createCache } from "./cache";
-
 /** City list, live-air loader, and an offline estimate curve used only if the live feed is unreachable. */
-
 import { CITIES, type City } from "./cities";
 export { CITIES };
 export type { City };
@@ -33,7 +31,12 @@ const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
 export function istClock(d = new Date()): { hour: number; label: string; elapsed: number } {
-  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
   const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0) % 24;
   const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
   return { hour, label: `${String(hour).padStart(2, "0")}:${minute}`, elapsed: hour + Number(minute) / 60 };
@@ -59,17 +62,26 @@ export function parseWeather(json: unknown): { temp: number | null; wind: number
  * If the feed is unreachable it returns a clearly labelled "estimate", never a fake "live".
  */
 export async function loadAir(city: City, signal?: AbortSignal): Promise<AirResult> {
-  const estimate: AirResult = { hourly: estimateHourly(city), source: "estimate", temp: null, wind: null, updated: null };
+  const estimate: AirResult = {
+    hourly: estimateHourly(city),
+    source: "estimate",
+    temp: null,
+    wind: null,
+    updated: null,
+  };
   try {
     const q = `latitude=${city.lat}&longitude=${city.lon}&timezone=Asia%2FKolkata`;
     const [airRes, wxRes] = await Promise.all([
       fetch(`${AIR_URL}?${q}&hourly=pm2_5&forecast_days=1`, { signal }),
-      fetch(`${WEATHER_URL}?${q}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh`, { signal }).catch(() => null),
+      fetch(`${WEATHER_URL}?${q}&current=temperature_2m,wind_speed_10m&wind_speed_unit=kmh`, {
+        signal,
+      }).catch(() => null),
     ]);
     if (!airRes.ok) return estimate;
     const hourly = parseHourly(await airRes.json());
     if (!hourly) return estimate;
-    const wx = wxRes && wxRes.ok ? parseWeather(await wxRes.json().catch(() => null)) : { temp: null, wind: null };
+    const wx =
+      wxRes && wxRes.ok ? parseWeather(await wxRes.json().catch(() => null)) : { temp: null, wind: null };
     return { hourly, source: "live", ...wx, updated: istClock().label };
   } catch {
     return estimate;
@@ -100,7 +112,10 @@ export function getCityAir(city: City): Promise<AirResult> {
   const pending = inflight.get(city.id);
   if (pending) return pending;
   const p = loadAir(city, AbortSignal.timeout(AIR_TIMEOUT_MS))
-    .then((r) => { if (r.source === "live") airCache.set(city.id, r); return r; })
+    .then((r) => {
+      if (r.source === "live") airCache.set(city.id, r);
+      return r;
+    })
     .finally(() => inflight.delete(city.id));
   inflight.set(city.id, p);
   return p;
@@ -136,20 +151,34 @@ export async function loadMap(hour: number, signal?: AbortSignal): Promise<MapPo
   if (hit) return hit;
   const days: (number[] | null)[] = CITIES.map(() => null);
   const chunks: number[][] = [];
-  for (let i = 0; i < CITIES.length; i += MAP_CHUNK) chunks.push(Array.from({ length: Math.min(MAP_CHUNK, CITIES.length - i) }, (_, k) => i + k));
-  await Promise.all(chunks.map(async (idx) => {
-    try {
-      const list = idx.map((i) => CITIES[i]);
-      const url = `${AIR_URL}?latitude=${list.map((c) => c.lat).join(",")}&longitude=${list.map((c) => c.lon).join(",")}&hourly=pm2_5&forecast_days=1&timezone=Asia%2FKolkata`;
-      const res = await fetch(url, { signal: signal ?? AbortSignal.timeout(8_000) });
-      if (res.ok) parseMapBatch(await res.json(), idx.length).forEach((d, k) => { days[idx[k]] = d; });
-    } catch {
-      /* this chunk's cities fall back to a labelled estimate */
-    }
-  }));
+  for (let i = 0; i < CITIES.length; i += MAP_CHUNK)
+    chunks.push(Array.from({ length: Math.min(MAP_CHUNK, CITIES.length - i) }, (_, k) => i + k));
+  await Promise.all(
+    chunks.map(async (idx) => {
+      try {
+        const list = idx.map((i) => CITIES[i]);
+        const url = `${AIR_URL}?latitude=${list.map((c) => c.lat).join(",")}&longitude=${list.map((c) => c.lon).join(",")}&hourly=pm2_5&forecast_days=1&timezone=Asia%2FKolkata`;
+        const res = await fetch(url, { signal: signal ?? AbortSignal.timeout(8_000) });
+        if (res.ok)
+          parseMapBatch(await res.json(), idx.length).forEach((d, k) => {
+            days[idx[k]] = d;
+          });
+      } catch {
+        /* this chunk's cities fall back to a labelled estimate */
+      }
+    }),
+  );
   const points: MapPoint[] = CITIES.map((c, i) => {
     const day = days[i];
-    return { id: c.id, name: c.name, state: c.state, lat: c.lat, lon: c.lon, pm: (day ?? estimateHourly(c))[hour], source: day ? "live" : "estimate" };
+    return {
+      id: c.id,
+      name: c.name,
+      state: c.state,
+      lat: c.lat,
+      lon: c.lon,
+      pm: (day ?? estimateHourly(c))[hour],
+      source: day ? "live" : "estimate",
+    };
   });
   if (points.some((p) => p.source === "live")) mapCache.set(`map:${hour}`, points);
   return points;
@@ -159,7 +188,10 @@ export async function loadMap(hour: number, signal?: AbortSignal): Promise<MapPo
 export const resetMapCache = () => mapCache.clear();
 
 /** Which weather sentence applies, as a translation key. `weatherNote` is the English text for the same rule. */
-export function weatherKey(temp: number | null, wind: number | null): "wx.strong" | "wx.cold" | "wx.light" | "wx.breeze" | null {
+export function weatherKey(
+  temp: number | null,
+  wind: number | null,
+): "wx.strong" | "wx.cold" | "wx.light" | "wx.breeze" | null {
   if (wind === null) return null;
   if (wind >= 15) return "wx.strong";
   if (wind < 8 && temp !== null && temp < 18) return "wx.cold";

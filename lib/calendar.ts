@@ -19,8 +19,14 @@ export function foldLine(line: string): string {
   let limit = 75;
   for (const ch of line) {
     const b = enc.encode(ch).length;
-    if (bytes + b > limit) { out.push(cur); cur = " "; bytes = 1; limit = 75; }
-    cur += ch; bytes += b;
+    if (bytes + b > limit) {
+      out.push(cur);
+      cur = " ";
+      bytes = 1;
+      limit = 75;
+    }
+    cur += ch;
+    bytes += b;
   }
   out.push(cur);
   return out.join("\r\n");
@@ -38,7 +44,14 @@ export interface ReminderOptions {
   description?: string;
 }
 
-export function buildReminderIcs({ url, hour = 7, minute = 0, now = new Date(), title = "Check today's air with AirWise", description }: ReminderOptions): string {
+export function buildReminderIcs({
+  url,
+  hour = 7,
+  minute = 0,
+  now = new Date(),
+  title = "Check today's air with AirWise",
+  description,
+}: ReminderOptions): string {
   // First occurrence is tomorrow, so the event never starts in the past. Floating local time: it fires at 7:00 wherever the phone is.
   const first = new Date(now.getTime() + 24 * 3600 * 1000);
   const day = `${first.getFullYear()}${pad(first.getMonth() + 1)}${pad(first.getDate())}`;

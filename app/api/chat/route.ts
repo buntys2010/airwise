@@ -1,5 +1,12 @@
 import { createCache } from "@/lib/cache";
-import { buildContext, buildPrompt, cleanQuestion, MAX_QUESTION, offlineAnswer, parseChoices } from "@/lib/chat";
+import {
+  buildContext,
+  buildPrompt,
+  cleanQuestion,
+  MAX_QUESTION,
+  offlineAnswer,
+  parseChoices,
+} from "@/lib/chat";
 import { getCityAir, istClock } from "@/lib/data";
 import { generateDetailed, REASON_TEXT } from "@/lib/gemini";
 import { verify } from "@/lib/guard";
@@ -19,7 +26,11 @@ const verifiedAnswers = createCache<string>(10 * 60_000);
 
 export async function POST(req: Request) {
   const started = Date.now();
-  const parsed = await readGuarded(req, { limited, maxBytes: 3_000, tooMany: "Too many questions. Try again in a minute." });
+  const parsed = await readGuarded(req, {
+    limited,
+    maxBytes: 3_000,
+    tooMany: "Too many questions. Try again in a minute.",
+  });
   if (!parsed.ok) return parsed.res;
 
   const body = parsed.body as { question?: unknown; choices?: unknown } | null;
@@ -35,11 +46,15 @@ export async function POST(req: Request) {
 
   const cacheKey = JSON.stringify([question.toLowerCase(), choices.lang, ctx]);
   const cached = verifiedAnswers.get(cacheKey);
-  if (cached) return json({ answer: cached, source: "gemini", verified: true, cached: true, air: air.source });
+  if (cached)
+    return json({ answer: cached, source: "gemini", verified: true, cached: true, air: air.source });
 
   const r = await generateDetailed({
-    prompt: buildPrompt(question, ctx, choices.lang), maxTokens: 260, kind: "chat",
-    timeoutMs: PER_CALL_MS, budgetMs: Math.max(2_000, CHAT_BUDGET_MS - (Date.now() - started)),
+    prompt: buildPrompt(question, ctx, choices.lang),
+    maxTokens: 260,
+    kind: "chat",
+    timeoutMs: PER_CALL_MS,
+    budgetMs: Math.max(2_000, CHAT_BUDGET_MS - (Date.now() - started)),
   });
   if (r.ok) {
     // Grounding guard: a Gemini answer is shown only if every number and claim in it traces back to the engine's facts.
@@ -49,7 +64,21 @@ export async function POST(req: Request) {
       verifiedAnswers.set(cacheKey, answer);
       return json({ answer, source: "gemini", verified: true, air: air.source });
     }
-    return json({ answer: offlineAnswer(question, ctx, choices.lang), source: "offline", verified: false, rejected: true, air: air.source });
+    return json({
+      answer: offlineAnswer(question, ctx, choices.lang),
+      source: "offline",
+      verified: false,
+      rejected: true,
+      air: air.source,
+    });
   }
-  return json({ answer: offlineAnswer(question, ctx, choices.lang), source: "offline", verified: false, rejected: false, reason: r.reason, reasonText: REASON_TEXT[r.reason], air: air.source });
+  return json({
+    answer: offlineAnswer(question, ctx, choices.lang),
+    source: "offline",
+    verified: false,
+    rejected: false,
+    reason: r.reason,
+    reasonText: REASON_TEXT[r.reason],
+    air: air.source,
+  });
 }

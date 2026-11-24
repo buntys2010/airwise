@@ -1,6 +1,7 @@
 "use client";
 import { fmtHour } from "@/lib/engine";
 import { ACTION_HI, CATEGORY_KEY, englishIn } from "@/lib/i18n";
+
 import { useLang } from "./LangProvider";
 import type { Airwise } from "./useAirwise";
 
@@ -15,7 +16,14 @@ export function MorningBrief({ a }: { a: Airwise }) {
     <section className="brief" aria-labelledby="h-brief">
       <h2 id="h-brief">{t("brief.h")}</h2>
       <p>
-        <strong>{t("brief.line", { city: a.city.name, time: fmtHour(a.nowHour), aqi: a.aqi, level: t(CATEGORY_KEY[a.cat.tone]) })}</strong>{" "}
+        <strong>
+          {t("brief.line", {
+            city: a.city.name,
+            time: fmtHour(a.nowHour),
+            aqi: a.aqi,
+            level: t(CATEGORY_KEY[a.cat.tone]),
+          })}
+        </strong>{" "}
         {t("brief.best", { hour: a.bestLabel, pm: a.hourly[a.best] })}{" "}
         {first && (
           <span {...(hi ? { lang: "hi" } : englishIn(lang))}>

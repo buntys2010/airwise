@@ -1,4 +1,4 @@
-import { loadMap, istClock } from "@/lib/data";
+import { istClock, loadMap } from "@/lib/data";
 import { json } from "@/lib/http";
 import { clientIp, createLimiter } from "@/lib/ratelimit";
 
@@ -16,5 +16,10 @@ export async function GET(req: Request) {
   if (limited(clientIp(req))) return json({ error: "Too many requests. Try again in a minute." }, 429);
   const clock = istClock();
   const points = await loadMap(clock.hour);
-  return json({ points, hour: clock.hour, time: clock.label, live: points.filter((p) => p.source === "live").length });
+  return json({
+    points,
+    hour: clock.hour,
+    time: clock.label,
+    live: points.filter((p) => p.source === "live").length,
+  });
 }

@@ -27,7 +27,9 @@ export function allowedNumbers(facts: unknown): number[] {
   const walk = (v: unknown) => {
     if (typeof v === "number" && Number.isFinite(v)) {
       // A model may round honestly: 3.74 can be written 3.7 or 4.
-      out.add(v); out.add(Math.round(v)); out.add(Math.round(v * 10) / 10);
+      out.add(v);
+      out.add(Math.round(v));
+      out.add(Math.round(v * 10) / 10);
     } else if (typeof v === "string") extractNumbers(v).forEach((n) => out.add(n));
     else if (Array.isArray(v)) v.forEach(walk);
     else if (v && typeof v === "object") Object.values(v as Record<string, unknown>).forEach(walk);
@@ -42,7 +44,8 @@ export function ungroundedNumbers(text: string, facts: unknown): number[] {
   return extractNumbers(text).filter((n) => !allowed.some((a) => Math.abs(a - n) <= TOLERANCE));
 }
 
-export const isGrounded = (text: string, facts: unknown): boolean => ungroundedNumbers(text, facts).length === 0;
+export const isGrounded = (text: string, facts: unknown): boolean =>
+  ungroundedNumbers(text, facts).length === 0;
 
 /**
  * Second layer: unsupported attributions. A supplied number can still be misused ("53% of people choose it").
@@ -65,7 +68,11 @@ export function unsupportedClaims(text: string): string[] {
   return ATTRIBUTIONS.map((re) => t.match(re)?.[0]).filter((m): m is string => Boolean(m));
 }
 
-export interface Verdict { ok: boolean; numbers: number[]; claims: string[] }
+export interface Verdict {
+  ok: boolean;
+  numbers: number[];
+  claims: string[];
+}
 
 /** Both layers together. `ok` means safe to show as a verified answer. */
 export function verify(text: string, facts: unknown): Verdict {

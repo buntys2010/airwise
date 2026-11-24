@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { clientIp } from "./ratelimit";
 
 export const json = (body: unknown, status = 200) => NextResponse.json(body, { status });
@@ -11,7 +12,11 @@ export type Parsed = { ok: true; body: unknown } | { ok: false; res: Response };
  */
 export async function readGuarded(
   req: Request,
-  { limited, maxBytes, tooMany = "Too many requests. Try again in a minute." }: { limited: (key: string) => boolean; maxBytes: number; tooMany?: string },
+  {
+    limited,
+    maxBytes,
+    tooMany = "Too many requests. Try again in a minute.",
+  }: { limited: (key: string) => boolean; maxBytes: number; tooMany?: string },
 ): Promise<Parsed> {
   if (limited(clientIp(req))) return { ok: false, res: json({ error: tooMany }, 429) };
 

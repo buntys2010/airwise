@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { clientIp, createBudget, createLimiter } from "./ratelimit";
 
 afterEach(() => vi.useRealTimers());
@@ -9,7 +10,9 @@ describe("clientIp", () => {
     expect(clientIp(req({ "x-forwarded-for": "6.6.6.6, 9.9.9.9" }))).toBe("9.9.9.9");
   });
   it("ignores spoofed leading entries: changing them does not change the key", () => {
-    expect(clientIp(req({ "x-forwarded-for": "1.1.1.1, 9.9.9.9" }))).toBe(clientIp(req({ "x-forwarded-for": "2.2.2.2, 3.3.3.3, 9.9.9.9" })));
+    expect(clientIp(req({ "x-forwarded-for": "1.1.1.1, 9.9.9.9" }))).toBe(
+      clientIp(req({ "x-forwarded-for": "2.2.2.2, 3.3.3.3, 9.9.9.9" })),
+    );
   });
   it("falls back to x-real-ip, then a fixed local key", () => {
     expect(clientIp(req({ "x-real-ip": "4.4.4.4" }))).toBe("4.4.4.4");
@@ -30,12 +33,14 @@ describe("createLimiter", () => {
   });
   it("keeps keys separate", () => {
     const l = createLimiter(1, 1000);
-    l("a"); expect(l("a")).toBe(true);
+    l("a");
+    expect(l("a")).toBe(true);
     expect(l("b")).toBe(false);
   });
   it("a flood of new keys does not wipe a blocked client's counter", () => {
     const l = createLimiter(2, 60_000, 50);
-    l("attacker"); l("attacker");
+    l("attacker");
+    l("attacker");
     expect(l("attacker")).toBe(true);
     for (let i = 0; i < 500; i++) l(`flood-${i}`);
     expect(l("attacker")).toBe(true); // still blocked: eviction removed stale one-off keys, not the busy one

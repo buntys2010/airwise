@@ -42,13 +42,21 @@ export function idsToPlan(ids: string[]): Plan {
 }
 
 export function encodeChoices(c: { city: string; profile: Profile; plan: Plan }): string {
-  const q = new URLSearchParams({ city: c.city, home: c.profile.home, commute: c.profile.commute, km: String(c.profile.km), cooking: c.profile.cooking, vulnerable: c.profile.vulnerable ? "1" : "0" });
+  const q = new URLSearchParams({
+    city: c.city,
+    home: c.profile.home,
+    commute: c.profile.commute,
+    km: String(c.profile.km),
+    cooking: c.profile.cooking,
+    vulnerable: c.profile.vulnerable ? "1" : "0",
+  });
   const ids = planToIds(c.plan);
   if (ids.length) q.set("plan", ids.join(","));
   return q.toString();
 }
 
-const oneOf = <T extends string>(list: readonly T[], v: string | null): T | undefined => (v && (list as readonly string[]).includes(v) ? (v as T) : undefined);
+const oneOf = <T extends string>(list: readonly T[], v: string | null): T | undefined =>
+  v && (list as readonly string[]).includes(v) ? (v as T) : undefined;
 
 /** Reads a query string. Anything outside the fixed lists is dropped, so a hand-edited link can only ever choose from valid options. */
 export function decodeChoices(search: string): SharedChoices {
@@ -57,15 +65,26 @@ export function decodeChoices(search: string): SharedChoices {
   const city = CITIES.find((c) => c.id === q.get("city"));
   if (city) out.city = city.id;
   const profile: Partial<Profile> = {};
-  const home = oneOf(HOMES, q.get("home")); if (home) profile.home = home;
-  const commute = oneOf(COMMUTES, q.get("commute")); if (commute) profile.commute = commute;
-  const cooking = oneOf(COOKINGS, q.get("cooking")); if (cooking) profile.cooking = cooking;
+  const home = oneOf(HOMES, q.get("home"));
+  if (home) profile.home = home;
+  const commute = oneOf(COMMUTES, q.get("commute"));
+  if (commute) profile.commute = commute;
+  const cooking = oneOf(COOKINGS, q.get("cooking"));
+  if (cooking) profile.cooking = cooking;
   const km = Number(q.get("km"));
-  if (q.get("km") !== null && q.get("km") !== "" && Number.isFinite(km)) profile.km = Math.min(60, Math.max(0, Math.round(km)));
-  const v = q.get("vulnerable"); if (v === "1" || v === "0") profile.vulnerable = v === "1";
+  if (q.get("km") !== null && q.get("km") !== "" && Number.isFinite(km))
+    profile.km = Math.min(60, Math.max(0, Math.round(km)));
+  const v = q.get("vulnerable");
+  if (v === "1" || v === "0") profile.vulnerable = v === "1";
   if (Object.keys(profile).length) out.profile = profile;
   const planParam = q.get("plan");
-  if (planParam) out.plan = idsToPlan(planParam.split(",").slice(0, 20).filter((id) => (PLAN_IDS as readonly string[]).includes(id)));
+  if (planParam)
+    out.plan = idsToPlan(
+      planParam
+        .split(",")
+        .slice(0, 20)
+        .filter((id) => (PLAN_IDS as readonly string[]).includes(id)),
+    );
   return out;
 }
 

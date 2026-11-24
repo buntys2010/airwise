@@ -1,26 +1,77 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { resetGeminiBudget } from "@/lib/gemini";
+
 import { POST } from "./route";
 
 vi.mock("@/lib/data", async (orig) => {
   const real = await orig<typeof import("@/lib/data")>();
-  return { ...real, getCityAir: async (c: Parameters<typeof real.estimateHourly>[0]) => ({ hourly: real.estimateHourly(c), source: "live" as const, temp: 9, wind: 4, updated: "10:00" }) };
+  return {
+    ...real,
+    getCityAir: async (c: Parameters<typeof real.estimateHourly>[0]) => ({
+      hourly: real.estimateHourly(c),
+      source: "live" as const,
+      temp: 9,
+      wind: 4,
+      updated: "10:00",
+    }),
+  };
 });
 
-const choices = { city: "delhi", home: "typical", commute: "bike", km: 8, cooking: "lpg", vulnerable: true, plan: {}, lang: "en" };
+const choices = {
+  city: "delhi",
+  home: "typical",
+  commute: "bike",
+  km: 8,
+  cooking: "lpg",
+  vulnerable: true,
+  plan: {},
+  lang: "en",
+};
 let n = 0;
 const call = (body: unknown, ip = `10.1.0.${++n}`) =>
-  POST(new Request("http://x/api/plan", { method: "POST", headers: { "x-forwarded-for": ip }, body: typeof body === "string" ? body : JSON.stringify(body) }));
-const bodyOf = (f: ReturnType<typeof vi.fn>) => JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
+  POST(
+    new Request("http://x/api/plan", {
+      method: "POST",
+      headers: { "x-forwarded-for": ip },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
+const bodyOf = (f: ReturnType<typeof vi.fn>) =>
+  JSON.parse((f.mock.calls[0][1] as RequestInit).body as string);
 /** Echoes the step times Gemini was asked to keep, so the reply is valid for whatever schedule the server built. */
-const echoPlan = (headline: string, textOf = (title: string) => `${title}.`) => vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
-  const prompt: string = JSON.parse(init.body as string).contents[0].parts[0].text;
-  const facts = JSON.parse(prompt.split("<facts>\n")[1].split("\n</facts>")[0]) as { steps: { time: string; title: string }[] };
-  return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ headline, steps: facts.steps.map((s) => ({ time: s.time, text: textOf(s.title) })) }) }] } }] }) };
-});
+const echoPlan = (headline: string, textOf = (title: string) => `${title}.`) =>
+  vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+    const prompt: string = JSON.parse(init.body as string).contents[0].parts[0].text;
+    const facts = JSON.parse(prompt.split("<facts>\n")[1].split("\n</facts>")[0]) as {
+      steps: { time: string; title: string }[];
+    };
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    headline,
+                    steps: facts.steps.map((s) => ({ time: s.time, text: textOf(s.title) })),
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    };
+  });
 
 beforeEach(() => resetGeminiBudget());
-afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 describe("POST /api/plan", () => {
   it("returns the deterministic plan when no key is set, with the reason", async () => {
@@ -37,7 +88,10 @@ describe("POST /api/plan", () => {
     vi.stubGlobal("fetch", f);
     const json = await (await call({ choices })).json();
     expect(json).toMatchObject({ source: "gemini", verified: true, headline: "A calmer day" });
-    expect(bodyOf(f).generationConfig).toMatchObject({ responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } });
+    expect(bodyOf(f).generationConfig).toMatchObject({
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
+    });
     expect(String(f.mock.calls[0][0])).not.toContain("test-key");
   });
   it("rejects Gemini's plan when it invents a number, and says so", async () => {

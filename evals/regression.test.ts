@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { verify } from "../lib/guard";
 import { ungroundedNumbers } from "../lib/guard";
 import { runCases, summarise, type Verifier } from "./cases";
@@ -29,7 +30,11 @@ describe("the eval set catches a weakened guard", () => {
     expect(f.length).toBeGreaterThanOrEqual(8);
   });
   it("a numeric check that ignores Devanagari digits is caught by the Hindi cases", () => {
-    const asciiOnly: Verifier = (text, facts) => ({ ok: ungroundedNumbers(text.replace(/[०-९]/g, ""), facts).length === 0 && verify(text.replace(/[०-९]/g, ""), facts).ok });
+    const asciiOnly: Verifier = (text, facts) => ({
+      ok:
+        ungroundedNumbers(text.replace(/[०-९]/g, ""), facts).length === 0 &&
+        verify(text.replace(/[०-९]/g, ""), facts).ok,
+    });
     const f = failed(asciiOnly);
     expect(f.some((r) => r.id === "hin-03")).toBe(true); // an invented number written in Devanagari slips through
   });

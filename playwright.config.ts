@@ -18,5 +18,10 @@ export default defineConfig({
     { name: "phone-390", use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 }, channel } },
   ],
   // Needs a production build first: `npm run build`.
-  webServer: { command: `npx next start -p ${PORT}`, url: `http://localhost:${PORT}`, reuseExistingServer: !process.env.CI, timeout: 120_000 },
+  webServer: {
+    command: `npx next start -p ${PORT}`,
+    url: `http://localhost:${PORT}`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
 });

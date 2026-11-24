@@ -1,19 +1,45 @@
 import { describe, expect, it } from "vitest";
+
 import { categoryOf } from "./engine";
 import { unsupportedClaims } from "./guard";
-import { ACTION_HI, ADVICE_KEY, CATEGORY_KEY, DICTS, EN, HI, SPEECH_LANG, englishIn, placeholders, t, type Key } from "./i18n";
+import {
+  ACTION_HI,
+  ADVICE_KEY,
+  CATEGORY_KEY,
+  DICTS,
+  EN,
+  englishIn,
+  HI,
+  type Key,
+  placeholders,
+  SPEECH_LANG,
+  t,
+} from "./i18n";
 
 const keys = Object.keys(EN) as Key[];
 const DEVANAGARI = /[ऀ-ॿ]/;
 /** Hindi entries that are deliberately Latin: the language buttons' own codes and brand or unit terms. */
-const LATIN_OK = new Set<Key>(["lang.en", "lang.enName", "strip.aqi", "share.h", "share.city", "share.btn", "share.title", "pill.cook.lpg", "map.pm"]);
+const LATIN_OK = new Set<Key>([
+  "lang.en",
+  "lang.enName",
+  "strip.aqi",
+  "share.h",
+  "share.city",
+  "share.btn",
+  "share.title",
+  "pill.cook.lpg",
+  "map.pm",
+]);
 
 describe("dictionary parity", () => {
   it("English and Hindi have exactly the same keys", () => {
     expect(Object.keys(HI).sort()).toEqual(Object.keys(EN).sort());
   });
   it("no entry is empty, in either language", () => {
-    for (const k of keys) { expect(EN[k].trim(), k).not.toBe(""); expect(HI[k].trim(), k).not.toBe(""); }
+    for (const k of keys) {
+      expect(EN[k].trim(), k).not.toBe("");
+      expect(HI[k].trim(), k).not.toBe("");
+    }
   });
   it("placeholders match between languages, so a value is never dropped", () => {
     for (const k of keys) expect(placeholders(HI[k]), k).toEqual(placeholders(EN[k]));
@@ -25,7 +51,10 @@ describe("dictionary parity", () => {
     for (const k of keys) expect(/[०-९]/.test(HI[k]), k).toBe(false);
   });
   it("our own text, in both languages, makes no unsupported attribution (studies, experts, population statistics)", () => {
-    for (const k of keys) { expect(unsupportedClaims(HI[k]), `hi ${k}`).toEqual([]); expect(unsupportedClaims(EN[k]), `en ${k}`).toEqual([]); }
+    for (const k of keys) {
+      expect(unsupportedClaims(HI[k]), `hi ${k}`).toEqual([]);
+      expect(unsupportedClaims(EN[k]), `en ${k}`).toEqual([]);
+    }
   });
 });
 

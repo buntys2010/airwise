@@ -1,5 +1,5 @@
 "use client";
-import { toggleAction, type ActionResult, type Plan } from "@/lib/engine";
+import { type ActionResult, type Plan, toggleAction } from "@/lib/engine";
 
 interface Props {
   actions: ActionResult[];
@@ -22,8 +22,12 @@ export function ActionList({ actions, plan, onChange }: Props) {
                 {a.applicable ? (
                   <>
                     <span className="pill good">−{pct}% exposure</span>
-                    {a.savedCigs >= 0.05 && <span className="pill">−{a.savedCigs.toFixed(1)} cigarettes a day</span>}
-                    {a.savedCo2Kg >= 0.05 && <span className="pill">−{a.savedCo2Kg.toFixed(1)} kg CO₂ a day</span>}
+                    {a.savedCigs >= 0.05 && (
+                      <span className="pill">−{a.savedCigs.toFixed(1)} cigarettes a day</span>
+                    )}
+                    {a.savedCo2Kg >= 0.05 && (
+                      <span className="pill">−{a.savedCo2Kg.toFixed(1)} kg CO₂ a day</span>
+                    )}
                   </>
                 ) : (
                   <span className="pill">Nothing to change here</span>
@@ -32,11 +36,20 @@ export function ActionList({ actions, plan, onChange }: Props) {
               </div>
               <details>
                 <summary>Show the math</summary>
-                <ul>{a.math.map((m) => (<li key={m}>{m}</li>))}</ul>
+                <ul>
+                  {a.math.map((m) => (
+                    <li key={m}>{m}</li>
+                  ))}
+                </ul>
               </details>
             </div>
-            <button type="button" className="toggle" aria-pressed={on} disabled={!a.applicable}
-              onClick={() => onChange(toggleAction(plan, a))}>
+            <button
+              type="button"
+              className="toggle"
+              aria-pressed={on}
+              disabled={!a.applicable}
+              onClick={() => onChange(toggleAction(plan, a))}
+            >
               {on ? "In my plan" : "Add to my plan"}
             </button>
           </li>

@@ -1,35 +1,70 @@
 // @vitest-environment jsdom
-import axe from "axe-core";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { LangProvider } from "@/components/LangProvider";
 import { STORE_KEY } from "@/lib/store";
+
 import Page from "./page";
 import { cityBox, cityName, pickCity } from "./test-city";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
-function stubFetch(chat: (body: Record<string, unknown>) => unknown = () => ({ answer: "Wear an N95.", verified: true })) {
+function stubFetch(
+  chat: (body: Record<string, unknown>) => unknown = () => ({ answer: "Wear an N95.", verified: true }),
+) {
   const f = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
-    if (String(url).startsWith("/api/chat")) return { ok: true, json: async () => chat(JSON.parse(init?.body as string)) };
+    if (String(url).startsWith("/api/chat"))
+      return { ok: true, json: async () => chat(JSON.parse(init?.body as string)) };
     throw new Error("offline");
   });
   vi.stubGlobal("fetch", f);
   return f;
 }
-const renderPage = () => render(<LangProvider><Page /></LangProvider>);
+const renderPage = () =>
+  render(
+    <LangProvider>
+      <Page />
+    </LangProvider>,
+  );
 const setUrl = (search: string) => window.history.replaceState({}, "", `/${search}`);
 const marker = (n: number) => screen.getByRole("button", { name: new RegExp(`^(Fix|उपाय) ${n}:`) });
 const saved = () => localStorage.getItem(STORE_KEY);
-const openTab = (name: string) => fireEvent.click(within(screen.getByRole("navigation", { name: "Sections" })).getByRole("button", { name: new RegExp(name) }));
+const openTab = (name: string) =>
+  fireEvent.click(
+    within(screen.getByRole("navigation", { name: "Sections" })).getByRole("button", {
+      name: new RegExp(name),
+    }),
+  );
 const radio = (name: RegExp) => screen.getByRole("radio", { name });
 const isOn = (el: HTMLElement) => el.getAttribute("aria-checked") === "true";
 
 beforeAll(() => {
-  window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as typeof window.matchMedia;
+  window.matchMedia = (q: string) => ({
+    matches: true,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    onchange: null,
+    dispatchEvent: () => false,
+  });
 });
-beforeEach(() => { localStorage.clear(); setUrl(""); stubFetch(); });
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); setUrl(""); document.documentElement.style.removeProperty("--haze"); });
+beforeEach(() => {
+  localStorage.clear();
+  setUrl("");
+  stubFetch();
+});
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  setUrl("");
+  document.documentElement.style.removeProperty("--haze");
+});
 
 describe("first run", () => {
   it("opens on the sample room and the sample family, with nothing saved yet", () => {
@@ -77,7 +112,13 @@ describe("shared links carry choices only", () => {
     expect(dial).not.toMatch(/b99%/);
   });
   it("opening someone's link never overwrites what this device saved", async () => {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ city: "pune", profile: { home: "typical", commute: "walk", km: 2, cooking: "induction", vulnerable: false } }));
+    localStorage.setItem(
+      STORE_KEY,
+      JSON.stringify({
+        city: "pune",
+        profile: { home: "typical", commute: "walk", km: 2, cooking: "induction", vulnerable: false },
+      }),
+    );
     setUrl("?city=delhi&cooking=wood");
     renderPage();
     await waitFor(() => expect(cityName()).toBe("Delhi"));
@@ -93,11 +134,21 @@ describe("shared links carry choices only", () => {
     fireEvent.click(marker(1));
     openTab("Share");
     fireEvent.click(screen.getByRole("button", { name: "Copy a link to this plan" }));
-    expect(await screen.findByText(/Link copied\. It carries your choices only, never a number\./)).toBeTruthy();
+    expect(
+      await screen.findByText(/Link copied\. It carries your choices only, never a number\./),
+    ).toBeTruthy();
     const url = new URL(writeText.mock.calls[0][0]);
     expect(url.searchParams.get("city")).toBe("lucknow");
     expect(url.searchParams.get("plan")).toBe("seal");
-    expect([...url.searchParams.keys()].sort()).toEqual(["city", "commute", "cooking", "home", "km", "plan", "vulnerable"]);
+    expect([...url.searchParams.keys()].sort()).toEqual([
+      "city",
+      "commute",
+      "cooking",
+      "home",
+      "km",
+      "plan",
+      "vulnerable",
+    ]);
   });
   it("uses the phone's share sheet when there is one", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
@@ -110,7 +161,10 @@ describe("shared links carry choices only", () => {
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
   });
   it("shows the link to copy by hand when the clipboard is blocked", async () => {
-    Object.defineProperty(navigator, "clipboard", { value: { writeText: vi.fn().mockRejectedValue(new Error("no")) }, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockRejectedValue(new Error("no")) },
+      configurable: true,
+    });
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
     renderPage();
     openTab("Share");
@@ -132,7 +186,13 @@ describe("shared links carry choices only", () => {
 
 describe("device-only save", () => {
   it("restores a saved household and city on the next visit, and says it is saved on this phone", async () => {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ city: "kolkata", profile: { home: "sealed", commute: "metro", km: 5, cooking: "induction", vulnerable: false } }));
+    localStorage.setItem(
+      STORE_KEY,
+      JSON.stringify({
+        city: "kolkata",
+        profile: { home: "sealed", commute: "metro", km: 5, cooking: "induction", vulnerable: false },
+      }),
+    );
     renderPage();
     await waitFor(() => expect(cityName()).toBe("Kolkata"));
     expect(isOn(radio(/Flat \(sealed\)/))).toBe(true);
@@ -160,8 +220,12 @@ describe("device-only save", () => {
     expect(screen.getByText(/Not saved yet/)).toBeTruthy();
   });
   it("works when storage is blocked, and says so", async () => {
-    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
     renderPage();
     expect(await screen.findByText("Not saved on this phone (storage is blocked)")).toBeTruthy();
     fireEvent.click(marker(1)); // the app still works
@@ -173,7 +237,10 @@ describe("device-only save", () => {
 describe("calendar reminder", () => {
   it("downloads a daily 7:00 calendar file built on the device, and shows the link to add it by hand", async () => {
     let blob: Blob | null = null;
-    URL.createObjectURL = vi.fn((b: Blob) => { blob = b; return "blob:ics"; });
+    URL.createObjectURL = vi.fn((b: Blob) => {
+      blob = b;
+      return "blob:ics";
+    });
     URL.revokeObjectURL = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     renderPage();
@@ -192,16 +259,36 @@ describe("calendar reminder", () => {
 describe("chat progress and time limits", () => {
   it("shows progress at once, says it is still working after a few seconds, and recovers on a timeout", async () => {
     vi.useFakeTimers();
-    vi.stubGlobal("fetch", vi.fn().mockImplementation((_u: string, init?: RequestInit) => new Promise((_r, rej) => init?.signal?.addEventListener("abort", () => rej(Object.assign(new Error("a"), { name: "AbortError" }))))));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation(
+          (_u: string, init?: RequestInit) =>
+            new Promise((_r, rej) =>
+              init?.signal?.addEventListener("abort", () =>
+                rej(Object.assign(new Error("a"), { name: "AbortError" })),
+              ),
+            ),
+        ),
+    );
     renderPage();
     openTab("Co-pilot");
     fireEvent.change(screen.getByLabelText("Ask AirWise a question"), { target: { value: "mask?" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(screen.getByRole("progressbar")).toBeTruthy();
     expect(screen.queryByText(/Still working/)).toBeNull();
-    await act(async () => { await vi.advanceTimersByTimeAsync(3_100); });
-    expect(screen.getByText(/Still working\. If Gemini is slow you will get checked guidance within a few seconds\./)).toBeTruthy();
-    await act(async () => { await vi.advanceTimersByTimeAsync(11_500); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_100);
+    });
+    expect(
+      screen.getByText(
+        /Still working\. If Gemini is slow you will get checked guidance within a few seconds\./,
+      ),
+    ).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(11_500);
+    });
     expect(screen.getByRole("alert").textContent).toMatch(/That took too long/);
     expect(screen.queryByRole("progressbar")).toBeNull();
     expect(screen.getByRole("button", { name: "Send" }).hasAttribute("disabled")).toBe(false);
@@ -210,7 +297,11 @@ describe("chat progress and time limits", () => {
 
 describe("chat controls layout", () => {
   it("the input has its own row, and the buttons below carry visible text labels", () => {
-    (window as unknown as Record<string, unknown>).SpeechRecognition = class { start() {} stop() {} abort() {} };
+    (window as unknown as Record<string, unknown>).SpeechRecognition = class {
+      start() {}
+      stop() {}
+      abort() {}
+    };
     renderPage();
     const form = document.querySelector(".chatform")!;
     const input = form.querySelector("input#q")!;
@@ -223,7 +314,9 @@ describe("chat controls layout", () => {
   });
   it("has no automated accessibility violations with the new tools", async () => {
     const { container } = renderPage();
-    const results = await axe.run(container, { rules: { "color-contrast": { enabled: false }, region: { enabled: false } } });
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+    });
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
   });
 });

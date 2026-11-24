@@ -6,7 +6,8 @@ export function useCountUp(target: number, ms = 900): number {
   const [value, setValue] = useState(target);
   const from = useRef(target);
   useEffect(() => {
-    const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
       from.current = target;
       setValue(target);

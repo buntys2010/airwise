@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { CITIES, estimateHourly, istClock, loadAir, parseHourly, parseWeather, weatherNote } from "./data";
 
 const delhi = CITIES[0];
@@ -23,14 +24,27 @@ describe("parseHourly", () => {
 });
 
 describe("parseWeather", () => {
-  it("reads temperature and wind", () => expect(parseWeather({ current: { temperature_2m: 9.4, wind_speed_10m: 3.6 } })).toEqual({ temp: 9, wind: 4 }));
-  it("returns nulls on bad input", () => expect(parseWeather({ current: { temperature_2m: "x" } })).toEqual({ temp: null, wind: null }));
+  it("reads temperature and wind", () =>
+    expect(parseWeather({ current: { temperature_2m: 9.4, wind_speed_10m: 3.6 } })).toEqual({
+      temp: 9,
+      wind: 4,
+    }));
+  it("returns nulls on bad input", () =>
+    expect(parseWeather({ current: { temperature_2m: "x" } })).toEqual({ temp: null, wind: null }));
 });
 
 describe("loadAir", () => {
   it("is labelled live only when the feed answered with valid data", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) =>
-      String(url).includes("air-quality") ? ok({ hourly: { pm2_5: day(100) } }) : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } })));
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation(async (url: string) =>
+          String(url).includes("air-quality")
+            ? ok({ hourly: { pm2_5: day(100) } })
+            : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+        ),
+    );
     const r = await loadAir(delhi);
     expect(r.source).toBe("live");
     expect(r.hourly[0]).toBe(100);
@@ -38,10 +52,13 @@ describe("loadAir", () => {
     expect(r.updated).toMatch(/^\d{2}:\d{2}$/);
   });
   it("still goes live when only the weather call fails", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
-      if (String(url).includes("air-quality")) return ok({ hourly: { pm2_5: day(80) } });
-      throw new Error("weather down");
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (url: string) => {
+        if (String(url).includes("air-quality")) return ok({ hourly: { pm2_5: day(80) } });
+        throw new Error("weather down");
+      }),
+    );
     const r = await loadAir(delhi);
     expect(r.source).toBe("live");
     expect(r.temp).toBeNull();
@@ -81,8 +98,13 @@ describe("getCityAir (server cache)", () => {
   it("caches a live result for ten minutes and de-duplicates concurrent requests", async () => {
     const { getCityAir, resetAirCache } = await import("./data");
     resetAirCache();
-    const f = vi.fn().mockImplementation(async (url: string) =>
-      String(url).includes("air-quality") ? ok({ hourly: { pm2_5: day(100) } }) : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }));
+    const f = vi
+      .fn()
+      .mockImplementation(async (url: string) =>
+        String(url).includes("air-quality")
+          ? ok({ hourly: { pm2_5: day(100) } })
+          : ok({ current: { temperature_2m: 12, wind_speed_10m: 5 } }),
+      );
     vi.stubGlobal("fetch", f);
     const [a, b] = await Promise.all([getCityAir(delhi), getCityAir(delhi)]);
     expect(a).toBe(b);
@@ -108,7 +130,11 @@ describe("loadMap (batched)", () => {
     const good = { hourly: { pm2_5: day(50) } };
     const f = vi.fn().mockImplementation(async (url: string) => {
       const n = new URL(url).searchParams.get("latitude")!.split(",").length;
-      return ok(Array.from({ length: n }, (_, i) => (url.includes("latitude=28.65,") && i === 1 ? { hourly: { pm2_5: [1] } } : good)));
+      return ok(
+        Array.from({ length: n }, (_, i) =>
+          url.includes("latitude=28.65,") && i === 1 ? { hourly: { pm2_5: [1] } } : good,
+        ),
+      );
     });
     vi.stubGlobal("fetch", f);
     const pts = await loadMap(9);
@@ -136,8 +162,8 @@ describe("parseMapBatch", () => {
 
 describe("istClock elapsed hours", () => {
   it("reports hours since midnight India time including minutes", () => {
-    expect(istClock(new Date("2026-11-22T10:30:00Z")).elapsed).toBe(16);        // 16:00 IST
+    expect(istClock(new Date("2026-11-22T10:30:00Z")).elapsed).toBe(16); // 16:00 IST
     expect(istClock(new Date("2026-11-22T00:15:00Z")).elapsed).toBeCloseTo(5.75, 9); // 05:45 IST
-    expect(istClock(new Date("2026-11-21T18:30:00Z")).elapsed).toBe(0);          // midnight IST
+    expect(istClock(new Date("2026-11-21T18:30:00Z")).elapsed).toBe(0); // midnight IST
   });
 });

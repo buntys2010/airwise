@@ -1,33 +1,69 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 /**
  * The core journey in a real browser, with the network stubbed so it is deterministic and works offline:
  * open the sample room, fix things, ask, switch language, visit the other pages.
  */
 const CITIES = [
-  ["delhi", "Delhi", 28.65, 77.31], ["lucknow", "Lucknow", 26.85, 80.99], ["kolkata", "Kolkata", 22.52, 88.36],
-  ["mumbai", "Mumbai", 19.07, 72.87], ["pune", "Pune", 18.53, 73.85], ["bengaluru", "Bengaluru", 12.92, 77.62],
+  ["delhi", "Delhi", 28.65, 77.31],
+  ["lucknow", "Lucknow", 26.85, 80.99],
+  ["kolkata", "Kolkata", 22.52, 88.36],
+  ["mumbai", "Mumbai", 19.07, 72.87],
+  ["pune", "Pune", 18.53, 73.85],
+  ["bengaluru", "Bengaluru", 12.92, 77.62],
 ] as const;
-const day = (base: number) => Array.from({ length: 24 }, (_, h) => Math.round(base + 60 * Math.exp(-(((h - 7) / 3) ** 2)) + 30 * Math.exp(-(((h - 20) / 3) ** 2))));
+const day = (base: number) =>
+  Array.from({ length: 24 }, (_, h) =>
+    Math.round(base + 60 * Math.exp(-(((h - 7) / 3) ** 2)) + 30 * Math.exp(-(((h - 20) / 3) ** 2))),
+  );
 
 async function stub(page: Page, opts: { airDown?: boolean } = {}) {
-  await page.route("**/air-quality-api.open-meteo.com/**", (r) => (opts.airDown ? r.abort() : r.fulfill({ json: { hourly: { pm2_5: day(70) } } })));
-  await page.route("**/api.open-meteo.com/**", (r) => (opts.airDown ? r.abort() : r.fulfill({ json: { current: { temperature_2m: 14, wind_speed_10m: 5 } } })));
-  await page.route("**/api/chat", (r) => r.fulfill({ json: { answer: "Wear a fitted N95 for any trip outside.", source: "gemini", verified: true } }));
-  await page.route("**/api/map", (r) => r.fulfill({ json: { points: CITIES.map(([id, name, lat, lon], i) => ({ id, name, lat, lon, pm: 40 + i * 35, source: i === 4 ? "estimate" : "live" })), hour: 16, time: "16:00", live: 5 } }));
+  await page.route("**/air-quality-api.open-meteo.com/**", (r) =>
+    opts.airDown ? r.abort() : r.fulfill({ json: { hourly: { pm2_5: day(70) } } }),
+  );
+  await page.route("**/api.open-meteo.com/**", (r) =>
+    opts.airDown ? r.abort() : r.fulfill({ json: { current: { temperature_2m: 14, wind_speed_10m: 5 } } }),
+  );
+  await page.route("**/api/chat", (r) =>
+    r.fulfill({
+      json: { answer: "Wear a fitted N95 for any trip outside.", source: "gemini", verified: true },
+    }),
+  );
+  await page.route("**/api/map", (r) =>
+    r.fulfill({
+      json: {
+        points: CITIES.map(([id, name, lat, lon], i) => ({
+          id,
+          name,
+          lat,
+          lon,
+          pm: 40 + i * 35,
+          source: i === 4 ? "estimate" : "live",
+        })),
+        hour: 16,
+        time: "16:00",
+        live: 5,
+      },
+    }),
+  );
 }
 
 function trackErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|net::ERR/.test(m.text())) errors.push(m.text()); });
+  page.on("console", (m) => {
+    if (m.type() === "error" && !/Failed to load resource|net::ERR/.test(m.text())) errors.push(m.text());
+  });
   return errors;
 }
 
-const haze = (page: Page) => page.evaluate(() => Number(document.documentElement.style.getPropertyValue("--haze")));
+const haze = (page: Page) =>
+  page.evaluate(() => Number(document.documentElement.style.getPropertyValue("--haze")));
 
 test.describe("core journey", () => {
-  test("opens on the sample room, and tapping the hotspots lowers the dial and clears the haze", async ({ page }) => {
+  test("opens on the sample room, and tapping the hotspots lowers the dial and clears the haze", async ({
+    page,
+  }) => {
     const errors = trackErrors(page);
     await stub(page);
     await page.goto("/");
@@ -45,7 +81,9 @@ test.describe("core journey", () => {
     await expect(page.getByRole("button", { name: /^Fix 1:/ })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("button", { name: "Done" })).toHaveCount(2);
     expect(await after.getAttribute("aria-label")).not.toBe(startLabel);
-    expect(parseFloat((await after.getAttribute("aria-label")) ?? "9")).toBeLessThan(parseFloat(startLabel ?? "0"));
+    expect(parseFloat((await after.getAttribute("aria-label")) ?? "9")).toBeLessThan(
+      parseFloat(startLabel ?? "0"),
+    );
     expect(await haze(page)).toBeLessThan(before * 0.75); // the haze visibly clears
     expect(errors).toEqual([]);
   });
@@ -72,7 +110,9 @@ test.describe("core journey", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
 
-  test("an unreachable air feed is labelled an offline estimate and the plan still works", async ({ page }) => {
+  test("an unreachable air feed is labelled an offline estimate and the plan still works", async ({
+    page,
+  }) => {
     await stub(page, { airDown: true });
     await page.goto("/");
     await expect(page.getByText(/Offline estimate/)).toBeVisible();
@@ -85,7 +125,11 @@ test.describe("core journey", () => {
     await stub(page);
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main" });
-    for (const [name, heading] of [["Community", "Community plan"], ["Map", "Air across cities, right now"], ["Guide", "How to use AirWise"]] as const) {
+    for (const [name, heading] of [
+      ["Community", "Community plan"],
+      ["Map", "Air across cities, right now"],
+      ["Guide", "How to use AirWise"],
+    ] as const) {
       await nav.getByRole("link", { name }).click();
       await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
       await expect(nav.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
@@ -139,18 +183,37 @@ test.describe("phone, 390 x 844", () => {
     const box = await bar.boundingBox();
     expect(box && box.y + box.height).toBeGreaterThan(800); // it is at the bottom, as designed
     const seen = new Set<string>();
-    let obscured: string[] = [];
+    const obscured: string[] = [];
     for (let i = 0; i < 90; i++) {
       await page.keyboard.press("Tab");
       // Wait for any smooth scrolling to finish: what matters is where the control ends up, not where it is mid-scroll.
-      await page.evaluate(() => new Promise<void>((done) => { let last = -1, same = 0; const tick = () => { const y = window.scrollY; if (y === last) { if (++same >= 4) return done(); } else { same = 0; last = y; } requestAnimationFrame(tick); }; tick(); }));
+      await page.evaluate(
+        () =>
+          new Promise<void>((done) => {
+            let last = -1,
+              same = 0;
+            const tick = () => {
+              const y = window.scrollY;
+              if (y === last) {
+                if (++same >= 4) return done();
+              } else {
+                same = 0;
+                last = y;
+              }
+              requestAnimationFrame(tick);
+            };
+            tick();
+          }),
+      );
       const info = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
         const navEl = document.querySelector("nav.dock") as HTMLElement | null;
         if (!el || !navEl || el === document.body) return null;
-        const r = el.getBoundingClientRect(), n = navEl.getBoundingClientRect();
+        const r = el.getBoundingClientRect(),
+          n = navEl.getBoundingClientRect();
         const inside = navEl.contains(el);
-        const hidden = !inside && r.bottom > n.top && r.top < n.bottom && r.right > n.left && r.left < n.right;
+        const hidden =
+          !inside && r.bottom > n.top && r.top < n.bottom && r.right > n.left && r.left < n.right;
         const id = `${el.tagName}:${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28)}`;
         return { id, hidden };
       });
@@ -172,7 +235,9 @@ test.describe("phone, 390 x 844", () => {
     expect(fb && nb && fb.y + fb.height).toBeLessThanOrEqual((nb?.y ?? 0) + 1);
   });
 
-  test("the chat controls fit the screen: input on its own row, labelled buttons, 44 px targets, nothing sideways", async ({ page }) => {
+  test("the chat controls fit the screen: input on its own row, labelled buttons, 44 px targets, nothing sideways", async ({
+    page,
+  }) => {
     await stub(page);
     await page.goto("/");
     await page.getByRole("button", { name: /Co-pilot/ }).click();

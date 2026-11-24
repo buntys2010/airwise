@@ -1,10 +1,11 @@
 "use client";
 import { useMemo, useState } from "react";
-import { CityPicker } from "@/components/CityPicker";
+
 import { Header } from "@/components/Chrome";
+import { CityPicker } from "@/components/CityPicker";
 import { useLang } from "@/components/LangProvider";
 import { useAirwise } from "@/components/useAirwise";
-import { fmtHour, type Cooking, type Home } from "@/lib/engine";
+import { type Cooking, fmtHour, type Home } from "@/lib/engine";
 import { ACTION_HI, CATEGORY_KEY, englishIn, type Key } from "@/lib/i18n";
 import { communityPlan } from "@/lib/plan";
 
@@ -27,14 +28,27 @@ export default function CommunityPage() {
   const [msg, setMsg] = useState("");
   const plan = useMemo(() => communityPlan(a.hourly, a.profile, a.nowHour), [a.hourly, a.profile, a.nowHour]);
   const level = t(CATEGORY_KEY[plan.tone]);
-  const title = name.trim() ? t("comm.title", { name: name.trim() }) : t("comm.titleCity", { city: a.city.name });
+  const title = name.trim()
+    ? t("comm.title", { name: name.trim() })
+    : t("comm.titleCity", { city: a.city.name });
 
   async function share() {
     const q = new URLSearchParams({ city: a.cityId, home: a.profile.home, cooking: a.profile.cooking });
     const url = `${window.location.origin}/community?${q.toString()}`;
-    try { if (typeof navigator.share === "function") { await navigator.share({ title, url }); return; } }
-    catch (e) { if ((e as Error).name === "AbortError") return; }
-    try { await navigator.clipboard.writeText(url); setMsg(t("comm.copied")); } catch { setMsg(url); } // clipboard blocked: show the link
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setMsg(t("comm.copied"));
+    } catch {
+      setMsg(url);
+    } // clipboard blocked: show the link
   }
 
   return (
@@ -49,19 +63,40 @@ export default function CommunityPage() {
         <section className="noprint">
           <div className="panel profile">
             <div>
-              <label htmlFor="cname" className="qhead">{t("comm.name")}</label>
-              <input id="cname" className="textfield" type="text" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+              <label htmlFor="cname" className="qhead">
+                {t("comm.name")}
+              </label>
+              <input
+                id="cname"
+                className="textfield"
+                type="text"
+                maxLength={60}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="off"
+              />
               <p className="dim">{t("comm.nameHint")}</p>
             </div>
             <div>
-              <span className="qhead" aria-hidden="true">{t("strip.city")}</span>
+              <span className="qhead" aria-hidden="true">
+                {t("strip.city")}
+              </span>
               <CityPicker value={a.cityId} onChange={a.setCityId} />
             </div>
             <fieldset>
               <legend>{t("comm.home")}</legend>
               <div className="opts">
                 {HOME_OPTIONS.map((o) => (
-                  <label key={o.v} className="opt"><input type="radio" name="chome" value={o.v} checked={a.profile.home === o.v} onChange={() => a.setProfile({ ...a.profile, home: o.v })} /><span>{lang === "hi" ? o.hi : o.en}</span></label>
+                  <label key={o.v} className="opt">
+                    <input
+                      type="radio"
+                      name="chome"
+                      value={o.v}
+                      checked={a.profile.home === o.v}
+                      onChange={() => a.setProfile({ ...a.profile, home: o.v })}
+                    />
+                    <span>{lang === "hi" ? o.hi : o.en}</span>
+                  </label>
                 ))}
               </div>
             </fieldset>
@@ -69,7 +104,16 @@ export default function CommunityPage() {
               <legend>{t("comm.cook")}</legend>
               <div className="opts">
                 {COOK_OPTIONS.map((o) => (
-                  <label key={o.v} className="opt"><input type="radio" name="ccook" value={o.v} checked={a.profile.cooking === o.v} onChange={() => a.setProfile({ ...a.profile, cooking: o.v })} /><span>{lang === "hi" ? o.hi : o.en}</span></label>
+                  <label key={o.v} className="opt">
+                    <input
+                      type="radio"
+                      name="ccook"
+                      value={o.v}
+                      checked={a.profile.cooking === o.v}
+                      onChange={() => a.setProfile({ ...a.profile, cooking: o.v })}
+                    />
+                    <span>{lang === "hi" ? o.hi : o.en}</span>
+                  </label>
                 ))}
               </div>
             </fieldset>
@@ -79,28 +123,42 @@ export default function CommunityPage() {
         <section id="notice-sec" aria-labelledby="h-notice">
           <article id="community-plan" className="notice">
             <h2 id="h-notice">{title}</h2>
-            <p style={{ margin: "10px 0 4px" }}><strong>{t("comm.now", { city: a.city.name, level, pm: plan.nowPm })}</strong></p>
+            <p style={{ margin: "10px 0 4px" }}>
+              <strong>{t("comm.now", { city: a.city.name, level, pm: plan.nowPm })}</strong>
+            </p>
             <p>{t("comm.best", { hour: fmtHour(plan.bestHour), pm: plan.bestPm })}</p>
 
             <h3>{t("comm.homes")}</h3>
             <ol>
               {plan.fixes.map((f) => {
                 const hi = lang === "hi" ? ACTION_HI[f.id] : undefined;
-                return <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>{t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}</li>;
+                return (
+                  <li key={f.id} {...(hi ? { lang: "hi" } : englishIn(lang))}>
+                    {t("comm.fix", { title: hi ? hi.title : f.title, pct: f.pct })}
+                  </li>
+                );
               })}
             </ol>
 
             <h3>{t("comm.together")}</h3>
             <ul>
-              {plan.rules.map((r) => (<li key={r}>{t(r as Key, { hour: fmtHour(plan.bestHour) })}</li>))}
+              {plan.rules.map((r) => (
+                <li key={r}>{t(r as Key, { hour: fmtHour(plan.bestHour) })}</li>
+              ))}
             </ul>
             <p className="fine">{t("comm.foot")}</p>
           </article>
           <div className="toolrow noprint" style={{ marginTop: 16 }}>
-            <button type="button" className="btn" onClick={() => window.print()}>{t("comm.print")}</button>
-            <button type="button" className="btn ghost" onClick={() => void share()}>{t("comm.share")}</button>
+            <button type="button" className="btn" onClick={() => window.print()}>
+              {t("comm.print")}
+            </button>
+            <button type="button" className="btn ghost" onClick={() => void share()}>
+              {t("comm.share")}
+            </button>
           </div>
-          <p className="statusline noprint" role="status" aria-live="polite">{msg}</p>
+          <p className="statusline noprint" role="status" aria-live="polite">
+            {msg}
+          </p>
         </section>
       </main>
     </div>

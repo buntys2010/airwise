@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
+
 import { CITIES, estimateHourly } from "./data";
 import {
-  NO_PLAN, aqiFromPm, bestHour, buildActions, categoryOf, fmtHour, fullPlan, planSummary, simulate,
+  aqiFromPm,
+  bestHour,
+  buildActions,
+  categoryOf,
+  fmtHour,
+  fullPlan,
+  NO_PLAN,
+  planSummary,
   type Profile,
+  simulate,
 } from "./engine";
 
 const delhi = CITIES[0];
@@ -64,14 +73,19 @@ describe("simulate", () => {
   });
   it("each action lowers exposure and never raises it", () => {
     const plans = [
-      { ...NO_PLAN, purifier: true }, { ...NO_PLAN, mask: "n95" as const }, { ...NO_PLAN, shiftOutdoor: true },
-      { ...NO_PLAN, swapCommute: "metro" as const }, { ...NO_PLAN, induction: true }, { ...NO_PLAN, sealGaps: true },
+      { ...NO_PLAN, purifier: true },
+      { ...NO_PLAN, mask: "n95" as const },
+      { ...NO_PLAN, shiftOutdoor: true },
+      { ...NO_PLAN, swapCommute: "metro" as const },
+      { ...NO_PLAN, induction: true },
+      { ...NO_PLAN, sealGaps: true },
     ];
     for (const plan of plans) expect(simulate(hourly, family, plan).meanPm).toBeLessThanOrEqual(base.meanPm);
   });
   it("combined plan beats any single action", () => {
     const all = simulate(hourly, family, fullPlan(family));
-    for (const a of buildActions(hourly, family)) expect(all.meanPm).toBeLessThanOrEqual(base.meanPm - a.savedPm + 1e-9);
+    for (const a of buildActions(hourly, family))
+      expect(all.meanPm).toBeLessThanOrEqual(base.meanPm - a.savedPm + 1e-9);
     expect(all.cigs).toBeLessThan(base.cigs);
   });
   it("N95 beats cloth", () => {
@@ -154,20 +168,27 @@ describe("cigsSoFar", () => {
     }
   });
   it("interpolates inside an hour", () => {
-    const a = cigsSoFar(hourly, profile, NO_PLAN, 7), b = cigsSoFar(hourly, profile, NO_PLAN, 8), mid = cigsSoFar(hourly, profile, NO_PLAN, 7.5);
+    const a = cigsSoFar(hourly, profile, NO_PLAN, 7),
+      b = cigsSoFar(hourly, profile, NO_PLAN, 8),
+      mid = cigsSoFar(hourly, profile, NO_PLAN, 7.5);
     expect(mid).toBeCloseTo((a + b) / 2, 9);
   });
   it("every action lowers it, at any hour that has any exposure", () => {
     for (const hour of [8, 12, 18, 24]) {
       const base = cigsSoFar(hourly, profile, NO_PLAN, hour);
       for (const a of buildActions(hourly, profile).filter((x) => x.applicable)) {
-        expect(cigsSoFar(hourly, profile, a.apply(NO_PLAN), hour), `${a.id} at ${hour}`).toBeLessThanOrEqual(base + 1e-12);
+        expect(cigsSoFar(hourly, profile, a.apply(NO_PLAN), hour), `${a.id} at ${hour}`).toBeLessThanOrEqual(
+          base + 1e-12,
+        );
       }
     }
   });
   it("a full plan lowers the day by the same amount simulate() reports", () => {
     const all = fullPlan(profile);
-    expect(cigsSoFar(hourly, profile, NO_PLAN, 24) - cigsSoFar(hourly, profile, all, 24)).toBeCloseTo(simulate(hourly, profile, NO_PLAN).cigs - simulate(hourly, profile, all).cigs, 9);
+    expect(cigsSoFar(hourly, profile, NO_PLAN, 24) - cigsSoFar(hourly, profile, all, 24)).toBeCloseTo(
+      simulate(hourly, profile, NO_PLAN).cigs - simulate(hourly, profile, all).cigs,
+      9,
+    );
   });
   it("clamps hours outside 0 to 24 and survives non-numbers", () => {
     expect(cigsSoFar(hourly, profile, NO_PLAN, -5)).toBe(0);
@@ -190,7 +211,9 @@ describe("shifting outdoor time", () => {
     for (const home of ["sealed", "typical", "leaky"] as const) {
       for (const cooking of ["wood", "lpg", "induction"] as const) {
         const p: Profile = { home, commute: "bike", km: 8, cooking, vulnerable: true };
-        expect(simulate(hourly, p, { ...NO_PLAN, shiftOutdoor: true }).meanPm).toBeLessThanOrEqual(simulate(hourly, p, NO_PLAN).meanPm + 1e-9);
+        expect(simulate(hourly, p, { ...NO_PLAN, shiftOutdoor: true }).meanPm).toBeLessThanOrEqual(
+          simulate(hourly, p, NO_PLAN).meanPm + 1e-9,
+        );
       }
     }
   });

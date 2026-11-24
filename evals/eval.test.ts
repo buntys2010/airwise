@@ -1,6 +1,9 @@
+/* eslint-disable no-console -- the eval report prints its pass rate */
 import { writeFileSync } from "node:fs";
 import path from "node:path";
+
 import { afterAll, describe, expect, it } from "vitest";
+
 import { CASES, runCases, summarise } from "./cases";
 
 /**
@@ -17,13 +20,19 @@ describe("eval set", () => {
     expect(new Set(CASES.map((c) => c.id)).size).toBe(CASES.length); // ids are unique
   });
   for (const r of results) {
-    it(`${r.id}: ${r.category} - ${r.expect}`, () => { expect(r.passed, `${r.id} failed`).toBe(true); });
+    it(`${r.id}: ${r.category} - ${r.expect}`, () => {
+      expect(r.passed, `${r.id} failed`).toBe(true);
+    });
   }
 });
 
 afterAll(() => {
   const line = `Eval pass rate: ${summary.passed}/${summary.total} (${Math.round((summary.passed / summary.total) * 100)}%)`;
-  console.log(`\n${line}\n${Object.entries(summary.byCategory).map(([k, v]) => `  ${k}: ${v.passed}/${v.total}`).join("\n")}\n`);
+  console.log(
+    `\n${line}\n${Object.entries(summary.byCategory)
+      .map(([k, v]) => `  ${k}: ${v.passed}/${v.total}`)
+      .join("\n")}\n`,
+  );
   if (process.env.EVAL_WRITE_REPORT === "1") {
     const md = [
       "# Eval report",

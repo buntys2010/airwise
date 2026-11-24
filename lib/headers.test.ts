@@ -3,7 +3,9 @@ const CONFIG_PATH = "../next.config.mjs";
 
 describe("security headers", () => {
   it("send the expected headers on every route, allowing the microphone for same-origin voice only", async () => {
-    const config = (await import(/* @vite-ignore */ CONFIG_PATH)).default as { headers: () => Promise<{ source: string; headers: { key: string; value: string }[] }[]> };
+    const config = (await import(/* @vite-ignore */ CONFIG_PATH)).default as {
+      headers: () => Promise<{ source: string; headers: { key: string; value: string }[] }[]>;
+    };
     const rules = await config.headers();
     const h = Object.fromEntries(rules[0].headers.map((x) => [x.key, x.value]));
     expect(rules[0].source).toBe("/(.*)");

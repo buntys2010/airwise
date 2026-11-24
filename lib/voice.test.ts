@@ -1,10 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { VOICE_PROBLEM_KEY, canSpeak, getRecognitionCtor, mapVoiceError, speak, stopSpeaking, transcriptOf } from "./voice";
+
+import {
+  canSpeak,
+  getRecognitionCtor,
+  mapVoiceError,
+  speak,
+  stopSpeaking,
+  transcriptOf,
+  VOICE_PROBLEM_KEY,
+} from "./voice";
 
 describe("getRecognitionCtor", () => {
-  class A {} class B {}
+  class A {}
+  class B {}
   it("prefers the standard name, then the webkit one, else null", () => {
-    expect(getRecognitionCtor({ SpeechRecognition: A as never, webkitSpeechRecognition: B as never })).toBe(A);
+    expect(getRecognitionCtor({ SpeechRecognition: A as never, webkitSpeechRecognition: B as never })).toBe(
+      A,
+    );
     expect(getRecognitionCtor({ webkitSpeechRecognition: B as never })).toBe(B);
     expect(getRecognitionCtor({})).toBeNull();
     expect(getRecognitionCtor(undefined)).toBeNull();
@@ -29,7 +41,7 @@ describe("transcriptOf", () => {
     expect(transcriptOf(ev("  do I need a mask  "))).toBe("do I need a mask");
     expect(transcriptOf(ev("a".repeat(900))).length).toBe(400);
     expect(transcriptOf(ev(""))).toBe("");
-    expect(transcriptOf({ results: [] } as never)).toBe("");
+    expect(transcriptOf({ results: [] })).toBe("");
   });
 });
 
@@ -37,12 +49,24 @@ describe("speech output", () => {
   function fakeWindow() {
     const spoken: { text: string; lang: string }[] = [];
     const order: string[] = [];
-    class U { lang = ""; constructor(public text: string) {} }
+    class U {
+      lang = "";
+      constructor(public text: string) {}
+    }
     return {
-      spoken, order,
+      spoken,
+      order,
       w: {
         SpeechSynthesisUtterance: U as never,
-        speechSynthesis: { speak: (u: { text: string; lang: string }) => { order.push("speak"); spoken.push(u); }, cancel: () => { order.push("cancel"); } },
+        speechSynthesis: {
+          speak: (u: { text: string; lang: string }) => {
+            order.push("speak");
+            spoken.push(u);
+          },
+          cancel: () => {
+            order.push("cancel");
+          },
+        },
       },
     };
   }

@@ -1,4 +1,4 @@
-import { NO_PLAN, simulate, type Cooking, type Home, type Plan, type Profile } from "./engine";
+import { type Cooking, type Home, NO_PLAN, type Plan, type Profile, simulate } from "./engine";
 
 /**
  * Room findings and the product catalog.
@@ -23,7 +23,12 @@ export type QuestionId = "window" | "stove" | "purifier";
 export const QUESTIONS: QuestionId[] = ["window", "stove", "purifier"];
 export type Answers = Partial<Record<QuestionId, boolean>>;
 
-export interface BBox { x: number; y: number; w: number; h: number } // fractions of the image, 0 to 1
+export interface BBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} // fractions of the image, 0 to 1
 
 export interface Hotspot {
   id: string;
@@ -82,7 +87,16 @@ export const VISION_SCHEMA = {
         properties: {
           kind: { type: "STRING", enum: [...VISION_KINDS] },
           confidence: { type: "NUMBER" },
-          bbox: { type: "OBJECT", properties: { x: { type: "NUMBER" }, y: { type: "NUMBER" }, w: { type: "NUMBER" }, h: { type: "NUMBER" } }, required: ["x", "y", "w", "h"] },
+          bbox: {
+            type: "OBJECT",
+            properties: {
+              x: { type: "NUMBER" },
+              y: { type: "NUMBER" },
+              w: { type: "NUMBER" },
+              h: { type: "NUMBER" },
+            },
+            required: ["x", "y", "w", "h"],
+          },
         },
         required: ["kind", "confidence", "bbox"],
       },
@@ -104,7 +118,7 @@ export const VISION_PROMPT = [
 
 export type VisionOutcome =
   | { status: "ok"; hotspots: Hotspot[] }
-  | { status: "none" }       // a room, but none of the three things were visible
+  | { status: "none" } // a room, but none of the three things were visible
   | { status: "not_room" }
   | { status: "unreadable" }; // not valid JSON or wrong shape
 
@@ -120,7 +134,12 @@ function normaliseBox(b: Record<string, unknown>): Record<string, unknown> {
   if (!vals.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0)) return b;
   const max = Math.max(...(vals as number[]));
   if (max <= 1 || max > 1000) return b;
-  return { x: (b.x as number) / 1000, y: (b.y as number) / 1000, w: (b.w as number) / 1000, h: (b.h as number) / 1000 };
+  return {
+    x: (b.x as number) / 1000,
+    y: (b.y as number) / 1000,
+    w: (b.w as number) / 1000,
+    h: (b.h as number) / 1000,
+  };
 }
 
 function validBox(raw: unknown): BBox | null {
@@ -134,7 +153,11 @@ function validBox(raw: unknown): BBox | null {
 /** Strict validation: visible-evidence kinds only, boxes inside the image, confidence in range and above the floor, one finding per kind. */
 export function validateVision(text: string): VisionOutcome {
   let json: unknown;
-  try { json = JSON.parse(text); } catch { return { status: "unreadable" }; }
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return { status: "unreadable" };
+  }
   const j = json as { is_room?: unknown; findings?: unknown };
   if (typeof j?.is_room !== "boolean" || !Array.isArray(j.findings)) return { status: "unreadable" };
   if (!j.is_room) return { status: "not_room" };
@@ -169,13 +192,17 @@ export function mergeFindings(evidence: Hotspot[], answers: Answers): Hotspot[] 
   const stove = answers.stove ?? (seen("gas_stove") ? true : undefined);
   if (stove) out.push(seen("gas_stove") ?? hotspotFor("gas_stove", undefined, 1));
   const purifier = answers.purifier ?? (seen("purifier_seen") ? true : undefined);
-  if (purifier === true && seen("purifier_seen")) out.push(seen("purifier_seen")!);
+  const purifierSeen = seen("purifier_seen");
+  if (purifier === true && purifierSeen) out.push(purifierSeen);
   if (purifier === false) out.push(seen("no_purifier") ?? hotspotFor("no_purifier", undefined, 1));
   return out;
 }
 
 /** For each question: was it answered by the photo, by the user, or not at all. Drives the labels under the questions. */
-export function questionState(evidence: Hotspot[], answers: Answers): Record<QuestionId, { value: boolean | undefined; source: "user" | "photo" | "none" }> {
+export function questionState(
+  evidence: Hotspot[],
+  answers: Answers,
+): Record<QuestionId, { value: boolean | undefined; source: "user" | "photo" | "none" }> {
   const photoYes: Record<QuestionId, boolean> = {
     window: evidence.some((h) => h.kind === "window_gap"),
     stove: evidence.some((h) => h.kind === "gas_stove"),
@@ -207,11 +234,41 @@ export interface Product {
 }
 
 export const CATALOG: Product[] = [
-  { id: "purifier-hepa", name: "HEPA air purifier, room size", price: [8000, 15000], query: "HEPA air purifier for room", patch: { purifier: true, purifierKind: "hepa" } },
-  { id: "purifier-boxfan", name: "Box fan with a MERV 13 filter (DIY)", price: [1800, 2500], query: "20 inch box fan MERV 13 filter", patch: { purifier: true, purifierKind: "boxfan" } },
-  { id: "mask-n95", name: "N95 masks, pack of 10", price: [600, 1200], query: "N95 mask pack of 10", patch: { mask: "n95" } },
-  { id: "weather-strip", name: "Weather-strip and door-seal kit", price: [300, 800], query: "window weather strip door draft seal kit", patch: { sealGaps: true } },
-  { id: "induction", name: "Single-plate induction cooktop", price: [2200, 3000], query: "single plate induction cooktop", patch: { induction: true } },
+  {
+    id: "purifier-hepa",
+    name: "HEPA air purifier, room size",
+    price: [8000, 15000],
+    query: "HEPA air purifier for room",
+    patch: { purifier: true, purifierKind: "hepa" },
+  },
+  {
+    id: "purifier-boxfan",
+    name: "Box fan with a MERV 13 filter (DIY)",
+    price: [1800, 2500],
+    query: "20 inch box fan MERV 13 filter",
+    patch: { purifier: true, purifierKind: "boxfan" },
+  },
+  {
+    id: "mask-n95",
+    name: "N95 masks, pack of 10",
+    price: [600, 1200],
+    query: "N95 mask pack of 10",
+    patch: { mask: "n95" },
+  },
+  {
+    id: "weather-strip",
+    name: "Weather-strip and door-seal kit",
+    price: [300, 800],
+    query: "window weather strip door draft seal kit",
+    patch: { sealGaps: true },
+  },
+  {
+    id: "induction",
+    name: "Single-plate induction cooktop",
+    price: [2200, 3000],
+    query: "single plate induction cooktop",
+    patch: { induction: true },
+  },
 ];
 
 export interface RankedProduct extends Product {
@@ -228,15 +285,21 @@ export const retailerLink = (q: string) => `https://www.amazon.in/s?k=${encodeUR
 /** Ranks the catalog by engine cut per rupee for this household, best value first. Items that change nothing are dropped. */
 export function rankProducts(hourly: number[], profile: Profile): RankedProduct[] {
   const base = simulate(hourly, profile, NO_PLAN).meanPm;
-  return CATALOG
-    .map((p) => {
-      const cut = base - simulate(hourly, profile, { ...NO_PLAN, ...p.patch }).meanPm;
-      const mid = (p.price[0] + p.price[1]) / 2;
-      return { ...p, cutPm: cut, cutPct: base > 0 ? cut / base : 0, perThousand: (cut / mid) * 1000, link: retailerLink(p.query) };
-    })
+  return CATALOG.map((p) => {
+    const cut = base - simulate(hourly, profile, { ...NO_PLAN, ...p.patch }).meanPm;
+    const mid = (p.price[0] + p.price[1]) / 2;
+    return {
+      ...p,
+      cutPm: cut,
+      cutPct: base > 0 ? cut / base : 0,
+      perThousand: (cut / mid) * 1000,
+      link: retailerLink(p.query),
+    };
+  })
     .filter((p) => p.cutPm > 0.01)
     .sort((a, b) => b.perThousand - a.perThousand);
 }
 
 export const formatRupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-export const priceRange = (p: Pick<Product, "price">) => `${formatRupees(p.price[0])} to ${formatRupees(p.price[1])}`;
+export const priceRange = (p: Pick<Product, "price">) =>
+  `${formatRupees(p.price[0])} to ${formatRupees(p.price[1])}`;

@@ -1,9 +1,11 @@
+import "./globals.css";
+
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
+
 import { Sky } from "@/components/Chrome";
 import { FocusGuard } from "@/components/FocusGuard";
 import { LangProvider } from "@/components/LangProvider";
-import "./globals.css";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
 const body = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", display: "swap" });
@@ -14,7 +16,8 @@ export const metadata: Metadata = {
   applicationName: "AirWise",
   icons: { icon: "/icons/192", apple: "/icons/192" },
   appleWebApp: { capable: true, title: "AirWise", statusBarStyle: "black-translucent" },
-  description: "Show AirWise your room, or tell it how your family lives. Get a clear-air plan built on live air quality, and see exactly how much each fix cuts your exposure.",
+  description:
+    "Show AirWise your room, or tell it how your family lives. Get a clear-air plan built on live air quality, and see exactly how much each fix cuts your exposure.",
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#12222a" };
 
@@ -25,7 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LangProvider>
           <Sky />
           <FocusGuard />
-          <a className="skip" href="#main">Skip to main content</a>
+          <a className="skip" href="#main">
+            Skip to main content
+          </a>
           {children}
         </LangProvider>
       </body>

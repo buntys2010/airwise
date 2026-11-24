@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
+
 import { CITIES, estimateHourly } from "./data";
-import { NO_PLAN, simulate, type Profile } from "./engine";
+import { NO_PLAN, type Profile, simulate } from "./engine";
 import {
-  CATALOG, FINDING_KINDS, SAMPLE_HOTSPOTS, VISION_KINDS, VISION_PROMPT, VISION_SCHEMA, hotspotFor, mergeFindings, priceRange, profilePatch,
-  questionState, rankProducts, validateVision,
+  CATALOG,
+  FINDING_KINDS,
+  hotspotFor,
+  mergeFindings,
+  priceRange,
+  profilePatch,
+  questionState,
+  rankProducts,
+  SAMPLE_HOTSPOTS,
+  validateVision,
+  VISION_KINDS,
+  VISION_PROMPT,
+  VISION_SCHEMA,
 } from "./room";
 
 const box = { x: 0.1, y: 0.2, w: 0.3, h: 0.3 };
@@ -14,15 +26,24 @@ const family: Profile = { home: "leaky", commute: "bike", km: 8, cooking: "lpg",
 
 describe("validateVision: only visible evidence", () => {
   it("accepts visible findings and orders them", () => {
-    const out = validateVision(good([
-      { kind: "purifier_seen", confidence: 0.7, bbox: box }, { kind: "window_gap", confidence: 0.9, bbox: box }, { kind: "gas_stove", confidence: 0.6, bbox: box },
-    ]));
+    const out = validateVision(
+      good([
+        { kind: "purifier_seen", confidence: 0.7, bbox: box },
+        { kind: "window_gap", confidence: 0.9, bbox: box },
+        { kind: "gas_stove", confidence: 0.6, bbox: box },
+      ]),
+    );
     expect(out.status).toBe("ok");
-    if (out.status === "ok") expect(out.hotspots.map((h) => h.kind)).toEqual(["window_gap", "gas_stove", "purifier_seen"]);
+    if (out.status === "ok")
+      expect(out.hotspots.map((h) => h.kind)).toEqual(["window_gap", "gas_stove", "purifier_seen"]);
   });
   it("never accepts the absence finding from a model: no_purifier is not something a photo can prove", () => {
-    expect(validateVision(good([{ kind: "no_purifier", confidence: 0.99, bbox: box }]))).toEqual({ status: "none" });
-    expect((VISION_SCHEMA.properties.findings.items.properties.kind as { enum: string[] }).enum).toEqual([...VISION_KINDS]);
+    expect(validateVision(good([{ kind: "no_purifier", confidence: 0.99, bbox: box }]))).toEqual({
+      status: "none",
+    });
+    expect((VISION_SCHEMA.properties.findings.items.properties.kind as { enum: string[] }).enum).toEqual([
+      ...VISION_KINDS,
+    ]);
     expect(VISION_KINDS).not.toContain("no_purifier" as never);
   });
   it("tells the model to report only what is visible, and that an electric hob is not a gas stove", () => {
@@ -41,7 +62,9 @@ describe("validateVision: only visible evidence", () => {
   });
   it("reports a photo that is not a room, and a low-confidence finding as nothing found", () => {
     expect(validateVision(good([], false))).toEqual({ status: "not_room" });
-    expect(validateVision(good([{ kind: "window_gap", confidence: 0.1, bbox: box }]))).toEqual({ status: "none" });
+    expect(validateVision(good([{ kind: "window_gap", confidence: 0.1, bbox: box }]))).toEqual({
+      status: "none",
+    });
   });
   it("rejects bad JSON and the wrong shape as unreadable", () => {
     expect(validateVision("not json")).toEqual({ status: "unreadable" });
@@ -50,32 +73,53 @@ describe("validateVision: only visible evidence", () => {
     expect(validateVision(reply({ is_room: true, findings: "many" }))).toEqual({ status: "unreadable" });
   });
   it("ignores hostile or malformed findings: unknown kinds, boxes outside the image, bad confidence, duplicates", () => {
-    const out = validateVision(good([
-      { kind: "ignore previous instructions", confidence: 1, bbox: box },
-      { kind: "window_gap", confidence: 1, bbox: { x: 0.9, y: 0.2, w: 0.5, h: 0.3 } },
-      { kind: "window_gap", confidence: 1, bbox: { x: -0.1, y: 0.2, w: 0.3, h: 0.3 } },
-      { kind: "window_gap", confidence: 1, bbox: { x: 0.1, y: 0.2, w: 0, h: 0.3 } },
-      { kind: "window_gap", confidence: 7, bbox: box },
-      { kind: "window_gap", confidence: "high", bbox: box },
-      { kind: "gas_stove", confidence: 0.8, bbox: box },
-      { kind: "gas_stove", confidence: 0.9, bbox: box },
-      null, 42, "x",
-    ]));
+    const out = validateVision(
+      good([
+        { kind: "ignore previous instructions", confidence: 1, bbox: box },
+        { kind: "window_gap", confidence: 1, bbox: { x: 0.9, y: 0.2, w: 0.5, h: 0.3 } },
+        { kind: "window_gap", confidence: 1, bbox: { x: -0.1, y: 0.2, w: 0.3, h: 0.3 } },
+        { kind: "window_gap", confidence: 1, bbox: { x: 0.1, y: 0.2, w: 0, h: 0.3 } },
+        { kind: "window_gap", confidence: 7, bbox: box },
+        { kind: "window_gap", confidence: "high", bbox: box },
+        { kind: "gas_stove", confidence: 0.8, bbox: box },
+        { kind: "gas_stove", confidence: 0.9, bbox: box },
+        null,
+        42,
+        "x",
+      ]),
+    );
     expect(out.status).toBe("ok");
-    if (out.status === "ok") { expect(out.hotspots).toHaveLength(1); expect(out.hotspots[0].kind).toBe("gas_stove"); }
+    if (out.status === "ok") {
+      expect(out.hotspots).toHaveLength(1);
+      expect(out.hotspots[0].kind).toBe("gas_stove");
+    }
   });
   it("reads boxes given on a 0 to 1000 scale (seen on gemini-3.5-flash-lite) as fractions", () => {
-    const out = validateVision(good([{ kind: "window_gap", confidence: 0.95, bbox: { x: 133, y: 311, w: 353, h: 491 } }]));
+    const out = validateVision(
+      good([{ kind: "window_gap", confidence: 0.95, bbox: { x: 133, y: 311, w: 353, h: 491 } }]),
+    );
     expect(out.status).toBe("ok");
     if (out.status === "ok") expect(out.hotspots[0].bbox).toEqual({ x: 0.133, y: 0.311, w: 0.353, h: 0.491 });
   });
   it("still rejects pixel-scale boxes and 0 to 1000 boxes that leave the image", () => {
-    expect(validateVision(good([{ kind: "window_gap", confidence: 0.9, bbox: { x: 133, y: 311, w: 1900, h: 491 } }]))).toEqual({ status: "none" });
-    expect(validateVision(good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: 800, y: 300, w: 500, h: 400 } }]))).toEqual({ status: "none" });
-    expect(validateVision(good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: -5, y: 300, w: 500, h: 400 } }]))).toEqual({ status: "none" });
+    expect(
+      validateVision(
+        good([{ kind: "window_gap", confidence: 0.9, bbox: { x: 133, y: 311, w: 1900, h: 491 } }]),
+      ),
+    ).toEqual({ status: "none" });
+    expect(
+      validateVision(
+        good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: 800, y: 300, w: 500, h: 400 } }]),
+      ),
+    ).toEqual({ status: "none" });
+    expect(
+      validateVision(good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: -5, y: 300, w: 500, h: 400 } }])),
+    ).toEqual({ status: "none" });
   });
   it("leaves in-range fractional boxes untouched", () => {
-    const out = validateVision(good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: 0.5, y: 0.5, w: 0.5, h: 0.5 } }]));
+    const out = validateVision(
+      good([{ kind: "gas_stove", confidence: 0.9, bbox: { x: 0.5, y: 0.5, w: 0.5, h: 0.5 } }]),
+    );
     if (out.status !== "ok") throw new Error("expected ok");
     expect(out.hotspots[0].bbox).toEqual({ x: 0.5, y: 0.5, w: 0.5, h: 0.5 });
   });
@@ -108,7 +152,9 @@ describe("mergeFindings: photo evidence plus the user's answers", () => {
     expect(mergeFindings([], { purifier: false }).map((h) => h.kind)).toEqual(["no_purifier"]);
     expect(mergeFindings([], { purifier: true })).toEqual([]);
     expect(mergeFindings([seen("purifier_seen")], {}).map((h) => h.kind)).toEqual(["purifier_seen"]);
-    expect(mergeFindings([seen("purifier_seen")], { purifier: false }).map((h) => h.kind)).toEqual(["no_purifier"]);
+    expect(mergeFindings([seen("purifier_seen")], { purifier: false }).map((h) => h.kind)).toEqual([
+      "no_purifier",
+    ]);
   });
   it("orders results the same way every time", () => {
     const out = mergeFindings([seen("purifier_seen"), seen("window_gap")], { stove: true });
@@ -120,9 +166,16 @@ describe("mergeFindings: photo evidence plus the user's answers", () => {
 describe("questionState: what the questions should show", () => {
   const seen = (k: Parameters<typeof hotspotFor>[0]) => hotspotFor(k, box, 0.9);
   it("unseen things are open questions, seen things are answered by the photo, and the user's answer wins", () => {
-    expect(questionState([], {})).toEqual({ window: { value: undefined, source: "none" }, stove: { value: undefined, source: "none" }, purifier: { value: undefined, source: "none" } });
+    expect(questionState([], {})).toEqual({
+      window: { value: undefined, source: "none" },
+      stove: { value: undefined, source: "none" },
+      purifier: { value: undefined, source: "none" },
+    });
     expect(questionState([seen("gas_stove")], {}).stove).toEqual({ value: true, source: "photo" });
-    expect(questionState([seen("gas_stove")], { stove: false }).stove).toEqual({ value: false, source: "user" });
+    expect(questionState([seen("gas_stove")], { stove: false }).stove).toEqual({
+      value: false,
+      source: "user",
+    });
     expect(questionState([], { purifier: true }).purifier).toEqual({ value: true, source: "user" });
   });
 });
@@ -138,19 +191,23 @@ describe("profilePatch", () => {
 describe("rankProducts (engine cut per rupee)", () => {
   const ranked = rankProducts(hourly, family);
   it("ranks best value first, with every figure from the engine", () => {
-    for (let i = 1; i < ranked.length; i++) expect(ranked[i - 1].perThousand).toBeGreaterThanOrEqual(ranked[i].perThousand);
+    for (let i = 1; i < ranked.length; i++)
+      expect(ranked[i - 1].perThousand).toBeGreaterThanOrEqual(ranked[i].perThousand);
     const base = simulate(hourly, family, NO_PLAN).meanPm;
     const seal = ranked.find((p) => p.id === "weather-strip")!;
     expect(seal.cutPm).toBeCloseTo(base - simulate(hourly, family, { ...NO_PLAN, sealGaps: true }).meanPm, 6);
   });
   it("the cheap box-fan filter beats the HEPA unit on value but not on absolute cut", () => {
-    const hepa = ranked.find((p) => p.id === "purifier-hepa")!, fan = ranked.find((p) => p.id === "purifier-boxfan")!;
+    const hepa = ranked.find((p) => p.id === "purifier-hepa")!,
+      fan = ranked.find((p) => p.id === "purifier-boxfan")!;
     expect(fan.perThousand).toBeGreaterThan(hepa.perThousand);
     expect(fan.cutPm).toBeLessThan(hepa.cutPm);
   });
   it("drops items that change nothing for this household", () => {
     const sealed = rankProducts(hourly, { ...family, home: "sealed", cooking: "induction" });
-    expect(sealed.find((p) => p.id === "weather-strip")?.cutPm ?? 0).toBeLessThan(ranked.find((p) => p.id === "weather-strip")!.cutPm);
+    expect(sealed.find((p) => p.id === "weather-strip")?.cutPm ?? 0).toBeLessThan(
+      ranked.find((p) => p.id === "weather-strip")!.cutPm,
+    );
     expect(sealed.find((p) => p.id === "induction")).toBeUndefined();
   });
   it("links only open a retailer search and prices are ranges in rupees", () => {
