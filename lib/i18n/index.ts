@@ -26,11 +26,6 @@ export const placeholders = (s: string): string[] =>
     .flatMap((m) => (m[1] ? [m[1]] : []))
     .sort((a, b) => a.localeCompare(b));
 
-/**
- * Engine-written action text for the three room fixes, in Hindi. Other action text stays English
- * and is marked lang="en".
- */
-
 /** Props for text that is still English inside a Hindi page, so screen readers switch voice correctly. */
 export const englishIn = (lang: Lang): { lang?: string } => (lang === "hi" ? { lang: "en" } : {});
 
