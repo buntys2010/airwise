@@ -14,3 +14,4 @@ playwright-report
 
 mcp/dist
 .env*
+coverage
