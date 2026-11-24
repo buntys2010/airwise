@@ -1,4 +1,7 @@
+/** The web app manifest, so the app can be installed to a phone's home screen. */
 import type { MetadataRoute } from "next";
+
+import { BRAND } from "@/lib/palette";
 
 /**
  * Makes AirWise installable ("Add to Home Screen"). No service worker: the app needs the network
@@ -15,8 +18,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#12222a",
-    theme_color: "#12222a",
+    background_color: BRAND.ink,
+    theme_color: BRAND.ink,
     lang: "en-IN",
     categories: ["health", "lifestyle", "weather"],
     icons: [

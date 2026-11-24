@@ -1,4 +1,7 @@
+/** Generates the app icons at build time, so no image files are stored. */
 import { ImageResponse } from "next/og";
+
+import { BRAND } from "@/lib/palette";
 
 export const dynamic = "force-static";
 
@@ -9,6 +12,7 @@ const SIZES: Record<string, { size: number; pad: number }> = {
   maskable: { size: 512, pad: 0.26 },
 };
 
+/** Lets Next render every icon size once at build time. */
 export function generateStaticParams() {
   return Object.keys(SIZES).map((name) => ({ name }));
 }
@@ -31,17 +35,17 @@ export async function GET(
       style={{
         width: size,
         height: size,
-        background: "#12222a",
+        background: BRAND.ink,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
       <svg width={inner} height={inner} viewBox="0 0 32 32">
-        <circle cx="16" cy="16" r="15" fill="#1c333e" />
+        <circle cx="16" cy="16" r="15" fill={BRAND.inkRaised} />
         <path
           d="M7 14c3-3 5 3 9 0s5-3 9 0M7 20c3-3 5 3 9 0s5-3 9 0"
-          stroke="#45d1b7"
+          stroke={BRAND.mark}
           strokeWidth="2.4"
           fill="none"
           strokeLinecap="round"

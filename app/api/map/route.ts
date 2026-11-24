@@ -1,3 +1,4 @@
+/** GET /api/map: the current PM2.5 for every city, live where possible, for the map and the city table. */
 import { istClock } from "@/lib/air/live";
 import { loadMap } from "@/lib/air/server";
 import { json } from "@/lib/http";

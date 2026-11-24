@@ -1,3 +1,4 @@
+/** The community page: today's rules for a school, society or workplace, from the same engine. */
 "use client";
 import { useMemo, useState } from "react";
 

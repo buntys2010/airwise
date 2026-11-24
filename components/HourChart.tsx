@@ -1,16 +1,9 @@
+/** The 24-hour PM2.5 chart, with the cleanest hour marked. */
 import { fmtHour } from "@/lib/engine/actions";
 import { aqiFromPm, categoryOf } from "@/lib/engine/aqi";
 import { pmAt } from "@/lib/engine/model";
 import { categoryLabel } from "@/lib/i18n";
-
-const TONE_FILL: Record<string, string> = {
-  good: "#45d1b7",
-  moderate: "#e9d758",
-  sensitive: "#ffae4a",
-  unhealthy: "#ff7a4d",
-  severe: "#e0508a",
-  hazardous: "#a56bff",
-};
+import { TONE_COLOUR } from "@/lib/palette";
 
 interface Props {
   hourly: number[];
@@ -78,7 +71,7 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
               width={bw - 6}
               height={CHART_HEIGHT - padB - yFor(v)}
               rx={5}
-              fill={TONE_FILL[tone]}
+              fill={TONE_COLOUR[tone]}
               opacity={h === best || h === usual ? 1 : 0.78}
             />
           );
@@ -121,7 +114,7 @@ export function HourChart({ hourly, best, usual }: Readonly<Props>) {
         {(["good", "moderate", "sensitive", "unhealthy", "severe", "hazardous"] as const).map(
           (t, i) => (
             <span key={t}>
-              <i className="sw" style={{ background: TONE_FILL[t] }} />
+              <i className="sw" style={{ background: TONE_COLOUR[t] }} />
               {
                 [
                   "Good",

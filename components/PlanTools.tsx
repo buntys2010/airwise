@@ -1,3 +1,4 @@
+/** Keeping a plan: a share link of choices only, a calendar reminder, and the device-only save. */
 "use client";
 import { useEffect, useState } from "react";
 

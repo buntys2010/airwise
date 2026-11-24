@@ -1,8 +1,10 @@
+/** The clear-air day: what to do at each key hour, built from dictionary text and the day's PM2.5. */
 import { fmtHour, modeLabel } from "./engine/actions";
 import { bestHour, OPEN_MODES, OUTDOOR_HOUR, type Profile } from "./engine/model";
 import { type Key, t } from "./i18n";
 import type { Lang } from "./lang";
 
+/** One time slot in the day: what to do and the air at that hour. */
 export interface ScheduleEntry {
   hour: number;
   time: string;

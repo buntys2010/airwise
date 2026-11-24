@@ -1,3 +1,4 @@
+/** The room photo input, its plain-language disclosure, and the questions a photo cannot answer. */
 "use client";
 import { useId, useRef } from "react";
 

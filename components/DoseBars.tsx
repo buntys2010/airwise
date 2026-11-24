@@ -1,10 +1,12 @@
+/** Bars showing where a day's exposure comes from: indoors, commute, outdoors and cooking. */
 import type { Sim } from "@/lib/engine/model";
+import { TONE_COLOUR } from "@/lib/palette";
 
 const PARTS: { key: keyof Sim["parts"]; label: string; color: string }[] = [
-  { key: "indoor", label: "Breathed at home", color: "#45d1b7" },
-  { key: "commute", label: "On the way", color: "#ffae4a" },
-  { key: "outdoor", label: "Outdoor time", color: "#ff7a4d" },
-  { key: "cooking", label: "Cooking smoke", color: "#a56bff" },
+  { key: "indoor", label: "Breathed at home", color: TONE_COLOUR.good },
+  { key: "commute", label: "On the way", color: TONE_COLOUR.sensitive },
+  { key: "outdoor", label: "Outdoor time", color: TONE_COLOUR.unhealthy },
+  { key: "cooking", label: "Cooking smoke", color: TONE_COLOUR.hazardous },
 ];
 
 /** The bar's text alternative: each part of the day's dose as a whole percent. */

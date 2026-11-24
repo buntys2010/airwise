@@ -1,3 +1,4 @@
+/** The home page: the household planner. */
 import type { Metadata } from "next";
 
 import { Home } from "@/components/Home";

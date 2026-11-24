@@ -1,3 +1,4 @@
+/** The first thing on screen: the city, the AQI band (icon and word) and what to do about it. */
 "use client";
 import Link from "next/link";
 

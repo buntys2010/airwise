@@ -1,3 +1,4 @@
+/** Cigarette sticks for a day's exposure, partly burned, for today with and without the plan. */
 "use client";
 import type { ReactNode } from "react";
 
@@ -84,7 +85,7 @@ function CigRows({
         ariaLabel={`${f1(a.withPlan.cigs)} ${t("dial.after")}`}
       >
         {t("cig.plan")}{" "}
-        <b style={{ color: changed ? "var(--breath)" : "#fff" }}>{f1(a.withPlan.cigs)}</b>
+        <b style={{ color: changed ? "var(--breath)" : "var(--surface)" }}>{f1(a.withPlan.cigs)}</b>
         {changed && <em>{t("cig.less", { pct: a.savedPct })}</em>}
       </CigColumn>
     </div>

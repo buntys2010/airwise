@@ -3,6 +3,7 @@
  * before anything leaves the device.
  */
 
+/** Longest side in pixels after downscaling. Enough for the vision model, small enough to upload. */
 export const MAX_EDGE = 1024;
 const JPEG_QUALITY = 0.8;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -19,6 +20,7 @@ export function fitSize(w: number, h: number, max = MAX_EDGE): { w: number; h: n
   return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) };
 }
 
+/** Whether a picked file is usable, with the reason when it is not. */
 export type PickCheck = { ok: true } | { ok: false; message: string };
 
 /**
@@ -40,6 +42,7 @@ export function checkPick(file: { type: string; size: number }): PickCheck {
   return { ok: true };
 }
 
+/** A downscaled photo: the data URL to upload and a blob URL to preview. */
 export interface Prepared {
   dataUrl: string;
   objectUrl: string;

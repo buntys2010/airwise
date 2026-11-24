@@ -1,3 +1,4 @@
+/** Keeps a focused control clear of the fixed bottom bar (WCAG 2.2 focus not obscured). */
 "use client";
 import { useEffect } from "react";
 

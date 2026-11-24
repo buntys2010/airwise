@@ -1,3 +1,4 @@
+/** The grounding guard: rejects a model answer containing a number or a claim the engine did not produce. */
 import { isRecord } from "./json";
 /**
  * Numeric grounding guard.
@@ -76,6 +77,7 @@ export function unsupportedClaims(text: string): string[] {
   return ATTRIBUTIONS.map((re) => re.exec(normalised)?.[0]).filter((m): m is string => Boolean(m));
 }
 
+/** The guard's decision, with the numbers and claims it examined. */
 export interface Verdict {
   ok: boolean;
   numbers: number[];

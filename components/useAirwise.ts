@@ -1,3 +1,4 @@
+/** The planner's state and derived values: profile, plan, live air, fixes and schedule. */
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -258,4 +259,5 @@ export function useAirwise(lang: Lang = "en") {
   };
 }
 
+/** Everything the planner page needs, as returned by useAirwise. */
 export type Airwise = ReturnType<typeof useAirwise>;

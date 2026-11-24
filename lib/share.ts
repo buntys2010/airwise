@@ -1,3 +1,4 @@
+/** Share links carry choices only, never numbers, so every figure is recomputed by whoever opens one. */
 import { COMMUTES, COOKINGS, HOMES } from "./chat";
 import { CITIES } from "./cities";
 import { NO_PLAN, type Plan, type Profile } from "./engine/model";

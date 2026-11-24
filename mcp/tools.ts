@@ -1,3 +1,7 @@
+/**
+ * The MCP tools: each returns data from the same engine the site uses, or an error saying what to
+ * do next.
+ */
 import { type AirResult, loadAir } from "../lib/air/live";
 import { COMMUTES, COOKINGS, HOMES } from "../lib/chat";
 import { CITIES } from "../lib/cities";
@@ -22,8 +26,10 @@ interface ToolError {
   /** What to do next, in a sentence an agent can act on. */
   next_step: string;
 }
+/** A tool's outcome: data, or an error that says what to do next. */
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ToolError };
 
+/** How a tool fetches a city's air. Injected so tests need no network. */
 export type LoadAir = (cityId: string) => Promise<AirResult>;
 const defaultLoad: LoadAir = (id) => {
   const city = CITIES.find((c) => c.id === id);

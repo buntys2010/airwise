@@ -1,8 +1,10 @@
+/** Translation lookup, and the keys for AQI bands and advice. */
 import type { Tone } from "../engine/aqi";
 import type { Lang } from "../lang";
 import { EN, type Key } from "./en";
 import { HI } from "./hi";
 
+/** Re-exported so callers import keys and `t` from one place. */
 export type { Key } from "./en";
 
 /**
@@ -29,8 +31,10 @@ export const placeholders = (s: string): string[] =>
 /** Props for text that is still English inside a Hindi page, so screen readers switch voice correctly. */
 export const englishIn = (lang: Lang): { lang?: string } => (lang === "hi" ? { lang: "en" } : {});
 
+/** The speech-recognition and speech-synthesis locale for each language. */
 export const SPEECH_LANG: Record<Lang, string> = { en: "en-IN", hi: "hi-IN" };
 
+/** The translation key for each AQI band's name. */
 export const CATEGORY_KEY = {
   good: "cat.good",
   moderate: "cat.moderate",
@@ -39,6 +43,7 @@ export const CATEGORY_KEY = {
   severe: "cat.severe",
   hazardous: "cat.hazardous",
 } as const;
+/** The translation key for each AQI band's advice. */
 export const ADVICE_KEY = {
   good: "advice.good",
   moderate: "advice.moderate",

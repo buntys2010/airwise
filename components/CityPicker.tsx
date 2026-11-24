@@ -1,3 +1,4 @@
+/** The city picker: a searchable list that is also usable with the keyboard and a screen reader. */
 "use client";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 

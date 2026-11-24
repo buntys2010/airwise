@@ -39,6 +39,7 @@ export function foldLine(line: string): string {
   return out.join("\r\n");
 }
 
+/** Settings for the daily reminder file. */
 export interface ReminderOptions {
   /** The link back to the app (choices only). */
   url: string;

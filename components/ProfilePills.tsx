@@ -1,3 +1,4 @@
+/** The household profile as pills, operable with arrow keys. */
 "use client";
 import { useRef } from "react";
 

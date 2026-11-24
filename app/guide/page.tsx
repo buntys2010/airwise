@@ -1,3 +1,4 @@
+/** The guide page: quick start, features, example questions and plain-language terms. */
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";

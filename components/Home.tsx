@@ -1,3 +1,4 @@
+/** The planner page body: profile, fixes, plan and the panels around them. */
 "use client";
 import Link from "next/link";
 import { useMemo, useState } from "react";

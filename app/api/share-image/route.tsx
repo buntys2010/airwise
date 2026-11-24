@@ -1,3 +1,4 @@
+/** GET /api/share-image: renders the shareable card as a PNG from a city and a few validated choices. */
 import { ImageResponse } from "next/og";
 
 import { istClock } from "@/lib/air/live";

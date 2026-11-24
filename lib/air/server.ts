@@ -41,6 +41,7 @@ export function getCityAir(city: City): Promise<AirResult> {
 /** Test hook: forget cached city air so each test starts clean. */
 export const resetAirCache = () => airCache.clear();
 
+/** One city on the map: its current PM2.5 and whether that is live or an estimate. */
 export interface MapPoint {
   id: string;
   name: string;

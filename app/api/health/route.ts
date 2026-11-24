@@ -1,3 +1,4 @@
+/** GET /api/health: a cheap liveness check for the host and the smoke test. */
 import { NextResponse } from "next/server";
 
 import { withObservability } from "@/lib/observe";

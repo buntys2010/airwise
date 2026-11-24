@@ -1,3 +1,4 @@
+/** The chat context: validates the household's choices and builds the facts a model may use. */
 import { CITIES, type City } from "./cities";
 import { buildActions, fmtHour, planSummary } from "./engine/actions";
 import { categoryOf } from "./engine/aqi";
@@ -23,6 +24,7 @@ import { categoryLabel, type Key, t } from "./i18n";
 import { asRecord, isRecord, oneOf } from "./json";
 import { type Lang, LANGS } from "./lang";
 
+/** Longest question accepted, in characters. Keeps prompts small and cheap. */
 export const MAX_QUESTION = 400;
 
 /**
@@ -61,8 +63,11 @@ export interface Choices {
   lang: Lang;
 }
 
+/** Allowed home types, used to validate input from the browser. */
 export const HOMES: Home[] = ["sealed", "typical", "leaky"];
+/** Allowed commute modes, used to validate input from the browser. */
 export const COMMUTES: Commute[] = ["walk", "cycle", "bike", "car", "ev", "bus", "metro"];
+/** Allowed cooking fuels, used to validate input from the browser. */
 export const COOKINGS: Cooking[] = ["wood", "lpg", "induction"];
 const MASKS: Mask[] = ["none", "cloth", "n95"];
 const KINDS: PurifierKind[] = ["hepa", "boxfan"];

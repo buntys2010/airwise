@@ -395,4 +395,5 @@ export const EN = {
     "Outdoor PM2.5 is {at} at {time}. Close the bedroom door and keep the purifier running through the night.",
 } as const;
 
+/** Every translation key. The Hindi table must define all of them. */
 export type Key = keyof typeof EN;

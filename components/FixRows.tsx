@@ -1,3 +1,4 @@
+/** One plain row per finding: what was seen, the fix and what it is worth. */
 "use client";
 import type { ActionResult } from "@/lib/engine/actions";
 import type { Key } from "@/lib/i18n";

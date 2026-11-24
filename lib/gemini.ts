@@ -1,6 +1,8 @@
+/** The Gemini client: one call with a timeout and a per-minute budget, returning a reason when it fails. */
 import { logLine } from "./log";
 import { createBudget } from "./ratelimit";
 
+/** Why a Gemini call produced no answer, so the page can say so plainly. */
 export type FailureReason =
   | "no_key"
   | "budget"
@@ -17,6 +19,7 @@ interface ImagePart {
   data: string; /* base64, no data: prefix */
 }
 
+/** What to ask Gemini and how. */
 export interface GenerateOptions {
   prompt: string;
   maxTokens: number;
@@ -33,6 +36,7 @@ export interface GenerateOptions {
   kind?: "chat" | "plan" | "vision";
 }
 
+/** Either the model's text, or the reason there is none. */
 export type GenResult =
   { ok: true; text: string; model: string } | { ok: false; reason: FailureReason };
 

@@ -1,3 +1,4 @@
+/** The top of the page: the day's outdoor air in the chosen city, as cigarettes. */
 "use client";
 import { sticksFor } from "@/lib/cigsHourly";
 

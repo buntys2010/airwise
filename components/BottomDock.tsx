@@ -1,6 +1,8 @@
+/** The phone's bottom bar, which switches between the room, plan, chat and share panels. */
 "use client";
 import { useLang } from "./LangProvider";
 
+/** The panel the bottom bar has open on a phone. */
 export type ActiveTab = "room" | "plan" | "copilot" | "share";
 
 interface Props {

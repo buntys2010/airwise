@@ -1,3 +1,4 @@
+/** Holds the chosen language and exposes `t`, so any component can translate. */
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 

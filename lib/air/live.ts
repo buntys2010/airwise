@@ -18,6 +18,7 @@ export function estimateHourly(city: City): number[] {
   return out;
 }
 
+/** One city's air: 24 hourly PM2.5 values plus where they came from. */
 export interface AirResult {
   hourly: number[];
   /** "live" only when the numbers came from the live feed just now; otherwise "estimate". */
@@ -28,6 +29,7 @@ export interface AirResult {
   updated: string | null;
 }
 
+/** The Open-Meteo air-quality endpoint (no key needed). */
 export const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
