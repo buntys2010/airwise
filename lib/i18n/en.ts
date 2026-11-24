@@ -362,6 +362,37 @@ export const EN = {
   "planitem.shift": "move outdoor time to the cleanest hour",
   "planitem.swap": "switch commute to {mode}",
   "planitem.induction": "cook on induction",
+  "sched.morning.title": "Keep windows shut and start the purifier",
+  "sched.morning.detail":
+    "Outdoor PM2.5 is {at} at {time}, one of the heavier hours. {home} Run the purifier in the room you use most.",
+  "sched.home.sealed": "Your home is already well sealed.",
+  "sched.home.leaky": "Seal gaps with weather-strip.",
+  "sched.cook.titleInduction": "Cook as usual",
+  "sched.cook.titleSmoky": "Cook with less smoke",
+  "sched.cook.induction": "Induction adds almost no smoke indoors. Run the hood anyway.",
+  "sched.cook.wood":
+    "Wood and coal smoke is the largest indoor source. Switch to induction if you can, and ventilate the kitchen while you cook.",
+  "sched.cook.lpg":
+    "Gas leaves smoke in the kitchen. Run the chimney or crack a window by the stove while you cook, then close it.",
+  "sched.travel.title": "Travel the cleaner way ({mode})",
+  "sched.travel.detail":
+    "Outdoor PM2.5 is {at} at {time}. {tip} Metro or a shared ride cuts exposure and emissions.",
+  "sched.travel.open": "Wear a fitted N95 for the whole trip.",
+  "sched.travel.closed": "Keep the windows up and the air on recirculate.",
+  "sched.best.title": "Your cleanest hour ({time})",
+  "sched.best.detail":
+    "Outdoor PM2.5 falls to {at} at {time}, against {nowAt} at {nowTime}. Move the walk or play outside to this window, and air the home for a few minutes.{extra}",
+  "sched.best.vulnerable": " Keep it short for the child or older adult.",
+  "sched.back.title": "Head home protected",
+  "sched.back.detail": "Outdoor PM2.5 is {at} at {time}. {tip}",
+  "sched.back.open": "Put the N95 back on for the trip home.",
+  "sched.back.closed": "Stay in your enclosed ride.",
+  "sched.evening.title": "Cook and wind down with the door closed",
+  "sched.evening.detail":
+    "Outdoor PM2.5 is {at} at {time}, when evening smoke builds. Keep windows shut and let the purifier run.",
+  "sched.night.title": "Sleep with the purifier on",
+  "sched.night.detail":
+    "Outdoor PM2.5 is {at} at {time}. Close the bedroom door and keep the purifier running through the night.",
 } as const;
 
 export type Key = keyof typeof EN;

@@ -164,7 +164,7 @@ export function useAirwise(lang: Lang = "en") {
   const base = useMemo(() => simulate(hourly, profile, NO_PLAN), [hourly, profile]);
   const withPlan = useMemo(() => simulate(hourly, profile, plan), [hourly, profile, plan]);
   const actions = useMemo(() => buildActions(hourly, profile, lang), [hourly, profile, lang]);
-  const schedule = useMemo(() => buildSchedule(hourly, profile), [hourly, profile]);
+  const schedule = useMemo(() => buildSchedule(hourly, profile, lang), [hourly, profile, lang]);
   const best = bestHour(hourly);
   const category = categoryOf(pmAt(hourly, nowHour));
   const outdoorDay = useMemo(() => outdoorCigs(hourly), [hourly]);

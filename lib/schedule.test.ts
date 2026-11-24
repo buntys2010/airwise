@@ -57,3 +57,29 @@ describe("buildSchedule", () => {
     ).not.toMatch(/child or older adult/);
   });
 });
+
+describe("buildSchedule in Hindi", () => {
+  const english = buildSchedule(hourly, family);
+  const hindi = buildSchedule(hourly, family, "hi");
+  const digits = (s: string) => (s.match(/\d+/g) ?? []).sort();
+
+  it("has the same hours and the same numbers as English", () => {
+    expect(hindi.map((e) => e.hour)).toEqual(english.map((e) => e.hour));
+    hindi.forEach((e, i) => {
+      const en = must(english[i]);
+      expect(digits(`${e.time} ${e.title} ${e.detail}`)).toEqual(
+        digits(`${en.time} ${en.title} ${en.detail}`),
+      );
+    });
+  });
+  it("is written in Devanagari with no placeholder left unfilled", () => {
+    for (const e of hindi) {
+      expect(`${e.title}${e.detail}`).toMatch(/[\u0900-\u097F]/u);
+      expect(`${e.title}${e.detail}`).not.toMatch(/[{}]/u);
+    }
+  });
+  it("stays grounded in the data", () => {
+    for (const e of hindi)
+      expect(isGrounded(`${e.title}. ${e.detail}`, { hourly, schedule: hindi })).toBe(true);
+  });
+});

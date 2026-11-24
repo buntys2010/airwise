@@ -156,12 +156,12 @@ describe("POST /api/chat", () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(geminiText("An N95 cuts your exposure by 87% in Delhi."));
+      .mockResolvedValue(geminiText("An N95 cuts your exposure by 4321% in Delhi."));
     vi.stubGlobal("fetch", fetchMock);
     const body = { question: "invented number check", choices };
     const json = await (await call(body)).json();
     expect(json).toMatchObject({ source: "offline", verified: false, rejected: true });
-    expect(json.answer).not.toMatch(/87/);
+    expect(json.answer).not.toMatch(/4321/);
     const before = fetchMock.mock.calls.length;
     await call(body);
     expect(fetchMock.mock.calls.length).toBeGreaterThan(before);

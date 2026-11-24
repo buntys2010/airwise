@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GET } from "./route";
 
@@ -11,6 +11,8 @@ const call = (query = "", ip = `10.8.0.${++callCount}`) =>
   );
 
 describe("GET /api/share-image", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("returns an image response with security and cache headers", async () => {
     const res = await call("city=delhi&size=card");
     expect(res.status).toBe(200);
@@ -32,6 +34,9 @@ describe("GET /api/share-image", () => {
     "enforces rate limits per client IP",
     async () => {
       const testIp = "192.168.100.99";
+      // Rendering is slow on a CI runner, so the real clock could outlast the limiter window and
+      // let early requests age out. Freezing it makes the count depend on the requests alone.
+      vi.spyOn(Date, "now").mockReturnValue(Date.now());
       // Send 20 requests (the limit)
       for (let i = 0; i < 20; i++) {
         const res = await call("city=delhi", testIp);
