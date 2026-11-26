@@ -7,6 +7,7 @@ import type { Key } from "@/lib/i18n";
 
 import { useLang } from "./LangProvider";
 
+/** The air itself as a background: haze, sun and drifting shapes. Decorative. */
 export function Sky() {
   return (
     <div className="sky" aria-hidden="true">
@@ -19,6 +20,7 @@ export function Sky() {
   );
 }
 
+/** The AirWise mark and name, linking home. */
 export function Brand() {
   return (
     <Link href="/" className="brand" aria-label="AirWise">

@@ -16,6 +16,7 @@ export interface SharedChoices {
 export const PLAN_IDS = ["seal", "purifier", "boxfan", "n95", "shift", "swap", "induction"] as const;
 type PlanId = (typeof PLAN_IDS)[number];
 
+/** The plan as short ids for a share link. */
 export function planToIds(plan: Plan): PlanId[] {
   const ids: PlanId[] = [];
   if (plan.sealGaps) ids.push("seal");
@@ -27,6 +28,7 @@ export function planToIds(plan: Plan): PlanId[] {
   return ids;
 }
 
+/** The plan from share-link ids; unknown ids are ignored. */
 export function idsToPlan(ids: string[]): Plan {
   const set = new Set(ids);
   return {
@@ -41,6 +43,7 @@ export function idsToPlan(ids: string[]): Plan {
   };
 }
 
+/** Choices as a query string. Never contains a computed number. */
 export function encodeChoices(c: { city: string; profile: Profile; plan: Plan }): string {
   const q = new URLSearchParams({
     city: c.city,
@@ -88,6 +91,7 @@ export function decodeChoices(search: string): SharedChoices {
   return out;
 }
 
+/** A share link for the app's origin, carrying choices only. */
 export function shareUrl(origin: string, c: { city: string; profile: Profile; plan: Plan }): string {
   const safeOrigin = origin.replace(/[\r\n\0]/g, "").trim();
   return `${safeOrigin}/?${encodeChoices(c)}`;

@@ -38,6 +38,7 @@ export function sanitizeSaved(raw: unknown): Saved | null {
   return { city: city.id, profile: { home, commute, cooking, km, vulnerable: p.vulnerable === true } };
 }
 
+/** The household saved on this device, and whether saving works here. */
 export function readSaved(storage: StorageLike | null = defaultStorage()): {
   data: Saved | null;
   state: StoreState;
@@ -53,6 +54,7 @@ export function readSaved(storage: StorageLike | null = defaultStorage()): {
   }
 }
 
+/** Saves the household on this device only. Returns whether it was saved or storage is blocked. */
 export function writeSaved(data: Saved, storage: StorageLike | null = defaultStorage()): StoreState {
   if (!storage) return "blocked";
   try {
@@ -63,6 +65,7 @@ export function writeSaved(data: Saved, storage: StorageLike | null = defaultSto
   }
 }
 
+/** Forgets what is saved on this device. */
 export function clearSaved(storage: StorageLike | null = defaultStorage()): StoreState {
   if (!storage) return "blocked";
   try {

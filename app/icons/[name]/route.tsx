@@ -9,6 +9,7 @@ const SIZES: Record<string, { size: number; pad: number }> = {
   maskable: { size: 512, pad: 0.26 },
 };
 
+/** One static icon per size, built at deploy time. */
 export function generateStaticParams() {
   return Object.keys(SIZES).map((name) => ({ name }));
 }

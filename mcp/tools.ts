@@ -37,6 +37,7 @@ function pick<T extends string>(field: string, value: unknown, allowed: readonly
 
 const note = (a: AirResult) => (a.source === "live" ? "Live hourly PM2.5 from Open-Meteo." : "The live feed was unreachable, so these hourly values are an offline estimate. Say so if you quote them.");
 
+/** Tool: today's hourly PM2.5 for a city, labelled live or estimate. */
 export async function getCityAir(args: { city?: unknown }, load: LoadAir = defaultLoad): Promise<Result<unknown>> {
   const city = pick("city", args.city, CITY_IDS);
   if (!city.ok) return city;
@@ -64,6 +65,7 @@ export async function getCityAir(args: { city?: unknown }, load: LoadAir = defau
 
 const PLAN_OF: Record<string, string> = { sealGaps: "seal", purifier: "purifier", "mask-n95": "n95", shiftOutdoor: "shift", swap: "swap", induction: "induction" };
 
+/** Tool: how much each action cuts exposure for a household, from the same engine as the app. */
 export async function scoreActions(
   args: { city?: unknown; home?: unknown; commute?: unknown; km?: unknown; cooking?: unknown; vulnerable?: unknown; actions?: unknown },
   load: LoadAir = defaultLoad,

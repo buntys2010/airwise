@@ -1,6 +1,6 @@
 # Cities
 
-`lib/cities.ts` lists 100+ places: every state and union-territory capital plus large cities. Each has latitude and longitude to about 0.1 degree, from public knowledge of the city centre. That is finer than the air feed's own grid, so nearby cities can share a value (the map and the guide say so).
+`lib/cities/` lists 100+ places: every state and union-territory capital plus large cities. Each has latitude and longitude to about 0.1 degree, from public knowledge of the city centre. That is finer than the air feed's own grid, so nearby cities can share a value (the map and the guide say so).
 
 - Ids are lowercase slugs; the first six (Delhi, Lucknow, Kolkata, Mumbai, Pune, Bengaluru) keep their original ids and monitoring areas so saved choices and share links still work.
 - Old names people search for (Bombay, Madras, Allahabad, ...) are in `aka`. The English name always works.

@@ -510,3 +510,19 @@ section[id^="stage-"] { scroll-margin-top: 14px; }
 .citycigs p { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; }
 .citycigs small { display: inline; font-size: 0.95rem; color: var(--ink); font-weight: 500; }
 @media (max-width: 420px) { .citycigs { gap: 10px; } }
+
+/* Small spacing and link utilities, so components do not carry inline styles. */
+.mt-0 { margin-top: 0; }
+.mt-8 { margin-top: 8px; }
+.mt-10 { margin-top: 10px; }
+.mt-12 { margin-top: 12px; }
+.mt-14 { margin-top: 14px; }
+.mt-16 { margin-top: 16px; }
+.mt-18 { margin-top: 18px; }
+.no-underline { text-decoration: none; }
+.answernote { margin-top: 8px; font-size: 0.9rem; }
+.btn.block-link { display: inline-block; text-decoration: none; margin-top: 14px; }
+.notice-now { margin: 10px 0 4px; }
+.skeletons { display: grid; gap: 10px; margin-bottom: 12px; }
+.chart-label { fill: #0f1f27; font-weight: 700; font-size: 14px; }
+.chart-label-small { font-size: 13px; }

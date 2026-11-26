@@ -5,19 +5,47 @@ Measured, not estimated. Every figure below is from `npm run check` (and `npm ru
 ```
 AirWise proof card
   Type-check     pass
-  Tests          471 passed, 0 failed, in 41 files
-  Accessibility  10 automated axe scans of the pages, 0 with violations
+  Tests          477 passed, 0 failed, in 42 files
+  Accessibility  11 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
-  First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB
+  First-load JS  home 146 kB, largest page / 146 kB (budget 150 kB), shared 103 kB
   Audit          0 vulnerabilities in runtime dependencies
 ```
-Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and 390 px phone profiles.
+Plus `npm run e2e`: 49 browser tests passed (3 skipped by design) in desktop and 390 px phone profiles.
 
 ## Code quality
 - Strict TypeScript, checked by `npm run lint`; the compiler is part of the proof card.
-- One source of numbers: [`lib/engine.ts`](../lib/engine.ts) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
-- Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/data.ts`](../lib/data.ts), [`lib/cities.ts`](../lib/cities.ts), [`lib/room.ts`](../lib/room.ts).
+- One source of numbers: [`lib/engine/`](../lib/engine/index.ts) is pure and deterministic; the UI, chat context, MCP server and tests all call it. Nothing else computes exposure.
+- Small modules with one job: [`lib/guard.ts`](../lib/guard.ts), [`lib/gemini.ts`](../lib/gemini.ts), [`lib/data.ts`](../lib/data.ts), [`lib/cities/`](../lib/cities/index.ts), [`lib/room/`](../lib/room/index.ts).
 - Model assumptions are written down with ranges in [`methodology.md`](methodology.md).
+- Decisions and their costs are recorded in [`DECISIONS.md`](DECISIONS.md); how to contribute is in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+### Limits that fail the build
+ESLint ([`eslint.config.mjs`](../eslint.config.mjs)) treats these as errors, so they cannot erode quietly:
+
+| Rule | Limit |
+| --- | --- |
+| File length (non-test) | 300 lines |
+| Function length | 60 lines |
+| Cyclomatic complexity | 15 |
+| Nesting depth | 4 |
+| Parameters | 5 |
+| `console`, `==`, parameter reassignment | not allowed |
+| `any`, non-null `!` (outside tests) | not allowed |
+| Import and export order, accessibility rules | enforced |
+
+Measured on this commit: 102 source files (excluding tests), the largest 291 lines (an i18n dictionary); every function within the limits above; 2 lint suppressions, both accessibility rules with a written reason; every one of the 195 exported functions and components has a doc comment, and every module opens with a one-line purpose.
+
+### Layout
+```
+lib/engine/   pure impact model: constants, simulate, cigarettes, actions, plan
+lib/room/     findings, vision validation, product catalog
+lib/cities/   types, data, search
+lib/i18n/     English and Hindi dictionaries, lookup
+components/   chat/ map/ plan/ room/ cigs/ share/ home/ (feature folders; state in hooks beside them)
+app/          pages and API routes; each route is a thin handler over lib/
+```
+A pre-commit hook (`npm run hooks`) runs lint, the format check and the tests before each commit; CI runs the same gates plus coverage, evals, the build with its bundle budget, browser tests and the dependency audit.
 
 ## Security
 - Trust boundary, threats and mitigations: [`SECURITY.md`](../SECURITY.md).
@@ -31,7 +59,7 @@ Plus `npm run e2e`: 41 browser tests passed (3 skipped by design) in desktop and
 - Verified model answers are cached for 10 minutes, and Gemini calls have per-call and overall time budgets.
 
 ## Testing
-- 471 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
+- 477 unit and component tests (Vitest, Testing Library) covering the engine, guard, data loading with partial failure, routes, pages, i18n parity (English and Hindi), city list integrity, the city picker, and the MCP tools.
 - 52 eval cases for grounding, injection, Hindi and photo findings ([`evals/`](../evals)).
 - Browser tests ([`e2e/`](../e2e)) for the core journey, layout at 360 and 390 px, focus never hidden behind the bottom bar, and the cigarette animation.
 - `npm run smoke` checks a running deployment.

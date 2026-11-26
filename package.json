@@ -2,6 +2,9 @@
   "name": "airwise",
   "version": "0.1.0",
   "private": true,
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,7 +17,8 @@
     "smoke": "node scripts/smoke.mjs",
     "eval": "vitest run evals",
     "check": "node scripts/check.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "hooks": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "next": "^15.5.29",

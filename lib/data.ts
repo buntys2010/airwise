@@ -30,6 +30,7 @@ export interface AirResult {
 const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 
+/** The current hour (0-23), a display label, and hours elapsed (with minutes) in India time. */
 export function istClock(d = new Date()): { hour: number; label: string; elapsed: number } {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
@@ -51,6 +52,7 @@ export function parseHourly(json: unknown): number[] | null {
   return (day as number[]).map((v) => Math.round(v));
 }
 
+/** Temperature and wind from an Open-Meteo reply, each null when missing or not a number. */
 export function parseWeather(json: unknown): { temp: number | null; wind: number | null } {
   const cur = (json as { current?: { temperature_2m?: unknown; wind_speed_10m?: unknown } } | null)?.current;
   const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
@@ -120,6 +122,7 @@ export function getCityAir(city: City): Promise<AirResult> {
   inflight.set(city.id, p);
   return p;
 }
+/** Test hook: forget cached air data. */
 export const resetAirCache = () => airCache.clear();
 
 export interface MapPoint {

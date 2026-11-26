@@ -1,9 +1,11 @@
 "use client";
+/** The city map page. */
+
 import { useEffect, useState } from "react";
 
-import { AirMap } from "@/components/AirMap";
 import { Header } from "@/components/Chrome";
 import { useLang } from "@/components/LangProvider";
+import { AirMap } from "@/components/map/AirMap";
 import type { MapPoint } from "@/lib/data";
 
 interface MapReply {
@@ -12,6 +14,7 @@ interface MapReply {
   live: number;
 }
 
+/** The city map: live PM2.5 for every listed city, with a searchable table. */
 export default function MapPage() {
   const { t } = useLang();
   const [data, setData] = useState<MapReply | null>(null);

@@ -18,7 +18,7 @@ Most smog apps do the same thing: show the city's AQI, then put a chatbot beside
 
 ## Our original work (where to find it)
 
-1. **Personal dose engine and counterfactual action ledger** (`lib/engine.ts`).
+1. **Personal dose engine and counterfactual action ledger** (`lib/engine/`).
    A pure, deterministic 24-hour model splits exposure into home, commute, outdoor and cooking parts. Each action is measured by re-running the model with only that action switched on, so every card shows its own solo effect. A combined plan is the same model with several switched on. Nothing here depends on an AI.
 
 2. **Two-layer grounding guard** (`lib/guard.ts`).

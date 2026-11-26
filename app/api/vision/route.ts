@@ -15,6 +15,7 @@ const limited = createLimiter(4, 60_000);
 /** Findings are cached by the hash of the downscaled photo, never the photo itself. */
 const findings = createCache<VisionOutcome>(30 * 60_000, 50);
 
+/** POST /api/vision: reads one room photo for visible evidence only (gaps, a gas stove, a purifier) and returns validated hotspots. */
 export async function POST(req: Request) {
   // Decoded photo is capped at 1.5 MB (parseDataUrl); base64 plus JSON framing stays under this.
   const parsed = await readGuarded(req, {

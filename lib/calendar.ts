@@ -44,6 +44,7 @@ export interface ReminderOptions {
   description?: string;
 }
 
+/** Builds a daily morning reminder (.ics) that links back to the app. Built on the device; nothing is sent. */
 export function buildReminderIcs({
   url,
   hour = 7,

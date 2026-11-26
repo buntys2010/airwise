@@ -1,3 +1,5 @@
+/** Day plan and community notice: the calculated plan, its prompt and its checks. */
+
 import { buildContext, type ChatContext, type Choices, type Lang } from "./chat";
 import { bestHour, buildActions, categoryOf, type Profile, type Tone } from "./engine";
 import { verify } from "./guard";
@@ -50,6 +52,7 @@ export const PLAN_SCHEMA = {
   required: ["headline", "steps"],
 };
 
+/** The prompt that asks the model to rewrite the calculated day in friendly words, with the same times and no new numbers. */
 export function buildPlanPrompt(req: PlanRequest, lang: Lang = "en"): string {
   return [
     "You are AirWise. Rewrite the household's clear-air day as a warm, plain-language plan.",
@@ -127,6 +130,7 @@ export interface CommunityPlan {
   rules: CommunityRule[];
 }
 
+/** The notice for a building: today's level, the cleanest hour, the fixes that help most and shared rules. */
 export function communityPlan(hourly: number[], profile: Profile, nowHour: number): CommunityPlan {
   const tone = categoryOf(hourly[nowHour]).tone;
   const best = bestHour(hourly);

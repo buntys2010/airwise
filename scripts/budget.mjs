@@ -22,6 +22,7 @@ export function parseBuildLog(log) {
   return { pages, shared };
 }
 
+/** Checks parsed build output against the per-page and shared first-load JS budgets. Returns the violations. */
 export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED_BUDGET_KB } = {}) {
   const violations = [];
   const entries = Object.entries(parsed.pages);

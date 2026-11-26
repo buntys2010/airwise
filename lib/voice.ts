@@ -23,6 +23,7 @@ export interface RecognitionLike {
 
 export type RecognitionCtor = new () => RecognitionLike;
 
+/** The browser's speech-recognition class, or null where voice input is unsupported. */
 export function getRecognitionCtor(
   w: { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor } | undefined,
 ): RecognitionCtor | null {
@@ -54,6 +55,7 @@ interface SynthWindow {
   SpeechSynthesisUtterance?: new (text: string) => { lang: string };
 }
 
+/** Whether the browser can read text aloud. */
 export function canSpeak(w: SynthWindow | undefined): boolean {
   return Boolean(w?.speechSynthesis && w.SpeechSynthesisUtterance);
 }
@@ -73,6 +75,7 @@ export function speak(
   synth.speak(utterance);
 }
 
+/** Stops any speech in progress. */
 export function stopSpeaking(
   w: SynthWindow | undefined = typeof window === "undefined" ? undefined : window,
 ): void {

@@ -1,3 +1,5 @@
+/** Root layout, fonts and page metadata. */
+
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
@@ -21,6 +23,7 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#12222a" };
 
+/** The page shell: fonts, language provider, and the sky behind everything. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>

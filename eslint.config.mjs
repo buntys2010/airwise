@@ -25,11 +25,11 @@ export default tseslint.config(
     rules: {
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
-      complexity: ["error", 35],
+      complexity: ["error", 15],
       "max-depth": ["error", 4],
       "max-params": ["error", 5],
-      "max-lines-per-function": ["error", { max: 250, skipBlankLines: true, skipComments: true }],
-      "max-lines": ["error", { max: 420, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
       "no-console": "error",
       "no-param-reassign": "error",
       eqeqeq: "error",
@@ -60,7 +60,6 @@ export default tseslint.config(
     },
   },
   { files: ["**/*.mjs", "**/*.mts"], ...tseslint.configs.disableTypeChecked },
-  { files: ["lib/i18n.ts"], rules: { "max-lines": "off" } },
   { files: ["scripts/**"], rules: { "no-console": "off" } },
   prettier,
 );

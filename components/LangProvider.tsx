@@ -1,4 +1,6 @@
 "use client";
+/** Language state shared by every component, with a translate function. */
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import type { Lang } from "@/lib/chat";
@@ -42,4 +44,5 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
+/** The current language and a translate function bound to it. */
 export const useLang = () => useContext(LangContext);

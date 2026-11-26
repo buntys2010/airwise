@@ -1,3 +1,5 @@
+/** Chat endpoint: takes choices only, recomputes the facts here, asks the model and checks its answer. */
+
 import { createCache } from "@/lib/cache";
 import {
   buildContext,
@@ -24,6 +26,7 @@ const PER_CALL_MS = 6_000;
 /** Verified answers only, for 10 minutes: the same question about the same air costs no model call. */
 const verifiedAnswers = createCache<string>(10 * 60_000);
 
+/** POST /api/chat: answers a question about the household's plan. Takes choices only; every figure is recomputed here and checked in the reply. */
 export async function POST(req: Request) {
   const started = Date.now();
   const parsed = await readGuarded(req, {

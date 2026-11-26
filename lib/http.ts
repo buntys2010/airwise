@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { clientIp } from "./ratelimit";
 
+/** A JSON response with a status (200 by default). */
 export const json = (body: unknown, status = 200) => NextResponse.json(body, { status });
 
 export type Parsed = { ok: true; body: unknown } | { ok: false; res: Response };

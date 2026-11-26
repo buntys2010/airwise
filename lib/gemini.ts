@@ -1,3 +1,5 @@
+/** The only caller of the Gemini API: time limits, a per-minute budget, model fallback and structured logs. */
+
 import { createBudget } from "./ratelimit";
 
 export type FailureReason =
@@ -72,10 +74,13 @@ export function generationConfig(
 
 /** A global cap on Gemini calls a minute, so one busy client cannot spend everyone's quota (and money, on a paid key). */
 const budget = createBudget(() => Number(process.env.GEMINI_BUDGET_PER_MIN) || 40, 60_000);
+/** Test hook: reset the per-minute call budget. */
 export const resetGeminiBudget = () => budget.reset();
 
 let sink: (line: string) => void = (line) => {
-  if (process.env.NODE_ENV !== "test") console.info(line); // eslint-disable-line no-console -- structured log sink
+  if (process.env.NODE_ENV !== "test")
+    process.stdout.write(`${line}
+`);
 };
 /** Test hook. */
 export function setLogSink(fn: (line: string) => void) {
@@ -85,6 +90,34 @@ export function setLogSink(fn: (line: string) => void) {
 const log = (o: Record<string, unknown>) => sink(JSON.stringify({ evt: "gemini", ...o }));
 
 type CallResult = { ok: true; text: string } | { ok: false; reason: FailureReason };
+
+/** The failure to report for an HTTP error status from the model API. */
+function failureForStatus(status: number): FailureReason {
+  if (status === 429) return "quota";
+  if (status === 400 || status === 401 || status === 403) return "rejected";
+  return "unavailable";
+}
+
+const BLOCKED_FINISH_REASONS = ["SAFETY", "PROHIBITED_CONTENT", "RECITATION", "BLOCKLIST"];
+
+interface ModelReply {
+  promptFeedback?: { blockReason?: string };
+  candidates?: { finishReason?: string; content?: { parts?: { text?: string }[] } }[];
+}
+
+/** The text of a model reply, or why there is none (blocked for safety, or empty). */
+function textOf(json: ModelReply): CallResult {
+  if (json.promptFeedback?.blockReason) return { ok: false, reason: "blocked" };
+  const cand = json.candidates?.[0];
+  if (cand?.finishReason && BLOCKED_FINISH_REASONS.includes(cand.finishReason)) {
+    return { ok: false, reason: "blocked" };
+  }
+  const text = cand?.content?.parts
+    ?.map((p) => p.text ?? "")
+    .join("")
+    .trim();
+  return text ? { ok: true, text } : { ok: false, reason: "empty" };
+}
 
 async function callModel(
   model: string,
@@ -111,28 +144,8 @@ async function callModel(
         signal: ctrl.signal,
       },
     );
-    if (!res.ok) {
-      if (res.status === 429) return { ok: false, reason: "quota" };
-      if (res.status === 400 || res.status === 401 || res.status === 403)
-        return { ok: false, reason: "rejected" };
-      return { ok: false, reason: "unavailable" };
-    }
-    const json = (await res.json()) as {
-      promptFeedback?: { blockReason?: string };
-      candidates?: { finishReason?: string; content?: { parts?: { text?: string }[] } }[];
-    };
-    if (json.promptFeedback?.blockReason) return { ok: false, reason: "blocked" };
-    const cand = json.candidates?.[0];
-    if (
-      cand?.finishReason &&
-      ["SAFETY", "PROHIBITED_CONTENT", "RECITATION", "BLOCKLIST"].includes(cand.finishReason)
-    )
-      return { ok: false, reason: "blocked" };
-    const text = cand?.content?.parts
-      ?.map((p) => p.text ?? "")
-      .join("")
-      .trim();
-    return text ? { ok: true, text } : { ok: false, reason: "empty" };
+    if (!res.ok) return { ok: false, reason: failureForStatus(res.status) };
+    return textOf((await res.json()) as ModelReply);
   } catch (e) {
     return { ok: false, reason: e instanceof Error && e.name === "AbortError" ? "timeout" : "network" };
   } finally {

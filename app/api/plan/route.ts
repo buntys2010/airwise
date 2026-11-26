@@ -1,3 +1,5 @@
+/** Day-plan endpoint: takes choices only and returns the checked plan, calculated or model-written. */
+
 import { createCache } from "@/lib/cache";
 import { parseChoices } from "@/lib/chat";
 import { getCityAir, istClock } from "@/lib/data";
@@ -20,6 +22,7 @@ export const maxDuration = 30;
 const limited = createLimiter(6, 60_000);
 const verifiedPlans = createCache<DayPlan>(10 * 60_000, 100);
 
+/** POST /api/plan: writes the day's plan in friendly words from choices only, falling back to the calculated plan if any number is off. */
 export async function POST(req: Request) {
   const parsed = await readGuarded(req, { limited, maxBytes: 3_000 });
   if (!parsed.ok) return parsed.res;

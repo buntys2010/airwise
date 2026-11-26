@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CityCigs } from "@/components/CityCigs";
+import { CityCigs } from "@/components/cigs/CityCigs";
 import { LangProvider } from "@/components/LangProvider";
 import { DEFAULT_PROFILE } from "@/components/useAirwise";
 import { CITIES, estimateHourly } from "@/lib/data";

@@ -7,6 +7,7 @@
  */
 export const HAZE_MIN = 0.04;
 
+/** How thick the page's smog layer is, 0 to 1: today's air, reduced as the plan removes exposure. */
 export function hazeLevel(nowPm: number, baseMeanPm: number, planMeanPm: number): number {
   const ambient = Math.min(1, Math.max(0.45, 0.45 + nowPm / 300)); // 0.45 on a clean day, 1 at 165 µg/m³ and above
   const remaining = baseMeanPm > 0 ? Math.min(1, Math.max(0, planMeanPm / baseMeanPm)) : 1;

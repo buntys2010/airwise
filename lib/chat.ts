@@ -1,3 +1,5 @@
+/** Chat inputs and prompt: validated choices, the facts block and the model prompt. */
+
 import { CITIES, type City } from "./data";
 import {
   bestHour,
@@ -79,6 +81,7 @@ export function parsePlan(raw: unknown): Plan {
   };
 }
 
+/** Validates choices from the client against fixed lists. Returns null for anything else, so no free text reaches the model. */
 export function parseChoices(raw: unknown): Choices | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
@@ -132,6 +135,7 @@ export function buildContext(
   };
 }
 
+/** A trimmed question without angle brackets, or null when it is empty, too long or not text. */
 export function cleanQuestion(q: unknown): string | null {
   if (typeof q !== "string") return null;
   const t = q.trim().replace(/[<>]/g, "");
@@ -158,6 +162,7 @@ export function offlineAnswer(q: string, c: ChatContext, lang: Lang = "en"): str
   return `Today in ${c.city} the air is "${c.category}" (PM2.5 about ${Math.round(c.pm)} µg/m³). Following your plan (${c.actions.join(", ") || "no actions chosen yet"}) takes your breathing from about ${c.baselineCigs.toFixed(1)} to ${c.planCigs.toFixed(1)} cigarettes' worth a day, saving ${save}. General guidance, not medical advice.`;
 }
 
+/** The full prompt: the rules, the verified facts block and the question. */
 export function buildPrompt(question: string, c: ChatContext, lang: Lang = "en"): string {
   return [
     "You are AirWise, a calm, practical assistant that helps families cope with smog.",

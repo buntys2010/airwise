@@ -1,4 +1,6 @@
 "use client";
+/** The bottom dock that switches between the home page stages. */
+
 import { useLang } from "./LangProvider";
 
 export type ActiveTab = "room" | "plan" | "copilot" | "share";

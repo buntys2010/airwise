@@ -31,6 +31,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Params 
   };
 }
 
+/** The home page. */
 export default function Page() {
   return <Home />;
 }
