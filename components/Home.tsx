@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { type ActiveTab, BottomDock } from "@/components/BottomDock";
-import { Chat } from "@/components/Chat";
+import { Chat } from "@/components/chat/Chat";
 import { Header } from "@/components/Chrome";
 import { Cigarettes } from "@/components/Cigarettes";
 import { DayPlan } from "@/components/DayPlan";
