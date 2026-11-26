@@ -2,7 +2,7 @@ import { CITIES } from "./data";
 import type { City } from "./model";
 
 export { CITIES } from "./data";
-export { type City, type Zone, ZONE_LEVELS } from "./model";
+export { type City, ZONE_LEVELS } from "./model";
 
 /** The city shown when an id is unknown. The list is never empty, so this always exists. */
 export const FALLBACK_CITY: City =

@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { CITIES, type City, FALLBACK_CITY, searchCities } from "@/lib/cities";
 
 import { CityList, MAX_SHOWN, resultsNote, useScrollIntoView } from "./city/CityList";
+import { cityKeyHandler } from "./city/keys";
 import { useLang } from "./LangProvider";
 
 /**
@@ -51,60 +52,16 @@ export function CityPicker({
     if (restore) setText(current.name);
   }
 
-  function arrowDown() {
-    if (open) {
-      setActive((a) => (a + 1) % Math.max(1, shown.length));
-      return;
-    }
-    setOpen(true);
-    setActive(
-      Math.max(
-        0,
-        shown.findIndex((c) => c.id === current.id),
-      ),
-    );
-  }
-
-  function arrowUp() {
-    if (open) setActive((a) => (a - 1 + shown.length) % Math.max(1, shown.length));
-    else setOpen(true);
-  }
-
-  /** Each key returns true when it acted, so the browser default (caret move, form submit) is suppressed. */
-  function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    const keys: Record<string, () => boolean> = {
-      ArrowDown: () => {
-        arrowDown();
-        return true;
-      },
-      ArrowUp: () => {
-        arrowUp();
-        return true;
-      },
-      Enter: () => {
-        if (!open || !shown[active]) return false;
-        choose(shown[active]);
-        return true;
-      },
-      Escape: () => {
-        if (!open) return false;
-        close();
-        return true;
-      },
-      Home: () => {
-        if (!open) return false;
-        setActive(0);
-        return true;
-      },
-      End: () => {
-        if (!open) return false;
-        setActive(Math.max(0, shown.length - 1));
-        return true;
-      },
-    };
-    const handler = Object.hasOwn(keys, e.key) ? keys[e.key] : undefined;
-    if (handler?.()) e.preventDefault();
-  }
+  const onKey = cityKeyHandler({
+    open,
+    shown,
+    active,
+    setOpen,
+    setActive,
+    choose,
+    close,
+    currentShownIndex: shown.findIndex((c) => c.id === current.id),
+  });
 
   const status = resultsNote(results.length, t);
   return (

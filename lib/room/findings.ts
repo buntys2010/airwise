@@ -18,7 +18,7 @@ import type { Cooking, Home, Profile } from "../engine/model";
  * user's own answer.
  */
 export type FindingKind = "window_gap" | "gas_stove" | "purifier_seen" | "no_purifier";
-export type RoomActionId = "sealGaps" | "induction" | "purifier";
+type RoomActionId = "sealGaps" | "induction" | "purifier";
 /** Display and sort order. */
 export const FINDING_KINDS: FindingKind[] = [
   "window_gap",

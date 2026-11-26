@@ -14,7 +14,7 @@ import {
 import type { FailureReason, GenerateOptions, GenResult } from "./types";
 
 export { generationConfig, modelChain, positiveInt } from "./config";
-export type { FailureReason, GenerateOptions, GenResult } from "./types";
+export type { GenerateOptions, GenResult } from "./types";
 export { REASON_TEXT } from "./types";
 
 /**

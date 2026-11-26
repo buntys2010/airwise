@@ -12,7 +12,7 @@ export type FailureReason =
   | "network"
   | "empty";
 
-export interface ImagePart {
+interface ImagePart {
   mimeType: string;
   data: string; /* base64, no data: prefix */
 }
