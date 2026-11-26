@@ -59,8 +59,8 @@ export default tseslint.config(
       "sonarjs/function-return-type": "off",
       "max-depth": ["error", 4],
       "max-params": ["error", 5],
-      "max-lines-per-function": ["error", { max: 150, skipBlankLines: true, skipComments: true }],
-      "max-lines": ["error", { max: 500, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }],
+      "max-lines": ["error", { max: 200, skipBlankLines: true, skipComments: true }],
     },
   },
   {

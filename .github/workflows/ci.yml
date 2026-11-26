@@ -34,8 +34,8 @@ jobs:
       - run: npm run eval
       - name: Build and check the bundle budget
         run: |
-          npm run build 2>&1 | tee build.log
-          node scripts/budget.mjs build.log
+          npm run build
+          node scripts/budget.mjs
       - name: Smoke test the production build
         run: |
           npx next start -p 3100 &

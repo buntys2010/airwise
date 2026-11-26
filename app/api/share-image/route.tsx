@@ -15,7 +15,8 @@ import { withObservability } from "@/lib/observe";
 import { clientIp, createLimiter } from "@/lib/ratelimit";
 import { decodeChoices } from "@/lib/share";
 
-import { type CardData, cardSize, ShareCardImage } from "./card";
+import { cardSize, ShareCardImage } from "./card";
+import type { CardData } from "./model";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;

@@ -4,125 +4,22 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { type ActiveTab, BottomDock } from "@/components/BottomDock";
-import { Chat } from "@/components/Chat";
+import { Chat } from "@/components/chat/Chat";
 import { Header } from "@/components/Chrome";
 import { Cigarettes } from "@/components/Cigarettes";
-import { DayPlan } from "@/components/DayPlan";
-import { DoseBars } from "@/components/DoseBars";
-import { FixRows } from "@/components/FixRows";
-import { HourChart } from "@/components/HourChart";
 import { useLang } from "@/components/LangProvider";
 import { MorningBrief } from "@/components/MorningBrief";
-import { PHOTO_INPUT_ID, PhotoPicker } from "@/components/PhotoPicker";
+import { PHOTO_INPUT_ID } from "@/components/PhotoPicker";
 import { PlanTools } from "@/components/PlanTools";
-import { ProfilePills } from "@/components/ProfilePills";
-import { RoomPanel } from "@/components/RoomPanel";
 import { SeverityStrip } from "@/components/SeverityStrip";
 import { ShareCard } from "@/components/ShareCard";
-import { type Airwise, useAirwise } from "@/components/useAirwise";
-import { type Room, useRoom } from "@/components/useRoom";
-import { ValueList } from "@/components/ValueList";
-import { fmtHour } from "@/lib/engine/actions";
-import { OUTDOOR_HOUR } from "@/lib/engine/model";
+import { useAirwise } from "@/components/useAirwise";
+import { useRoom } from "@/components/useRoom";
 import { englishIn } from "@/lib/i18n";
-import type { Lang } from "@/lib/lang";
-import { type Hotspot, type RankedProduct, rankProducts } from "@/lib/room";
+import { rankProducts } from "@/lib/room";
 
-/** The "your home" stage: the room photo, the fixes it points to, and the household. */
-function RoomStage({
-  airwise,
-  room,
-  hotspots,
-  onPick,
-  hidden,
-  onNext,
-}: Readonly<{
-  airwise: Airwise;
-  room: Room;
-  hotspots: Hotspot[];
-  onPick: (id: string) => void;
-  hidden: boolean;
-  onNext: () => void;
-}>) {
-  const { lang, t } = useLang();
-  return (
-    <section id="stage-room" aria-labelledby="h-room" hidden={hidden}>
-      <h2 id="h-room" className="sr-only">
-        {t("dock.room")}
-      </h2>
-      <div className="homegrid">
-        <RoomPanel
-          a={airwise}
-          hotspots={hotspots}
-          photoUrl={room.photoUrl}
-          onPick={onPick}
-          footer={<PhotoPicker room={room} />}
-        />
-        <div className="homeside">
-          <h2 className="sr-only">{t("fix.heading")}</h2>
-          <FixRows a={airwise} hotspots={hotspots} />
-          <ProfilePills profile={airwise.profile} onChange={airwise.setProfile} lang={lang} />
-          <button type="button" className="btn ghost nextstage" onClick={onNext}>
-            {t("plan.cta")} ➔
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
- * The "plan" stage: the cleanest hour, the day's schedule, what is worth buying, and where the dose
- * comes from.
- */
-function PlanStage({
-  airwise,
-  lang,
-  products,
-  hidden,
-  active,
-}: Readonly<{
-  airwise: Airwise;
-  lang: Lang;
-  products: RankedProduct[];
-  hidden: boolean;
-  active: boolean;
-}>) {
-  const { t } = useLang();
-  return (
-    <section id="stage-plan" aria-labelledby="h-plan" hidden={hidden}>
-      <div className="sec-head">
-        <h2 id="h-plan">{t("dock.plan")}</h2>
-        <p className="safewindow">{t("plan.window", { time: airwise.bestLabel })}</p>
-        <p {...englishIn(lang)}>
-          The air is usually worst before dawn and again at dusk. The cleanest window is around{" "}
-          <strong>{airwise.bestLabel}</strong>, when it is {airwise.hourly[airwise.best]} µg/m³
-          instead of {airwise.hourly[OUTDOOR_HOUR]} at your usual {fmtHour(OUTDOOR_HOUR)} outing.
-        </p>
-      </div>
-      <div {...englishIn(lang)}>
-        <HourChart hourly={airwise.hourly} best={airwise.best} usual={OUTDOOR_HOUR} />
-      </div>
-      <div className="sec-head">
-        <h2 id="h-daily">{t("sec.daily.h")}</h2>
-      </div>
-      <DayPlan schedule={airwise.schedule} choices={airwise.choices} active={active} />
-      <section aria-labelledby="h-value">
-        <div className="sec-head">
-          <h2 id="h-value">{t("value.h")}</h2>
-          <p>{t("value.sub")}</p>
-        </div>
-        <ValueList products={products} />
-      </section>
-      <div className="sec-head">
-        <h2 id="h-dose">{t("sec.dose.h")}</h2>
-      </div>
-      <div {...englishIn(lang)}>
-        <DoseBars base={airwise.base} plan={airwise.withPlan} />
-      </div>
-    </section>
-  );
-}
+import { PlanStage } from "./home/PlanStage";
+import { RoomStage } from "./home/RoomStage";
 
 /** The home screen: air strip, actions, plan, cigarettes, chat and room panel, wired to useAirwise. */
 export function Home() {

@@ -2,10 +2,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { type AirResult, estimateHourly, istClock, loadAir } from "@/lib/air/live";
-import { runInBackground } from "@/lib/background";
-import { CITIES, type City } from "@/lib/cities";
-import { FALLBACK_CITY } from "@/lib/cities";
+import { CITIES, FALLBACK_CITY } from "@/lib/cities";
 import {
   type ActionResult,
   buildActions,
@@ -18,7 +15,6 @@ import {
   bestHour,
   cigsSoFar,
   NO_PLAN,
-  OUTDOOR_HOUR,
   outdoorCigs,
   outdoorCigsSoFar,
   type Plan,
@@ -28,93 +24,12 @@ import {
 } from "@/lib/engine/model";
 import { hazeLevel } from "@/lib/haze";
 import type { Lang } from "@/lib/lang";
-import { SAMPLE_PROFILE_PATCH } from "@/lib/room";
 import { buildSchedule } from "@/lib/schedule";
 import { decodeChoices, sanitizePlan } from "@/lib/share";
 import { clearSaved, readSaved, type StoreState, writeSaved } from "@/lib/store";
 
-const REFRESH_MS = 15 * 60 * 1000;
-const LOAD_TIMEOUT_MS = 10_000;
-const sameProfile = (a: Profile, b: Profile) =>
-  a.home === b.home &&
-  a.commute === b.commute &&
-  a.km === b.km &&
-  a.cooking === b.cooking &&
-  a.vulnerable === b.vulnerable;
-/**
- * The sample-room family: an older flat in Lucknow, gas cooking, a two-wheeler commute, an
- * asthmatic child.
- */
-export const DEFAULT_PROFILE: Profile = {
-  home: SAMPLE_PROFILE_PATCH.home,
-  commute: "bike",
-  km: 8,
-  cooking: SAMPLE_PROFILE_PATCH.cooking,
-  vulnerable: true,
-};
-const DEFAULT_CITY = "lucknow";
-
-type Status = "loading" | "live" | "estimate";
-
-/**
- * Live air for a city, refreshed on a timer. Falls back to this city's own estimate and says so in
- * `status`.
- */
-function useLiveAir(city: City) {
-  const [air, setAir] = useState<AirResult>(() => ({
-    hourly: estimateHourly(city),
-    source: "estimate",
-    temp: null,
-    wind: null,
-    updated: null,
-  }));
-  const [status, setStatus] = useState<Status>("loading");
-  const [nowHour, setNowHour] = useState(OUTDOOR_HOUR);
-  const [elapsed, setElapsed] = useState(OUTDOOR_HOUR); // hours since midnight India time, with minutes
-
-  // Live by default, refreshed every 15 minutes. A failed fetch is labelled as an estimate, never as live.
-  useEffect(() => {
-    const ctrl = new AbortController();
-    setStatus("loading");
-    // Never show the previous city's curve under this city's name while the fetch is out: start
-    // from this city's own estimate.
-    setAir({
-      hourly: estimateHourly(city),
-      source: "estimate",
-      temp: null,
-      wind: null,
-      updated: null,
-    });
-    const run = () => {
-      // one request: cancelled with the effect, or after a timeout so a hung fetch falls back to
-      // the estimate
-      const req = new AbortController();
-      const onAbort = () => req.abort();
-      ctrl.signal.addEventListener("abort", onAbort);
-      const timeout = setTimeout(onAbort, LOAD_TIMEOUT_MS);
-      return loadAir(city, req.signal)
-        .then((r) => {
-          if (ctrl.signal.aborted) return;
-          setAir(r);
-          setStatus(r.source);
-          const clock = istClock();
-          setNowHour(clock.hour);
-          setElapsed(clock.elapsed);
-        })
-        .finally(() => {
-          clearTimeout(timeout);
-          ctrl.signal.removeEventListener("abort", onAbort);
-        });
-    };
-    runInBackground(run());
-    const timer = setInterval(() => runInBackground(run()), REFRESH_MS);
-    return () => {
-      ctrl.abort();
-      clearInterval(timer);
-    };
-  }, [city]);
-  return { air, status, nowHour, elapsed };
-}
+import { DEFAULT_CITY, DEFAULT_PROFILE, sameProfile } from "./airwiseDefaults";
+import { useLiveAir } from "./useLiveAir";
 
 /**
  * All home-screen state and everything derived from it, in one place. The engine does the

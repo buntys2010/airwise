@@ -4,89 +4,9 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { CITIES, type City, FALLBACK_CITY, searchCities } from "@/lib/cities";
 
+import { CityList, MAX_SHOWN, resultsNote, useScrollIntoView } from "./city/CityList";
+import { cityKeyHandler } from "./city/keys";
 import { useLang } from "./LangProvider";
-
-const MAX_SHOWN = 50;
-
-/** Keeps the highlighted option visible as the arrow keys move through a long list. */
-function useScrollIntoView(
-  listRef: React.RefObject<HTMLUListElement | null>,
-  open: boolean,
-  active: number,
-) {
-  useEffect(() => {
-    if (!open) return;
-    listRef.current
-      ?.querySelector<HTMLElement>(`[data-index="${active}"]`)
-      ?.scrollIntoView?.({ block: "nearest" });
-  }, [listRef, active, open]);
-}
-
-function resultsNote(count: number, t: ReturnType<typeof useLang>["t"]): string {
-  if (count === 0) return t("city.none");
-  if (count > MAX_SHOWN) return t("city.more", { n: MAX_SHOWN });
-  return t("city.count", { n: count });
-}
-
-interface CityListProps {
-  id: string;
-  listRef: React.RefObject<HTMLUListElement | null>;
-  label: string;
-  open: boolean;
-  shown: City[];
-  active: number;
-  currentId: string;
-  onChoose: (c: City) => void;
-  onHover: (i: number) => void;
-}
-
-/**
- * The popup list of matching cities. Keyboard operation lives on the input; options only need
- * pointer handlers.
- */
-function CityList({
-  id,
-  listRef,
-  label,
-  open,
-  shown,
-  active,
-  currentId,
-  onChoose,
-  onHover,
-}: Readonly<CityListProps>) {
-  return (
-    <ul
-      id={`${id}-list`}
-      ref={listRef}
-      role="listbox"
-      aria-label={label}
-      className="citylist"
-      hidden={!open}
-    >
-      {shown.map((c, i) => (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-        <li
-          key={c.id}
-          id={`${id}-o-${c.id}`}
-          data-index={i}
-          role="option"
-          aria-selected={c.id === currentId}
-          className={`cityopt${i === active ? " active" : ""}`}
-          onMouseDown={
-            (e) =>
-              e.preventDefault() /* keep focus in the input so blur does not close the list first */
-          }
-          onClick={() => onChoose(c)}
-          onMouseMove={() => onHover(i)}
-        >
-          <span>{c.name}</span>
-          <small>{c.state}</small>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 /**
  * A searchable city picker (ARIA 1.2 editable combobox with a list). Type a city, an old name
@@ -132,60 +52,16 @@ export function CityPicker({
     if (restore) setText(current.name);
   }
 
-  function arrowDown() {
-    if (open) {
-      setActive((a) => (a + 1) % Math.max(1, shown.length));
-      return;
-    }
-    setOpen(true);
-    setActive(
-      Math.max(
-        0,
-        shown.findIndex((c) => c.id === current.id),
-      ),
-    );
-  }
-
-  function arrowUp() {
-    if (open) setActive((a) => (a - 1 + shown.length) % Math.max(1, shown.length));
-    else setOpen(true);
-  }
-
-  /** Each key returns true when it acted, so the browser default (caret move, form submit) is suppressed. */
-  function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    const keys: Record<string, () => boolean> = {
-      ArrowDown: () => {
-        arrowDown();
-        return true;
-      },
-      ArrowUp: () => {
-        arrowUp();
-        return true;
-      },
-      Enter: () => {
-        if (!open || !shown[active]) return false;
-        choose(shown[active]);
-        return true;
-      },
-      Escape: () => {
-        if (!open) return false;
-        close();
-        return true;
-      },
-      Home: () => {
-        if (!open) return false;
-        setActive(0);
-        return true;
-      },
-      End: () => {
-        if (!open) return false;
-        setActive(Math.max(0, shown.length - 1));
-        return true;
-      },
-    };
-    const handler = Object.hasOwn(keys, e.key) ? keys[e.key] : undefined;
-    if (handler?.()) e.preventDefault();
-  }
+  const onKey = cityKeyHandler({
+    open,
+    shown,
+    active,
+    setOpen,
+    setActive,
+    choose,
+    close,
+    currentShownIndex: shown.findIndex((c) => c.id === current.id),
+  });
 
   const status = resultsNote(results.length, t);
   return (

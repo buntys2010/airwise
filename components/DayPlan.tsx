@@ -6,7 +6,7 @@ import { runInBackground } from "@/lib/background";
 import type { DayPlan as Plan } from "@/lib/plan";
 import type { ScheduleEntry } from "@/lib/schedule";
 
-import type { Choices } from "./Chat";
+import type { Choices } from "./chat/api";
 import { useLang } from "./LangProvider";
 
 interface Result extends Plan {

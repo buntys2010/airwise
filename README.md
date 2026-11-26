@@ -55,7 +55,7 @@ AirWise proof card
   Tests          516 passed, 0 failed, in 51 files
   Accessibility  10 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
-  First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB
+  First-load JS  home 182 kB, largest page / 182 kB (budget 200 kB), shared 156 kB (gzip)
   Audit          0 vulnerabilities in runtime dependencies
 ```
 The 52-case eval set (`evals/`, report in [`docs/EVAL_REPORT.md`](docs/EVAL_REPORT.md)) covers grounding, injection, Hindi and photo findings, and a regression test proves the evals fail if the guard is weakened. Playwright (`e2e/`) checks the core journey, layout at 360 and 390 px, that a focused control is never hidden behind the bottom bar, and the cigarette animation. CI runs the same steps (`.github/workflows/ci.yml`).

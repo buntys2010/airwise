@@ -3,9 +3,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import axe from "axe-core";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DEFAULT_PROFILE } from "@/components/airwiseDefaults";
 import { CityCigs } from "@/components/CityCigs";
 import { LangProvider } from "@/components/LangProvider";
-import { DEFAULT_PROFILE } from "@/components/useAirwise";
 import { estimateHourly } from "@/lib/air/live";
 import { CITIES } from "@/lib/cities";
 import { buildActions, toggleAction } from "@/lib/engine/actions";
