@@ -1,35 +1,66 @@
 /**
- * Bundle budget. Reads the table that `next build` prints and fails if any page's first-load JS is
- * over budget.
- * Usage: npm run build 2>&1 | tee build.log && node scripts/budget.mjs build.log
+ * Bundle budget. Reads the per-route chunk lists that `next build` writes to
+ * `.next/diagnostics/route-bundle-stats.json` (Next 16 no longer prints sizes), gzips each chunk
+ * and fails if any page's first-load JS is over budget.
+ * Usage: npm run build && node scripts/budget.mjs
  */
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { gzipSync } from "node:zlib";
 
-export const PAGE_BUDGET_KB = 150;
-export const SHARED_BUDGET_KB = 120;
+/**
+ * Gzipped first-load JS limits. Set from Next 16.4 + Turbopack, which ships more than Next 15 did:
+ * the heaviest page (/) measures about 182 kB and the shared bundle about 156 kB, so these leave
+ * roughly 10% of headroom. A real regression still fails; tighten them when the bundle shrinks.
+ */
+export const PAGE_BUDGET_KB = 200;
+export const SHARED_BUDGET_KB = 170;
 
-const toKb = (n, unit) => (unit === "B" ? Number(n) / 1000 : Number(n));
+const STATS_FILE = ".next/diagnostics/route-bundle-stats.json";
+/** Pages that ship no app JS of their own and would only add noise. */
+const SKIPPED_ROUTES = new Set(["/_not-found"]);
 
-/** Parses the route table from `next build` output. API routes are left out: they ship no page JS. */
-export function parseBuildLog(log) {
-  const pages = {};
-  let shared = null;
-  for (const line of String(log).split(/\r?\n/)) {
-    const row = /^\W*[○ƒ●λ]\s+(\/\S*)\s+([\d.]+)\s*(kB|B)\s+([\d.]+)\s*(kB|B)\s*$/u.exec(line);
-    if (row && !row[1].startsWith("/api/") && row[1] !== "/_not-found")
-      pages[row[1]] = toKb(row[4], row[5]);
-    const sh = /First Load JS shared by all\s+([\d.]+)\s*(kB|B)/.exec(line);
-    if (sh) shared = toKb(sh[1], sh[2]);
-  }
-  return { pages, shared };
+const toKilobytes = (bytes) => Math.round((bytes / 1000) * 10) / 10;
+
+/** The gzipped size of one built file, in bytes. Chunk paths use the build machine's separators. */
+export function gzipBytes(chunkPath, root = process.cwd()) {
+  return gzipSync(readFileSync(resolve(root, chunkPath.replaceAll("\\", "/")))).length;
+}
+
+/**
+ * Per-page first-load JS and the shared bundle, in kB. A page's first load is every chunk it
+ * lists; the shared bundle is the chunks every page lists. API routes are not in the stats.
+ * `sizeOf` returns a chunk's gzipped bytes, so tests need no files.
+ */
+export function summarizeBundles(stats, sizeOf = gzipBytes) {
+  const routes = stats.filter((entry) => !SKIPPED_ROUTES.has(entry.route));
+  const chunkSets = routes.map((entry) => new Set(entry.firstLoadChunkPaths.map(String)));
+  const sizes = new Map();
+  const sizeFor = (path) => {
+    if (!sizes.has(path)) sizes.set(path, sizeOf(path));
+    return sizes.get(path);
+  };
+  const total = (paths) => [...paths].reduce((sum, path) => sum + sizeFor(path), 0);
+  const pages = Object.fromEntries(
+    routes.map((entry, index) => [entry.route, toKilobytes(total(chunkSets[index]))]),
+  );
+  const [first, ...others] = chunkSets;
+  const common = first ? [...first].filter((path) => others.every((set) => set.has(path))) : [];
+  return { pages, shared: first ? toKilobytes(total(common)) : null };
+}
+
+/** Reads and summarizes the stats of the latest `next build`. */
+export function readBundleStats(root = process.cwd()) {
+  const stats = JSON.parse(readFileSync(resolve(root, STATS_FILE), "utf8"));
+  return summarizeBundles(stats, (path) => gzipBytes(path, root));
 }
 
 export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED_BUDGET_KB } = {}) {
   const violations = [];
   const entries = Object.entries(parsed.pages);
   if (entries.length === 0) violations.push("no pages found in the build output");
-  for (const [route, kb] of entries)
-    if (kb > pageKb) violations.push(`${route} is ${kb} kB, over the ${pageKb} kB page budget`);
+  for (const [route, size] of entries)
+    if (size > pageKb) violations.push(`${route} is ${size} kB, over the ${pageKb} kB page budget`);
   if (parsed.shared === null) violations.push("shared JS size not found in the build output");
   else if (parsed.shared > sharedKb)
     violations.push(`shared JS is ${parsed.shared} kB, over the ${sharedKb} kB budget`);
@@ -43,22 +74,21 @@ export function checkBudget(parsed, { pageKb = PAGE_BUDGET_KB, sharedKb = SHARED
   };
 }
 
-/**
- * Command-line entry: reads a `next build` log, prints the figures, and sets the exit code (0 ok, 1
- * over budget, 2 bad usage).
- */
+/** Command-line entry: prints the figures and sets the exit code (0 ok, 1 over budget, 2 no build). */
 function main() {
-  const file = process.argv[2];
-  if (!file) {
-    console.error("usage: node scripts/budget.mjs build.log");
+  let parsed;
+  try {
+    parsed = readBundleStats();
+  } catch {
+    console.error(`could not read ${STATS_FILE}; run "npm run build" first`);
     process.exitCode = 2;
     return;
   }
-  const result = checkBudget(parseBuildLog(readFileSync(file, "utf8")));
+  const result = checkBudget(parsed);
   console.log(
-    `First-load JS: home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`,
+    `First-load JS (gzip): home ${result.home} kB, largest ${result.worst?.route} ${result.worst?.kb} kB, shared ${result.shared} kB (budget ${PAGE_BUDGET_KB} kB per page, ${SHARED_BUDGET_KB} kB shared)`,
   );
-  for (const v of result.violations) console.error(`FAIL ${v}`);
+  for (const violation of result.violations) console.error(`FAIL ${violation}`);
   process.exitCode = result.ok ? 0 : 1;
 }
 

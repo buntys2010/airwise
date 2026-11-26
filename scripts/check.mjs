@@ -9,7 +9,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { checkBudget, PAGE_BUDGET_KB, parseBuildLog } from "./budget.mjs";
+import { checkBudget, PAGE_BUDGET_KB, readBundleStats } from "./budget.mjs";
 
 const shell = process.platform === "win32";
 const run = (cmd, args, opts = {}) =>
@@ -74,10 +74,9 @@ if (!report) {
 
 // 3. production build and bundle budget
 const build = run("npx", ["next", "build"]);
-const log = `${build.stdout}\n${build.stderr}`;
 if (build.status !== 0) row("Build", false, "FAIL (run npm run build)");
 else {
-  const result = checkBudget(parseBuildLog(log));
+  const result = checkBudget(readBundleStats());
   row(
     "First-load JS",
     result.ok,

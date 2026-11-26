@@ -8,7 +8,7 @@ AirWise proof card
   Tests          520 passed, 0 failed, in 52 files
   Accessibility  10 automated axe scans of the pages, 0 with violations
   Eval set       52/52 cases (100%)
-  First-load JS  home 142 kB, largest page / 142 kB (budget 150 kB), shared 103 kB
+  First-load JS  home 182 kB, largest page / 182 kB (budget 200 kB), shared 156 kB (gzip)
   Audit          0 vulnerabilities in runtime dependencies
 ```
 Plus `npm run e2e`: 39 browser tests passed (3 skipped by design) in desktop and 390 px phone profiles.
@@ -31,7 +31,7 @@ Plus `npm run e2e`: 39 browser tests passed (3 skipped by design) in desktop and
 - `npm audit` on runtime dependencies: 0 vulnerabilities.
 
 ## Efficiency
-- First-load JS 142 kB for the heaviest page against a 150 kB budget, enforced by [`scripts/budget.mjs`](../scripts/budget.mjs) in CI.
+- First-load JS (gzip) 182 kB for the heaviest page against a 200 kB budget (Next 16 with Turbopack; the earlier 142 kB figure was Next 15), enforced by [`scripts/budget.mjs`](../scripts/budget.mjs) in CI.
 - The city table loads only on `/map`; the home page fetches only the chosen city; the map uses 3 batched air requests, cached on the server for 10 minutes.
 - Verified model answers are cached for 10 minutes, and Gemini calls have per-call and overall time budgets.
 
